@@ -35,41 +35,41 @@ dialog{border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);w
 .role-admin{background:#1f7a5c22;color:#1f7a5c;border:1px solid #1f7a5c44}
 .role-field{background:#07101622;color:#60706b;border:1px solid #263640}
 /* === Field user: hide write/edit/reset/config controls === */
-.field-user #resetBtn,.field-user #dailyJumpBtn{display:none!important}
+.field-user #resetBtn{display:none!important}
 .field-user #saveDailyBtn,.field-user #clearLogBtn,.field-user #resetDailySetupBtn{display:none!important}
 .field-user #importAllBtn,.field-user #clearDailyImportBtn,.field-user #dailyImportFile{display:none!important}
 .field-user .edit-btn,.field-user #editForm,.field-user #editPanel{display:none!important}
 .field-user #configPanel,.field-user #saveConfigBtn,.field-user #resetConfigBtn,.field-user #resetBtn{display:none!important}
-.field-user .nav button[data-jump="daily"]{display:none!important}
 
-
-/* === Secure login-only first screen patch ===
-   Keeps all tracker content hidden until successful access verification. */
-html.auth-locked, body.auth-locked {
-  min-height: 100%;
-  overflow: hidden !important;
-  background: #071016;
-}
-body.auth-locked #appShell,
-#appShell[hidden] {
-  display: none !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
-}
-body.auth-locked #emailGate {
-  display: grid !important;
-}
-body.auth-unlocked {
-  overflow: auto !important;
-}
-body.auth-unlocked #emailGate {
-  display: none !important;
-}
-body.auth-unlocked #appShell {
-  display: grid !important;
-  visibility: visible !important;
-  pointer-events: auto !important;
-}
+/* === Secure login gate: hide tracker until successful login === */
+body.auth-locked{overflow:hidden}
+body.auth-locked #appShell{display:none!important}
+body.auth-locked #emailGate{display:grid!important}
+body.auth-unlocked #emailGate{display:none!important}
+body.auth-unlocked #appShell{display:grid!important}
+/* Viewer role: read-only, but keep reports/exports visible */
+.field-user #resetBtn,
+.field-user #saveDailyBtn,
+.field-user #clearLogBtn,
+.field-user #cancelDailyEditBtn,
+.field-user #resetDailySetupBtn,
+.field-user #importAllBtn,
+.field-user #clearDailyImportBtn,
+.field-user #dailyImportFile,
+.field-user .import-panel,
+.field-user #dailyForm,
+.field-user .entry-config,
+.field-user .edit-row,
+.field-user .edit-entry,
+.field-user .delete-entry,
+.field-user .requires-edit,
+.field-user #editForm,
+.field-user #editPanel,
+.field-user #configPanel,
+.field-user #saveConfigBtn,
+.field-user #resetConfigBtn{display:none!important}
+.viewer-note{border:1px solid #d8e2de;background:#f7faf8;color:#60706b;border-radius:8px;padding:10px 12px;margin:10px 0;font-size:12px;font-weight:800}
+.daily-report-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 </style></head><body class="auth-locked">
 <div class="access-gate" id="emailGate">
   <div class="access-card">
@@ -175,7 +175,7 @@ body.auth-unlocked #appShell {
 
     <div class="grid" id="daily">
       <section class="panel entry-panel">
-        <div class="head"><div><h3>Daily Progress Entry</h3><p class="footnote" style="margin:4px 0 0">Cascading dropdowns with permit, document, quantity, and contractor details.</p></div><span class="pill live" id="lastUpdatedLabel">Ready</span></div>
+        <div class="head"><div><h3>Daily Progress Entry</h3><p class="footnote" style="margin:4px 0 0">Cascading dropdowns with permit, document, quantity, and contractor details.</p><div class="viewer-note" id="viewerNotice" style="display:none">Viewer mode: review, print, and export only. Editing is disabled.</div></div><div class="daily-report-actions"><button class="btn" id="dailyPrintReportBtn" type="button" title="Print daily progress report"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="printer"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"></path><rect x="6" y="14" width="12" height="8" rx="1"></rect></svg><span>Print daily</span></button><button class="btn" id="dailyExportReportBtn" type="button" title="Export daily progress report"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="file-spreadsheet"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"></path><path d="M14 2v5a1 1 0 0 0 1 1h5"></path><path d="M8 13h2"></path><path d="M14 13h2"></path><path d="M8 17h2"></path><path d="M14 17h2"></path></svg><span>Export daily</span></button><span class="pill live" id="lastUpdatedLabel">Ready</span></div></div>
         <section class="import-panel">
           <div class="import-top">
             <label class="import-picker">Upload progress file<input type="file" id="dailyImportFile" accept=".csv,.tsv,.txt,.xls,.xlsx,.xlsm"></label>
@@ -452,24 +452,7 @@ function canEditData(){return true}
 function canExportReport(){return true}
 function requireEdit(){if(!isAdmin()){alert('Only the admin can make changes. You are logged in as a field viewer.');return false;}return true;}
 function requireExport(){return true}
-function showApp(){
-  const app=$('#appShell');
-  const gate=$('#emailGate');
-  document.body.classList.remove('auth-locked');
-  document.body.classList.add('auth-unlocked');
-  if(app){
-    app.hidden=false;
-    app.removeAttribute('hidden');
-    app.classList.remove('readonly');
-    app.style.display='grid';
-    app.style.visibility='visible';
-  }
-  if(gate){
-    gate.style.display='none';
-    gate.setAttribute('aria-hidden','true');
-  }
-  if(window.lucide)lucide.createIcons();
-}
+function showApp(){document.body.classList.remove('auth-locked');document.body.classList.add('auth-unlocked');const app=$('#appShell');if(app){app.hidden=false;app.classList.remove('readonly')}const gate=$('#emailGate');if(gate)gate.style.display='none';if(window.lucide)lucide.createIcons()}
 function current(row){const merged=Object.assign({},row,edits[row.id]||{});if(merged.category==='Station'&&!edits[row.id]?.system){merged.system=STATION_SYSTEMS.join(', ')}return merged}
 function statusFromProgress(p){p=Number(p||0);return p>=100?'Complete':p>0?'In Progress':'Not Started'}
 function statusClass(s){return s==='Complete'?'s-ready':s==='In Progress'?'s-progress':'s-start'}
@@ -609,67 +592,9 @@ function drawMasterDonut(){const canvas=$('#masterProgressChart');if(!canvas)ret
 function drawTrend(){const canvas=$('#trendProgressChart');if(!canvas)return;const ctx=canvas.getContext('2d');const data=trendData();const w=canvas.width,h=canvas.height;ctx.clearRect(0,0,w,h);ctx.fillStyle='#17211f';ctx.font='700 22px Inter, Arial';ctx.fillText('Daily Progress Trend',22,34);const left=58,right=28,top=62,bottom=48,plotW=w-left-right,plotH=h-top-bottom;ctx.strokeStyle='#d8e2de';ctx.lineWidth=1;for(let i=0;i<=4;i++){const y=top+plotH*i/4;ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(left+plotW,y);ctx.stroke();ctx.fillStyle='#60706b';ctx.font='12px Inter, Arial';ctx.fillText(100-i*25+'%',14,y+4)}if(!data.length){ctx.fillStyle='#60706b';ctx.font='600 16px Inter, Arial';ctx.fillText('No daily entries yet',left+20,top+plotH/2);return}ctx.strokeStyle='#18788d';ctx.lineWidth=4;ctx.beginPath();data.forEach((d,i)=>{const x=left+(data.length===1?plotW/2:plotW*i/(data.length-1));const y=top+plotH-(plotH*d.total/100);if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)});ctx.stroke();data.forEach((d,i)=>{const x=left+(data.length===1?plotW/2:plotW*i/(data.length-1));const y=top+plotH-(plotH*d.total/100);ctx.fillStyle='#1f7a5c';ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fill();ctx.fillStyle='#60706b';ctx.font='12px Inter, Arial';ctx.fillText(displayDate(d.date),x-28,h-18)})}
 function renderChart(){drawMasterDonut();drawBars($('#scopeProgressChart'),'Progress by Scope',scopeAverageData(),170);drawTrend();drawBars($('#progressChart'),'Average Progress by System',systemAverageData(),250)}
 function barChartHtml(title,data){return '<h2>'+html(title)+'</h2><div class="bar-report">'+(data.length?data.map(d=>'<div class="bar-line"><span>'+html(d.label)+'</span><div class="bar"><span style="width:'+d.avg+'%"></span></div><strong>'+d.avg+'%</strong></div>').join(''):'<p>No matching chart data.</p>')+'</div>'}
-function reportHtml(){const entries=filteredDailyEntries('daily');const assetIds=new Set(entries.map(e=>e.assetId));const rows=allRows().filter(r=>assetIds.has(r.id));const avg=rows.length?Math.round(rows.reduce((a,r)=>a+Number(r.progress||0),0)/rows.length):0;const complete=rows.filter(r=>Number(r.progress||0)>=100).length;const assetRows=rows.map(r=>'<tr><td>'+html(label(r))+'</td><td>'+html(r.category)+'</td><td>'+html(r.type)+'</td><td>'+html(r.location)+'</td><td>'+html(r.system)+'</td><td>'+html(r.scope)+'</td><td>'+Number(r.progress||0)+'%</td><td>'+html(r.status)+'</td><td>'+html(r.owner)+'</td><td>'+html(r.permitNo||'')+'</td><td>'+html(displayDate(rowDate(r))||'-')+'</td></tr>').join('')||'<tr><td colspan="11">No matching assets.</td></tr>';const logRows=entries.map(e=>'<tr><td>'+html(displayDate(e.date))+'</td><td>'+html(e.assetLabel)+'</td><td>'+html(e.projectScope)+'</td><td>'+html(e.system)+'</td><td>'+html(e.mainActivity)+'</td><td>'+html(e.subActivity)+'</td><td>'+e.dailyQty+' '+html(e.uom)+'</td><td>'+e.dailyProgress+'%</td><td>'+e.totalAfter+'%</td><td>'+html(e.permitNo)+'</td><td>'+html(e.docType)+'</td><td>'+html(e.docRef)+'</td><td>'+html(e.contractor)+'</td><td>'+html(e.remarks)+'</td></tr>').join('')||'<tr><td colspan="14">No daily entries match the filters.</td></tr>';return '<!doctype html><html><head><meta charset="utf-8"><title>AiP5 Telecom Daily Report</title><style>body{font-family:Arial,sans-serif;color:#17211f;margin:24px}h1{margin:0 0 4px;font-size:24px}p{margin:0 0 14px;color:#60706b}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:16px 0}.card{border:1px solid #d8e2de;padding:10px;border-radius:6px}.card strong{display:block;font-size:22px;margin-top:4px}table{width:100%;border-collapse:collapse;font-size:10px;margin-top:12px}th,td{border:1px solid #d8e2de;padding:5px;text-align:left;vertical-align:top}th{background:#edf3f0}h2{margin-top:22px;font-size:16px}@media print{button{display:none}body{margin:8mm}}
-
-/* === Secure login-only first screen patch ===
-   Keeps all tracker content hidden until successful access verification. */
-html.auth-locked, body.auth-locked {
-  min-height: 100%;
-  overflow: hidden !important;
-  background: #071016;
-}
-body.auth-locked #appShell,
-#appShell[hidden] {
-  display: none !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
-}
-body.auth-locked #emailGate {
-  display: grid !important;
-}
-body.auth-unlocked {
-  overflow: auto !important;
-}
-body.auth-unlocked #emailGate {
-  display: none !important;
-}
-body.auth-unlocked #appShell {
-  display: grid !important;
-  visibility: visible !important;
-  pointer-events: auto !important;
-}
-</style></head><body class="auth-locked"><button onclick="window.print()" style="float:right;padding:8px 12px">Print / Save PDF</button><h1>AiP5 BAB Field Telecom Daily Report</h1><p>Generated '+html(displayDateTime(new Date()))+'</p><p>Filters: '+html(filterSummary('daily'))+'</p><div class="cards"><div class="card">Matching assets<strong>'+rows.length+'</strong></div><div class="card">Average progress<strong>'+avg+'%</strong></div><div class="card">Complete assets<strong>'+complete+'</strong></div><div class="card">Daily entries<strong>'+entries.length+'</strong></div></div><h2>Filtered Asset Progress</h2><table><thead><tr><th>Asset</th><th>Category</th><th>Type</th><th>Location</th><th>System</th><th>Scope</th><th>Progress</th><th>Status</th><th>Owner</th><th>Permit</th><th>Last update</th></tr></thead><tbody>'+assetRows+'</tbody></table><h2>Filtered Daily Progress Log</h2><table><thead><tr><th>Date</th><th>Asset</th><th>Scope</th><th>System</th><th>Main Activity</th><th>Sub-Activity</th><th>Daily Qty</th><th>Daily %</th><th>Activity Total %</th><th>Permit</th><th>Doc Type</th><th>Doc Ref</th><th>Contractor</th><th>Remarks</th></tr></thead><tbody>'+logRows+'</tbody></table></body></html>'}
+function reportHtml(){const entries=filteredDailyEntries('daily');const assetIds=new Set(entries.map(e=>e.assetId));const rows=allRows().filter(r=>assetIds.has(r.id));const avg=rows.length?Math.round(rows.reduce((a,r)=>a+Number(r.progress||0),0)/rows.length):0;const complete=rows.filter(r=>Number(r.progress||0)>=100).length;const assetRows=rows.map(r=>'<tr><td>'+html(label(r))+'</td><td>'+html(r.category)+'</td><td>'+html(r.type)+'</td><td>'+html(r.location)+'</td><td>'+html(r.system)+'</td><td>'+html(r.scope)+'</td><td>'+Number(r.progress||0)+'%</td><td>'+html(r.status)+'</td><td>'+html(r.owner)+'</td><td>'+html(r.permitNo||'')+'</td><td>'+html(displayDate(rowDate(r))||'-')+'</td></tr>').join('')||'<tr><td colspan="11">No matching assets.</td></tr>';const logRows=entries.map(e=>'<tr><td>'+html(displayDate(e.date))+'</td><td>'+html(e.assetLabel)+'</td><td>'+html(e.projectScope)+'</td><td>'+html(e.system)+'</td><td>'+html(e.mainActivity)+'</td><td>'+html(e.subActivity)+'</td><td>'+e.dailyQty+' '+html(e.uom)+'</td><td>'+e.dailyProgress+'%</td><td>'+e.totalAfter+'%</td><td>'+html(e.permitNo)+'</td><td>'+html(e.docType)+'</td><td>'+html(e.docRef)+'</td><td>'+html(e.contractor)+'</td><td>'+html(e.remarks)+'</td></tr>').join('')||'<tr><td colspan="14">No daily entries match the filters.</td></tr>';return '<!doctype html><html><head><meta charset="utf-8"><title>AiP5 Telecom Daily Report</title><style>body{font-family:Arial,sans-serif;color:#17211f;margin:24px}h1{margin:0 0 4px;font-size:24px}p{margin:0 0 14px;color:#60706b}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:16px 0}.card{border:1px solid #d8e2de;padding:10px;border-radius:6px}.card strong{display:block;font-size:22px;margin-top:4px}table{width:100%;border-collapse:collapse;font-size:10px;margin-top:12px}th,td{border:1px solid #d8e2de;padding:5px;text-align:left;vertical-align:top}th{background:#edf3f0}h2{margin-top:22px;font-size:16px}@media print{button{display:none}body{margin:8mm}}</style></head><body><button onclick="window.print()" style="float:right;padding:8px 12px">Print / Save PDF</button><h1>AiP5 BAB Field Telecom Daily Report</h1><p>Generated '+html(displayDateTime(new Date()))+'</p><p>Filters: '+html(filterSummary('daily'))+'</p><div class="cards"><div class="card">Matching assets<strong>'+rows.length+'</strong></div><div class="card">Average progress<strong>'+avg+'%</strong></div><div class="card">Complete assets<strong>'+complete+'</strong></div><div class="card">Daily entries<strong>'+entries.length+'</strong></div></div><h2>Filtered Asset Progress</h2><table><thead><tr><th>Asset</th><th>Category</th><th>Type</th><th>Location</th><th>System</th><th>Scope</th><th>Progress</th><th>Status</th><th>Owner</th><th>Permit</th><th>Last update</th></tr></thead><tbody>'+assetRows+'</tbody></table><h2>Filtered Daily Progress Log</h2><table><thead><tr><th>Date</th><th>Asset</th><th>Scope</th><th>System</th><th>Main Activity</th><th>Sub-Activity</th><th>Daily Qty</th><th>Daily %</th><th>Activity Total %</th><th>Permit</th><th>Doc Type</th><th>Doc Ref</th><th>Contractor</th><th>Remarks</th></tr></thead><tbody>'+logRows+'</tbody></table></body></html>'}
 function chartImg(id){const c=$('#'+id);return c?c.toDataURL('image/png'):''}
-function legacyMasterReportHtml(){const rows=filteredMasterRows();const rowIds=new Set(rows.map(r=>r.id));const entries=filteredDailyEntries('master').filter(e=>!rowIds.size||rowIds.has(e.assetId)).sort((a,b)=>dateValue(b.date).localeCompare(dateValue(a.date))||Number(b.dailyProgress||0)-Number(a.dailyProgress||0));const avg=rows.length?Math.round(rows.reduce((a,r)=>a+Number(r.progress||0),0)/rows.length):0;const complete=rows.filter(r=>Number(r.progress||0)>=100).length;const inProgress=rows.filter(r=>Number(r.progress||0)>0&&Number(r.progress||0)<100).length;const zero=rows.length-complete-inProgress;const assetRows=rows.map(r=>'<tr><td>'+html(label(r))+'</td><td>'+html(r.category)+'</td><td>'+html(r.type)+'</td><td>'+html(r.location)+'</td><td>'+html(r.system)+'</td><td>'+html(r.scope)+'</td><td>'+Number(r.progress||0)+'%</td><td>'+html(r.status)+'</td><td>'+html(rowDate(r)||'-')+'</td></tr>').join('')||'<tr><td colspan="9">No matching assets.</td></tr>';const recentRows=entries.map(e=>'<tr><td>'+html(e.date)+'</td><td>'+html(e.assetLabel)+'</td><td>'+html(e.projectScope||'')+'</td><td>'+html(e.system)+'</td><td>'+html(e.mainActivity||'')+'</td><td>'+html(e.subActivity||'')+'</td><td>'+e.dailyQty+' '+html(e.uom||'')+'</td><td>'+e.dailyProgress+'%</td><td>'+e.totalAfter+'%</td><td>'+html(e.permitNo||'')+'</td><td>'+html(e.docType||'')+'</td><td>'+html(e.docRef||'')+'</td><td>'+html(e.contractor||'')+'</td><td>'+html(e.remarks||'')+'</td></tr>').join('')||'<tr><td colspan="14">No matching daily entries.</td></tr>';return '<!doctype html><html><head><meta charset="utf-8"><title>AiP5 Master Progress Report</title><style>body{font-family:Arial,sans-serif;color:#17211f;margin:22px}button{float:right;padding:8px 12px}.muted{color:#60706b}.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:16px 0}.card{border:1px solid #d8e2de;padding:10px;border-radius:6px}.card strong{display:block;font-size:22px;margin-top:4px}.bar-report{display:grid;gap:8px;margin:12px 0}.bar-line{display:grid;grid-template-columns:150px minmax(120px,1fr) 70px;gap:8px;align-items:center;font-size:11px}.bar{height:11px;background:#dfe8e4;border-radius:99px;overflow:hidden}.bar span{display:block;height:100%;background:#1f7a5c}table{width:100%;border-collapse:collapse;font-size:10px;margin-top:10px}th,td{border:1px solid #d8e2de;padding:5px;text-align:left;vertical-align:top}th{background:#edf3f0}h1{margin:0 0 4px}h2{font-size:16px;margin-top:20px}@page{size:landscape;margin:8mm}@media print{button{display:none}body{margin:0}.bar-report{break-inside:avoid}}
-
-/* === Secure login-only first screen patch ===
-   Keeps all tracker content hidden until successful access verification. */
-html.auth-locked, body.auth-locked {
-  min-height: 100%;
-  overflow: hidden !important;
-  background: #071016;
-}
-body.auth-locked #appShell,
-#appShell[hidden] {
-  display: none !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
-}
-body.auth-locked #emailGate {
-  display: grid !important;
-}
-body.auth-unlocked {
-  overflow: auto !important;
-}
-body.auth-unlocked #emailGate {
-  display: none !important;
-}
-body.auth-unlocked #appShell {
-  display: grid !important;
-  visibility: visible !important;
-  pointer-events: auto !important;
-}
-</style></head><body class="auth-locked"><button onclick="window.print()">Print / Save PDF</button><h1>AiP5 BAB Field Master Progress Report</h1><p class="muted">Generated '+html(new Date().toLocaleString())+'</p><p class="muted">Filters: '+html(filterSummary('master'))+'</p><div class="cards"><div class="card">Master Progress<strong>'+avg+'%</strong></div><div class="card">Matching Assets<strong>'+rows.length+'</strong></div><div class="card">Complete<strong>'+complete+'</strong></div><div class="card">In Progress<strong>'+inProgress+'</strong></div><div class="card">Not Started<strong>'+zero+'</strong></div></div>'+barChartHtml('Scope Progress Chart',scopeAverageData(rows))+barChartHtml('System Progress Chart',systemAverageData(rows))+'<h2>Progressed Assets</h2><table><thead><tr><th>Asset</th><th>Category</th><th>Type</th><th>Location</th><th>System</th><th>Scope</th><th>Progress</th><th>Status</th><th>Latest update</th></tr></thead><tbody>'+assetRows+'</tbody></table><h2>Daily Progress Entries</h2><table><thead><tr><th>Date</th><th>Asset</th><th>Scope</th><th>System</th><th>Main Activity</th><th>Sub-Activity</th><th>Daily Qty</th><th>Daily %</th><th>Activity Total %</th><th>Permit</th><th>Doc Type</th><th>Doc Ref</th><th>Contractor</th><th>Remarks</th></tr></thead><tbody>'+recentRows+'</tbody></table></body></html>'}
+function legacyMasterReportHtml(){const rows=filteredMasterRows();const rowIds=new Set(rows.map(r=>r.id));const entries=filteredDailyEntries('master').filter(e=>!rowIds.size||rowIds.has(e.assetId)).sort((a,b)=>dateValue(b.date).localeCompare(dateValue(a.date))||Number(b.dailyProgress||0)-Number(a.dailyProgress||0));const avg=rows.length?Math.round(rows.reduce((a,r)=>a+Number(r.progress||0),0)/rows.length):0;const complete=rows.filter(r=>Number(r.progress||0)>=100).length;const inProgress=rows.filter(r=>Number(r.progress||0)>0&&Number(r.progress||0)<100).length;const zero=rows.length-complete-inProgress;const assetRows=rows.map(r=>'<tr><td>'+html(label(r))+'</td><td>'+html(r.category)+'</td><td>'+html(r.type)+'</td><td>'+html(r.location)+'</td><td>'+html(r.system)+'</td><td>'+html(r.scope)+'</td><td>'+Number(r.progress||0)+'%</td><td>'+html(r.status)+'</td><td>'+html(rowDate(r)||'-')+'</td></tr>').join('')||'<tr><td colspan="9">No matching assets.</td></tr>';const recentRows=entries.map(e=>'<tr><td>'+html(e.date)+'</td><td>'+html(e.assetLabel)+'</td><td>'+html(e.projectScope||'')+'</td><td>'+html(e.system)+'</td><td>'+html(e.mainActivity||'')+'</td><td>'+html(e.subActivity||'')+'</td><td>'+e.dailyQty+' '+html(e.uom||'')+'</td><td>'+e.dailyProgress+'%</td><td>'+e.totalAfter+'%</td><td>'+html(e.permitNo||'')+'</td><td>'+html(e.docType||'')+'</td><td>'+html(e.docRef||'')+'</td><td>'+html(e.contractor||'')+'</td><td>'+html(e.remarks||'')+'</td></tr>').join('')||'<tr><td colspan="14">No matching daily entries.</td></tr>';return '<!doctype html><html><head><meta charset="utf-8"><title>AiP5 Master Progress Report</title><style>body{font-family:Arial,sans-serif;color:#17211f;margin:22px}button{float:right;padding:8px 12px}.muted{color:#60706b}.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:16px 0}.card{border:1px solid #d8e2de;padding:10px;border-radius:6px}.card strong{display:block;font-size:22px;margin-top:4px}.bar-report{display:grid;gap:8px;margin:12px 0}.bar-line{display:grid;grid-template-columns:150px minmax(120px,1fr) 70px;gap:8px;align-items:center;font-size:11px}.bar{height:11px;background:#dfe8e4;border-radius:99px;overflow:hidden}.bar span{display:block;height:100%;background:#1f7a5c}table{width:100%;border-collapse:collapse;font-size:10px;margin-top:10px}th,td{border:1px solid #d8e2de;padding:5px;text-align:left;vertical-align:top}th{background:#edf3f0}h1{margin:0 0 4px}h2{font-size:16px;margin-top:20px}@page{size:landscape;margin:8mm}@media print{button{display:none}body{margin:0}.bar-report{break-inside:avoid}}</style></head><body><button onclick="window.print()">Print / Save PDF</button><h1>AiP5 BAB Field Master Progress Report</h1><p class="muted">Generated '+html(new Date().toLocaleString())+'</p><p class="muted">Filters: '+html(filterSummary('master'))+'</p><div class="cards"><div class="card">Master Progress<strong>'+avg+'%</strong></div><div class="card">Matching Assets<strong>'+rows.length+'</strong></div><div class="card">Complete<strong>'+complete+'</strong></div><div class="card">In Progress<strong>'+inProgress+'</strong></div><div class="card">Not Started<strong>'+zero+'</strong></div></div>'+barChartHtml('Scope Progress Chart',scopeAverageData(rows))+barChartHtml('System Progress Chart',systemAverageData(rows))+'<h2>Progressed Assets</h2><table><thead><tr><th>Asset</th><th>Category</th><th>Type</th><th>Location</th><th>System</th><th>Scope</th><th>Progress</th><th>Status</th><th>Latest update</th></tr></thead><tbody>'+assetRows+'</tbody></table><h2>Daily Progress Entries</h2><table><thead><tr><th>Date</th><th>Asset</th><th>Scope</th><th>System</th><th>Main Activity</th><th>Sub-Activity</th><th>Daily Qty</th><th>Daily %</th><th>Activity Total %</th><th>Permit</th><th>Doc Type</th><th>Doc Ref</th><th>Contractor</th><th>Remarks</th></tr></thead><tbody>'+recentRows+'</tbody></table></body></html>'}
 function reportDailyRow(e){return '<tr><td>'+html(displayDate(e.date))+'</td><td>'+html(e.assetLabel)+'</td><td>'+html(e.projectScope||'')+'</td><td>'+html(e.system)+'</td><td>'+html(e.mainActivity||'')+'</td><td>'+html(e.subActivity||'')+'</td><td>'+e.dailyQty+' '+html(e.uom||'')+'</td><td>'+e.dailyProgress+'%</td><td>'+e.totalAfter+'%</td><td>'+html(e.permitNo||'')+'</td><td>'+html(e.docType||'')+'</td><td>'+html(e.docRef||'')+'</td><td>'+html(e.contractor||'')+'</td><td>'+html(e.remarks||'')+'</td></tr>'}
 function reportSystemsForAsset(row,entries=[]){const selected=valueOf('masterFilterSystem');const active=unique(entries.filter(e=>e.assetId===row.id).map(e=>e.system).filter(Boolean));if(selected&&selected!=='all')return active.includes(selected)?[selected]:[];if(active.length)return active;const systems=String(row.system||'').split(',').map(x=>x.trim()).filter(Boolean);return unique(systems.length?systems:['Unspecified'])}
 function reportEntriesForAsset(entries,assetId,system=''){return entries.filter(e=>e.assetId===assetId&&(!system||e.system===system))}
@@ -677,36 +602,15 @@ function latestReportEntry(entries,assetId,system=''){return reportEntriesForAss
 function systemProgressForAsset(entries,assetId,system){const related=reportEntriesForAsset(entries,assetId,system);const groups={};related.forEach(e=>{const key=entryKey(e);(groups[key]||(groups[key]=[])).push(e)});const values=Object.values(groups).map(groupProgress);return values.length?roundPercent(values.reduce((a,b)=>a+b,0)/values.length):0}
 function reportAssetRemarks(row,entries,system){const related=reportEntriesForAsset(entries,row.id,system);const notes=related.slice(0,2).map(e=>{const activity=[e.mainActivity,e.subActivity].filter(Boolean).join(' / ');const progress='Daily '+Number(e.dailyProgress||0)+'%, total '+Number(e.totalAfter||0)+'%';return [displayDate(e.date),activity,progress,e.remarks].filter(Boolean).join(' - ')}).join(' | ');return notes||row.remarks||''}
 function sortReportAssetsByActivity(rows,entries){const original=new Map(rows.map((r,i)=>[r.id,i]));return rows.slice().sort((a,b)=>{const ae=latestReportEntry(entries,a.id),be=latestReportEntry(entries,b.id);const ad=ae?dateValue(ae.date):'',bd=be?dateValue(be.date):'';return (ad?0:1)-(bd?0:1)||bd.localeCompare(ad)||masterProgressRank(a)-masterProgressRank(b)||Number(b.progress||0)-Number(a.progress||0)||(original.get(a.id)||0)-(original.get(b.id)||0)})}
-function masterReportHtml(){const baseRows=filteredMasterRows();const rowIds=new Set(baseRows.map(r=>r.id));const entries=filteredDailyEntries('master').filter(e=>!rowIds.size||rowIds.has(e.assetId)).sort((a,b)=>dateValue(b.date).localeCompare(dateValue(a.date))||Number(b.id)-Number(a.id));const rows=sortReportAssetsByActivity(baseRows,entries);const avg=rows.length?Math.round(rows.reduce((a,r)=>a+Number(r.progress||0),0)/rows.length):0;const complete=rows.filter(r=>Number(r.progress||0)>=100).length;const inProgress=rows.filter(r=>Number(r.progress||0)>0&&Number(r.progress||0)<100).length;const zero=rows.length-complete-inProgress;const latestRows=entries.slice(0,10).map(reportDailyRow).join('')||'<tr><td colspan="14">No matching daily entries.</td></tr>';const assetRows=rows.map(r=>{const systems=reportSystemsForAsset(r,entries).sort((a,b)=>{const ad=dateValue(latestReportEntry(entries,r.id,a)?.date),bd=dateValue(latestReportEntry(entries,r.id,b)?.date);return (ad?0:1)-(bd?0:1)||bd.localeCompare(ad)||a.localeCompare(b)});return systems.map((sys,idx)=>{const latest=latestReportEntry(entries,r.id,sys);const progress=systemProgressForAsset(entries,r.id,sys);const status=statusFromProgress(progress);const span=systems.length;const identity=idx===0?'<td rowspan="'+span+'">'+html(label(r))+'</td><td rowspan="'+span+'">'+html(r.category)+'</td><td rowspan="'+span+'">'+html(r.type)+'</td>':'';return '<tr>'+identity+'<td>'+html(r.location)+'</td><td>'+html(sys)+'</td><td>'+html(latest?.projectScope||r.scope||'')+'</td><td>'+progress+'%</td><td>'+html(status)+'</td><td>'+html(displayDate(latest?latest.date:rowDate(r))||'-')+'</td><td>'+html(reportAssetRemarks(r,entries,sys))+'</td></tr>'}).join('')}).join('')||'<tr><td colspan="10">No matching assets.</td></tr>';return '<!doctype html><html><head><meta charset="utf-8"><title>AiP5 Master Progress Report</title><style>body{font-family:Arial,sans-serif;color:#17211f;margin:22px}button{float:right;padding:8px 12px}.muted{color:#60706b}.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:16px 0}.card{border:1px solid #d8e2de;padding:10px;border-radius:6px}.card strong{display:block;font-size:22px;margin-top:4px}.bar-report{display:grid;gap:8px;margin:12px 0}.bar-line{display:grid;grid-template-columns:150px minmax(120px,1fr) 70px;gap:8px;align-items:center;font-size:11px}.bar{height:11px;background:#dfe8e4;border-radius:99px;overflow:hidden}.bar span{display:block;height:100%;background:#1f7a5c}table{width:100%;border-collapse:collapse;font-size:9.5px;margin-top:10px}th,td{border:1px solid #d8e2de;padding:4px;text-align:left;vertical-align:top}th{background:#edf3f0}.remarks-col{min-width:210px}h1{margin:0 0 4px}h2{font-size:16px;margin-top:20px}@page{size:landscape;margin:8mm}@media print{button{display:none}body{margin:0}.bar-report{break-inside:avoid}}
+function masterReportHtml(){const baseRows=filteredMasterRows();const rowIds=new Set(baseRows.map(r=>r.id));const entries=filteredDailyEntries('master').filter(e=>!rowIds.size||rowIds.has(e.assetId)).sort((a,b)=>dateValue(b.date).localeCompare(dateValue(a.date))||Number(b.id)-Number(a.id));const rows=sortReportAssetsByActivity(baseRows,entries);const avg=rows.length?Math.round(rows.reduce((a,r)=>a+Number(r.progress||0),0)/rows.length):0;const complete=rows.filter(r=>Number(r.progress||0)>=100).length;const inProgress=rows.filter(r=>Number(r.progress||0)>0&&Number(r.progress||0)<100).length;const zero=rows.length-complete-inProgress;const latestRows=entries.slice(0,10).map(reportDailyRow).join('')||'<tr><td colspan="14">No matching daily entries.</td></tr>';const assetRows=rows.map(r=>{const systems=reportSystemsForAsset(r,entries).sort((a,b)=>{const ad=dateValue(latestReportEntry(entries,r.id,a)?.date),bd=dateValue(latestReportEntry(entries,r.id,b)?.date);return (ad?0:1)-(bd?0:1)||bd.localeCompare(ad)||a.localeCompare(b)});return systems.map((sys,idx)=>{const latest=latestReportEntry(entries,r.id,sys);const progress=systemProgressForAsset(entries,r.id,sys);const status=statusFromProgress(progress);const span=systems.length;const identity=idx===0?'<td rowspan="'+span+'">'+html(label(r))+'</td><td rowspan="'+span+'">'+html(r.category)+'</td><td rowspan="'+span+'">'+html(r.type)+'</td>':'';return '<tr>'+identity+'<td>'+html(r.location)+'</td><td>'+html(sys)+'</td><td>'+html(latest?.projectScope||r.scope||'')+'</td><td>'+progress+'%</td><td>'+html(status)+'</td><td>'+html(displayDate(latest?latest.date:rowDate(r))||'-')+'</td><td>'+html(reportAssetRemarks(r,entries,sys))+'</td></tr>'}).join('')}).join('')||'<tr><td colspan="10">No matching assets.</td></tr>';return '<!doctype html><html><head><meta charset="utf-8"><title>AiP5 Master Progress Report</title><style>body{font-family:Arial,sans-serif;color:#17211f;margin:22px}button{float:right;padding:8px 12px}.muted{color:#60706b}.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:16px 0}.card{border:1px solid #d8e2de;padding:10px;border-radius:6px}.card strong{display:block;font-size:22px;margin-top:4px}.bar-report{display:grid;gap:8px;margin:12px 0}.bar-line{display:grid;grid-template-columns:150px minmax(120px,1fr) 70px;gap:8px;align-items:center;font-size:11px}.bar{height:11px;background:#dfe8e4;border-radius:99px;overflow:hidden}.bar span{display:block;height:100%;background:#1f7a5c}table{width:100%;border-collapse:collapse;font-size:9.5px;margin-top:10px}th,td{border:1px solid #d8e2de;padding:4px;text-align:left;vertical-align:top}th{background:#edf3f0}.remarks-col{min-width:210px}h1{margin:0 0 4px}h2{font-size:16px;margin-top:20px}@page{size:landscape;margin:8mm}@media print{button{display:none}body{margin:0}.bar-report{break-inside:avoid}}</style></head><body><button onclick="window.print()">Print / Save PDF</button><h1>AiP5 BAB Field Master Progress Report</h1><p class="muted">Generated '+html(displayDateTime(new Date()))+'</p><p class="muted">Filters: '+html(filterSummary('master'))+'</p><div class="cards"><div class="card">Master Progress<strong>'+avg+'%</strong></div><div class="card">Matching Assets<strong>'+rows.length+'</strong></div><div class="card">Complete<strong>'+complete+'</strong></div><div class="card">In Progress<strong>'+inProgress+'</strong></div><div class="card">Not Started<strong>'+zero+'</strong></div></div>'+barChartHtml('Scope Progress Chart',scopeAverageData(rows))+barChartHtml('System Progress Chart',systemAverageData(rows))+'<h2>Latest Daily Entries (Max 10)</h2><table><thead><tr><th>Date</th><th>Asset</th><th>Scope</th><th>System</th><th>Main Activity</th><th>Sub-Activity</th><th>Daily Qty</th><th>Daily %</th><th>Activity Total %</th><th>Permit</th><th>Doc Type</th><th>Doc Ref</th><th>Contractor</th><th>Remarks</th></tr></thead><tbody>'+latestRows+'</tbody></table><h2>Progressed Assets</h2><table><thead><tr><th>Asset</th><th>Category</th><th>Type</th><th>Location</th><th>System</th><th>Scope</th><th>Progress</th><th>Status</th><th>Latest update</th><th class="remarks-col">Remarks</th></tr></thead><tbody>'+assetRows+'</tbody></table></body></html>'}
 
-/* === Secure login-only first screen patch ===
-   Keeps all tracker content hidden until successful access verification. */
-html.auth-locked, body.auth-locked {
-  min-height: 100%;
-  overflow: hidden !important;
-  background: #071016;
+function dailyReportHtml(){
+  const rows=[...dailyEntries].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+  const table=rows.length?rows.map(e=>'<tr><td>'+html(displayDate(e.date||''))+'</td><td>'+html(e.assetLabel||e.assetId||'')+'</td><td>'+html(e.system||'')+'</td><td>'+html([e.mainActivity,e.subActivity].filter(Boolean).join(' / '))+'</td><td>'+html((e.dailyQty||0)+' '+(e.uom||''))+'</td><td>'+html((e.previousProgress||0)+'%')+'</td><td>'+html((e.dailyProgress||0)+'%')+'</td><td>'+html((e.totalAfter||0)+'%')+'</td><td>'+html(e.status||'')+'</td><td>'+html(e.permitNo||'')+'</td><td>'+html(e.docNo||'')+'</td><td>'+html(e.contractor||'')+'</td><td>'+html(e.remarks||'')+'</td></tr>').join(''):'<tr><td colspan="13">No daily entries available.</td></tr>';
+  return '<!doctype html><html><head><meta charset="utf-8"><title>Daily Progress Report</title><style>body{font-family:Arial,sans-serif;margin:24px;color:#17211f}h1{margin:0 0 6px;font-size:22px}p{margin:0 0 16px;color:#60706b}table{border-collapse:collapse;width:100%;font-size:11px}th,td{border:1px solid #d8e2de;padding:7px;text-align:left;vertical-align:top}th{background:#f7faf8;color:#60706b}.meta{margin-bottom:14px;font-size:12px;color:#60706b}</style></head><body><h1>Daily Progress Report</h1><p>Telecom progress daily log</p><div class="meta">Generated: '+html(new Date().toLocaleString())+' | Entries: '+rows.length+'</div><table><thead><tr><th>Date</th><th>Site</th><th>System</th><th>Activity</th><th>Daily Qty</th><th>Previous</th><th>Daily %</th><th>Total</th><th>Status</th><th>Permit</th><th>Document</th><th>Contractor</th><th>Remarks</th></tr></thead><tbody>'+table+'</tbody></table></body></html>';
 }
-body.auth-locked #appShell,
-#appShell[hidden] {
-  display: none !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
-}
-body.auth-locked #emailGate {
-  display: grid !important;
-}
-body.auth-unlocked {
-  overflow: auto !important;
-}
-body.auth-unlocked #emailGate {
-  display: none !important;
-}
-body.auth-unlocked #appShell {
-  display: grid !important;
-  visibility: visible !important;
-  pointer-events: auto !important;
-}
-</style></head><body class="auth-locked"><button onclick="window.print()">Print / Save PDF</button><h1>AiP5 BAB Field Master Progress Report</h1><p class="muted">Generated '+html(displayDateTime(new Date()))+'</p><p class="muted">Filters: '+html(filterSummary('master'))+'</p><div class="cards"><div class="card">Master Progress<strong>'+avg+'%</strong></div><div class="card">Matching Assets<strong>'+rows.length+'</strong></div><div class="card">Complete<strong>'+complete+'</strong></div><div class="card">In Progress<strong>'+inProgress+'</strong></div><div class="card">Not Started<strong>'+zero+'</strong></div></div>'+barChartHtml('Scope Progress Chart',scopeAverageData(rows))+barChartHtml('System Progress Chart',systemAverageData(rows))+'<h2>Latest Daily Entries (Max 10)</h2><table><thead><tr><th>Date</th><th>Asset</th><th>Scope</th><th>System</th><th>Main Activity</th><th>Sub-Activity</th><th>Daily Qty</th><th>Daily %</th><th>Activity Total %</th><th>Permit</th><th>Doc Type</th><th>Doc Ref</th><th>Contractor</th><th>Remarks</th></tr></thead><tbody>'+latestRows+'</tbody></table><h2>Progressed Assets</h2><table><thead><tr><th>Asset</th><th>Category</th><th>Type</th><th>Location</th><th>System</th><th>Scope</th><th>Progress</th><th>Status</th><th>Latest update</th><th class="remarks-col">Remarks</th></tr></thead><tbody>'+assetRows+'</tbody></table></body></html>'}
+function openDailyReport(print=true){if(!requireExport())return;const w=window.open('','_blank');w.document.write(dailyReportHtml());w.document.close();if(print){w.focus();setTimeout(()=>w.print(),250)}}
+function exportDailyExcel(){if(!requireExport())return;const blob=new Blob(['\ufeff'+dailyReportHtml()],{type:'application/vnd.ms-excel'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='aip5-daily-progress-report.xls';a.click();URL.revokeObjectURL(a.href)}
 function openMasterReport(print=true){if(!requireExport())return;const w=window.open('','_blank');w.document.write(masterReportHtml());w.document.close();if(print){w.focus();setTimeout(()=>w.print(),250)}}
 function exportMasterExcel(){if(!requireExport())return;const blob=new Blob(['\ufeff'+masterReportHtml()],{type:'application/vnd.ms-excel'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='aip5-master-progress-report.xls';a.click();URL.revokeObjectURL(a.href)}
 function openReport(print=true){if(!requireExport())return;const w=window.open('','_blank');w.document.write(reportHtml());w.document.close();if(print){w.focus();setTimeout(()=>w.print(),250)}}
@@ -715,10 +619,16 @@ function renderAll(full=true){renderKpis();renderRows();renderAttention();render
 function showAppControls(){const app=$('#appShell');if(app)app.classList.remove('readonly')}
 /* === Email Access Gate === */
 // Firebase Role Config
-const ADMIN_EMAILS = ['ziadseller@gmail.com'];
+const ACCESS_USERS = [
+  // To add users later, add a new line: { email:'user@example.com', role:'viewer' }
+  { email:'ziadseller@gmail.com', role:'admin', pinHash:'cfb5fa17062e5a82840a9bb662e1794637f847acdfc219d3d7467186994c5b9f' }, // PIN: 220321
+  { email:'jetawi333@yahoo.com', role:'viewer' }
+];
+const ADMIN_EMAILS = ACCESS_USERS.filter(u=>u.role==='admin').map(u=>u.email.toLowerCase());
+const VIEWER_EMAILS = ACCESS_USERS.filter(u=>u.role!=='admin').map(u=>u.email.toLowerCase());
 const ADMIN_PIN_HASH = 'cfb5fa17062e5a82840a9bb662e1794637f847acdfc219d3d7467186994c5b9f';
 let currentUserEmail = null;
-let currentUserRole = 'field'; // 'admin' or 'field'
+let currentUserRole = 'viewer'; // 'admin' or 'viewer'
 let fbDb = null;
 let fbListeners = [];
 let pendingAdminEmail = null;
@@ -774,29 +684,25 @@ function setupRealtimeSync(){
     renderAll();
   });
 }
+function getAccessUser(email){return ACCESS_USERS.find(u=>u.email.toLowerCase()===String(email||'').trim().toLowerCase())||null}
 function initGate(){
-  // Always start with the login prompt only.
-  // This prevents the tracker/dashboard from appearing automatically on page load.
+  // Always start with the login prompt when the page opens.
   sessionStorage.removeItem(GATE_SESSION_KEY);
   sessionStorage.removeItem(ROLE_SESSION_KEY);
   document.body.classList.add('auth-locked');
   document.body.classList.remove('auth-unlocked');
-  const appShellInitial=$('#appShell');
-  if(appShellInitial){
-    appShellInitial.hidden=true;
-    appShellInitial.style.display='none';
-    appShellInitial.style.visibility='hidden';
-  }
   const gateBtn=$('#gateSubmit');
   const gateInput=$('#gateEmail');
   const pinInput=$('#gatePin');
   const pinSection=$('#pinSection');
   const gateError=$('#gateError');
-  function tryAccess(){
+  function resetGateButton(){gateBtn.disabled=false;gateBtn.textContent='Enter'}
+  async function tryAccess(){
     const email=(gateInput.value||'').trim().toLowerCase();
+    const user=getAccessUser(email);
     if(!email){gateError.textContent='Please enter your email address.';return}
-    if(ADMIN_EMAILS.includes(email) && !pinSection.dataset.shown){
-      pendingAdminEmail=email;
+    if(!user){gateError.textContent='Access denied. Contact admin to request access.';resetGateButton();return}
+    if(user.role==='admin' && !pinSection.dataset.shown){
       pinSection.style.display='block';
       pinSection.dataset.shown='1';
       pinInput.focus();
@@ -804,56 +710,45 @@ function initGate(){
       gateBtn.textContent='Verify PIN';
       return;
     }
-    if(ADMIN_EMAILS.includes(email) && pinSection.dataset.shown){
+    if(user.role==='admin'){
       const pin=(pinInput.value||'').trim();
       if(!pin){gateError.textContent='Please enter your admin PIN.';return}
       gateBtn.disabled=true;gateBtn.textContent='Verifying...';
-      hashPin(pin).then(hash=>{
-        if(hash===ADMIN_PIN_HASH){
-          fetch('approved-emails.json?t='+Date.now()).then(r=>{if(!r.ok)throw new Error();return r.json()}).then(list=>{
-            const allowed=list.map(e=>e.trim().toLowerCase());
-            if(allowed.includes(email)){
-              currentUserEmail=email;currentUserRole='admin';
-              sessionStorage.setItem(GATE_SESSION_KEY,email);
-              sessionStorage.setItem(ROLE_SESSION_KEY,'admin');
-              applyRoleUI();bootApp();
-            } else {
-              gateError.textContent='Access denied. Email not authorized.';
-              gateBtn.disabled=false;gateBtn.textContent='Verify PIN';
-            }
-          }).catch(()=>{gateError.textContent='Unable to verify. Try again.';gateBtn.disabled=false;gateBtn.textContent='Verify PIN';});
-        } else {
-          gateError.textContent='Incorrect PIN. Please try again.';
-          pinInput.value='';pinInput.focus();
-          gateBtn.disabled=false;gateBtn.textContent='Verify PIN';
-        }
-      });
+      const hash=await hashPin(pin);
+      if(hash!==user.pinHash){
+        gateError.textContent='Incorrect PIN. Please try again.';
+        pinInput.value='';pinInput.focus();
+        gateBtn.disabled=false;gateBtn.textContent='Verify PIN';
+        return;
+      }
+      currentUserEmail=email;currentUserRole='admin';
+      sessionStorage.setItem(GATE_SESSION_KEY,email);
+      sessionStorage.setItem(ROLE_SESSION_KEY,'admin');
+      applyRoleUI();bootApp();
       return;
     }
-    gateBtn.disabled=true;gateBtn.textContent='Checking...';
-    fetch('approved-emails.json?t='+Date.now()).then(r=>{if(!r.ok)throw new Error('Cannot load access list');return r.json()}).then(list=>{
-      const allowed=list.map(e=>e.trim().toLowerCase());
-      if(allowed.includes(email)){
-        currentUserEmail=email;currentUserRole='field';
-        sessionStorage.setItem(GATE_SESSION_KEY,email);
-        sessionStorage.setItem(ROLE_SESSION_KEY,'field');
-        applyRoleUI();bootApp();
-      } else {
-        gateError.textContent='Access denied. Contact admin to request access.';
-        gateBtn.disabled=false;gateBtn.textContent='Enter';
-      }
-    }).catch(()=>{gateError.textContent='Unable to verify access. Please try again.';gateBtn.disabled=false;gateBtn.textContent='Enter';});
+    // Viewer users enter with email only. No PIN required.
+    currentUserEmail=email;currentUserRole='viewer';
+    sessionStorage.setItem(GATE_SESSION_KEY,email);
+    sessionStorage.setItem(ROLE_SESSION_KEY,'viewer');
+    applyRoleUI();bootApp();
   }
   gateBtn.addEventListener('click',tryAccess);
   gateInput.addEventListener('keydown',e=>{if(e.key==='Enter')tryAccess()});
   pinInput.addEventListener('keydown',e=>{if(e.key==='Enter')tryAccess()});
   gateInput.addEventListener('input',()=>{
     const email=(gateInput.value||'').trim().toLowerCase();
-    if(!ADMIN_EMAILS.includes(email)){
+    const user=getAccessUser(email);
+    gateError.textContent='';
+    pinInput.value='';
+    if(user && user.role==='admin'){
       pinSection.style.display='none';
-      pinInput.value='';
+      delete pinSection.dataset.shown;
       gateBtn.textContent='Enter';
-      gateError.textContent='';
+    } else {
+      pinSection.style.display='none';
+      delete pinSection.dataset.shown;
+      gateBtn.textContent='Enter';
     }
   });
 }
@@ -861,26 +756,24 @@ function applyRoleUI(){
   const app=$('#appShell');
   if(!app) return;
   if(currentUserRole==='admin'){
-    app.classList.remove('field-user');
+    app.classList.remove('field-user','readonly');
     app.classList.add('admin-user');
   } else {
-    app.classList.add('field-user');
+    app.classList.add('field-user','readonly');
     app.classList.remove('admin-user');
   }
-  // Show role badge in header
   const brand=$('.brand');
-  if(brand && !brand.querySelector('.role-badge')){
-    const badge=document.createElement('span');
+  if(brand){
+    let badge=brand.querySelector('.role-badge');
+    if(!badge){badge=document.createElement('span');brand.appendChild(badge)}
     badge.className='role-badge '+(currentUserRole==='admin'?'role-admin':'role-field');
-    badge.textContent=currentUserRole==='admin'?'Admin':'Field Viewer';
-    brand.appendChild(badge);
+    badge.textContent=currentUserRole==='admin'?'Admin':'Viewer';
   }
-  // Show viewer notice for field users
-  const notice=$('#fieldViewerNotice');
-  if(notice) notice.style.display=currentUserRole==='field'?'block':'none';
+  const notice=$('#viewerNotice')||$('#fieldViewerNotice');
+  if(notice) notice.style.display=currentUserRole==='admin'?'none':'block';
 }
 initGate();
 $('#dailyForm').addEventListener('submit',addDaily);$('#dailyImportFile').addEventListener('change',handleDailyImportFile);$('#clearDailyImportBtn').addEventListener('click',clearDailyImport);$('#importAllBtn').addEventListener('click',importAllValidRows);$('#cancelDailyEditBtn').addEventListener('click',resetDailyForm);$('#entryAsset').addEventListener('change',()=>{renderSystemChoices();updateProgressPreview()});$('#entrySystem').addEventListener('change',()=>{renderSpecificItems();renderMainActivities();updateProgressPreview()});$('#entryMainActivity').addEventListener('change',()=>{renderSubActivities();updateProgressPreview()});['entryDate','dailyFilterFrom','dailyFilterTo','masterFilterFrom','masterFilterTo'].forEach(id=>$('#'+id).addEventListener('blur',()=>normalizeDateField(id)));['entryPlannedQty','entryDailyQty','entrySpecificItem','entryProjectScope','entryStage'].forEach(id=>$('#'+id).addEventListener('input',updateProgressPreview));['q','category','statusFilter'].forEach(id=>$('#'+id).addEventListener('input',renderRows));['dailyFilterSite','dailyFilterSystem','dailyFilterScope','dailyFilterContractor','dailyFilterParty','dailyFilterMin','dailyFilterMax','dailyFilterFrom','dailyFilterTo'].forEach(id=>$('#'+id).addEventListener('input',renderLog));['masterFilterSite','masterFilterSystem','masterFilterScope','masterFilterStatus','masterFilterMin','masterFilterMax','masterFilterFrom','masterFilterTo','masterFilterSort'].forEach(id=>$('#'+id).addEventListener('input',()=>{renderChart();}));$('#clearDailyFiltersBtn').addEventListener('click',()=>clearReportFilters('daily'));$('#clearMasterFiltersBtn').addEventListener('click',()=>clearReportFilters('master'));
 $('#activitySystem').addEventListener('change',renderActivities);$('#configList').addEventListener('change',()=>{renderConfigMainOptions();loadConfigOptions()});$('#configSystem').addEventListener('change',()=>{renderConfigMainOptions();loadConfigOptions()});$('#configMainActivity').addEventListener('change',loadConfigOptions);$('#saveConfigBtn').addEventListener('click',saveConfigOptions);$('#resetConfigBtn').addEventListener('click',resetConfigTarget);$('#resetDailySetupBtn').addEventListener('click',resetDailySetup);$('#resetBtn').addEventListener('click',()=>{if(!requireEdit())return;if(confirm('Reset all progress, item edits, and daily entries?')){edits={};dailyEntries=[];save();resetDailyForm();populateForms();renderAll()}});$('#clearLogBtn').addEventListener('click',()=>{if(!requireEdit())return;if(confirm('Clear daily log and reset all progress to zero?')){dailyEntries=[];edits={};save();resetDailyForm();populateForms();renderAll()}});
-$('#printBtn').addEventListener('click',()=>openReport(true));$('#pdfBtn').addEventListener('click',()=>openReport(true));$('#excelBtn').addEventListener('click',exportExcel);$('#masterPrintBtn').addEventListener('click',()=>openMasterReport(true));$('#masterPdfBtn').addEventListener('click',()=>openMasterReport(true));$('#masterExcelBtn').addEventListener('click',exportMasterExcel);$('#dailyJumpBtn').addEventListener('click',()=>document.getElementById('daily').scrollIntoView({behavior:'smooth',block:'start'}));$('#editForm').addEventListener('submit',saveEdit);$('#restoreItemBtn').addEventListener('click',restoreItem);$$('.chip[data-summary]').forEach(b=>b.addEventListener('click',()=>{$$('.chip[data-summary]').forEach(x=>x.classList.remove('active'));b.classList.add('active');renderSummary(b.dataset.summary)}));$$('.nav button').forEach(b=>b.addEventListener('click',()=>{$$('.nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById(b.dataset.jump).scrollIntoView({behavior:'smooth',block:'start'})}));
+$('#dailyPrintReportBtn')?.addEventListener('click',()=>openDailyReport(true));$('#dailyExportReportBtn')?.addEventListener('click',exportDailyExcel);$('#printBtn').addEventListener('click',()=>openReport(true));$('#pdfBtn').addEventListener('click',()=>openReport(true));$('#excelBtn').addEventListener('click',exportExcel);$('#masterPrintBtn').addEventListener('click',()=>openMasterReport(true));$('#masterPdfBtn').addEventListener('click',()=>openMasterReport(true));$('#masterExcelBtn').addEventListener('click',exportMasterExcel);$('#dailyJumpBtn').addEventListener('click',()=>document.getElementById('daily').scrollIntoView({behavior:'smooth',block:'start'}));$('#editForm').addEventListener('submit',saveEdit);$('#restoreItemBtn').addEventListener('click',restoreItem);$$('.chip[data-summary]').forEach(b=>b.addEventListener('click',()=>{$$('.chip[data-summary]').forEach(x=>x.classList.remove('active'));b.classList.add('active');renderSummary(b.dataset.summary)}));$$('.nav button').forEach(b=>b.addEventListener('click',()=>{$$('.nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById(b.dataset.jump).scrollIntoView({behavior:'smooth',block:'start'})}));
 </script></body></html>
