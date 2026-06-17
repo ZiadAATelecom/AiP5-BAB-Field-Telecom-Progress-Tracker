@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- saved from url=(0038)http://127.0.0.1:8095/aip5telecom-zaa/ -->
-<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AiP5 BAB Field Telecom Progress Control</title><!-- LOGIN-STABLE-V8 --><link rel="preconnect" href="https://fonts.googleapis.com/"><link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin=""><link href="./css2" rel="stylesheet"><script src="./lucide.min.js.download"></script><style>
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AiP5 BAB Field Telecom Progress Control - DATA-ENTRY-PDF-V9</title><!-- LOGIN-STABLE-V8 --><link rel="preconnect" href="https://fonts.googleapis.com/"><link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin=""><link href="./css2" rel="stylesheet"><script src="./lucide.min.js.download"></script><style>
 :root{--ink:#17211f;--muted:#60706b;--line:#d8e2de;--deep:#11231f;--green:#1f7a5c;--mint:#39aa7d;--cyan:#18788d;--gold:#b27616;--red:#b53d49;--soft:#edf3f0;--shadow:0 18px 44px rgba(23,33,31,.1)}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,sans-serif;background:var(--soft);color:var(--ink);letter-spacing:0}button,input,select,textarea{font:inherit}button{cursor:pointer}
 .access-gate{min-height:100vh;display:grid;place-items:center;background:linear-gradient(135deg,#071016,#12231f);color:#f6fbf8;padding:22px}.access-card{width:min(500px,100%);border:1px solid #263640;background:#0b151d;border-radius:8px;padding:22px;box-shadow:0 18px 44px rgba(0,0,0,.28)}.access-card h1{font-size:25px;margin:0 0 6px}.access-card p{color:#b9c9c3;margin:0 0 18px;font-size:13px;line-height:1.5}.access-card label{display:grid;gap:6px;font-size:12px;font-weight:800;color:#d4e1dc;margin-top:10px}.access-card input,.access-card select{min-height:40px;border:1px solid #263640;border-radius:8px;background:#071016;color:#f6fbf8;padding:9px 11px}.access-error{min-height:18px;color:#ffb3b9;font-size:12px;margin-top:10px}.access-meta{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:14px;color:#9cafaa;font-size:11px}.access-table{width:100%;border-collapse:collapse;font-size:12px}.access-table th,.access-table td{border-bottom:1px solid var(--line);padding:8px;text-align:left;white-space:normal}.access-table th{color:var(--muted);font-weight:800;background:#f7faf8}.readonly .requires-edit,.readonly .edit-row,.readonly .edit-entry,.readonly .delete-entry,.readonly #saveDailyBtn,.readonly #clearLogBtn,.readonly #cancelDailyEditBtn,.readonly #resetBtn,.readonly .entry-config{display:none!important}.access-denied{display:none!important}
@@ -85,13 +85,12 @@ body.auth-unlocked #appShell{display:grid!important}
 .daily-entry-user #editPanel,
 .daily-entry-user #configPanel,
 .daily-entry-user #saveConfigBtn,
-.daily-entry-user #resetConfigBtn,
-.daily-entry-user .import-panel,
-.daily-entry-user #importAllBtn,
-.daily-entry-user #clearDailyImportBtn,
-.daily-entry-user #dailyImportFile{display:none!important}
+.daily-entry-user #resetConfigBtn{display:none!important}
 .daily-entry-user #dailyForm{display:grid!important}
-.daily-entry-user #saveDailyBtn{display:inline-flex!important}</style></head><body class="auth-locked">
+.daily-entry-user #saveDailyBtn{display:inline-flex!important}
+.daily-entry-user .import-panel{display:block!important}
+.daily-entry-user #dailyImportFile{display:block!important}
+.daily-entry-user #importAllBtn,.daily-entry-user #clearDailyImportBtn{display:inline-flex!important}</style></head><body class="auth-locked">
 <div class="access-gate" id="emailGate">
   <div class="access-card">
     <h1>AiP5 BAB Field Telecom</h1>
@@ -199,10 +198,10 @@ body.auth-unlocked #appShell{display:grid!important}
         <div class="head"><div><h3>Daily Progress Entry</h3><p class="footnote" style="margin:4px 0 0">Cascading dropdowns with permit, document, quantity, and contractor details.</p><div class="viewer-note" id="viewerNotice" style="display:none">Viewer mode: review, print, and export only. Editing is disabled.</div></div><div class="daily-report-actions"><button class="btn" id="dailyPrintReportBtn" type="button" title="Print daily progress report"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="printer"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"></path><rect x="6" y="14" width="12" height="8" rx="1"></rect></svg><span>Print daily</span></button><button class="btn" id="dailyExportReportBtn" type="button" title="Export daily progress report"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="file-spreadsheet"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"></path><path d="M14 2v5a1 1 0 0 0 1 1h5"></path><path d="M8 13h2"></path><path d="M14 13h2"></path><path d="M8 17h2"></path><path d="M14 17h2"></path></svg><span>Export daily</span></button><span class="pill live" id="lastUpdatedLabel">Ready</span></div></div>
         <section class="import-panel">
           <div class="import-top">
-            <label class="import-picker">Upload progress file<input type="file" id="dailyImportFile" accept=".csv,.tsv,.txt,.xls,.xlsx,.xlsm"></label>
+            <label class="import-picker">Upload progress file<input type="file" id="dailyImportFile" accept=".csv,.tsv,.txt,.xls,.xlsx,.xlsm,.pdf"></label>
             <div class="form-actions"><button class="btn primary" type="button" id="importAllBtn" hidden=""><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="upload" aria-hidden="true" class="lucide lucide-upload"><path d="M12 3v12"></path><path d="m17 8-5-5-5 5"></path><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path></svg><span>Import valid rows</span></button><button class="btn" type="button" id="clearDailyImportBtn" hidden=""><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="x" aria-hidden="true" class="lucide lucide-x"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg><span>Clear import</span></button></div>
           </div>
-          <div class="import-status" id="dailyImportStatus">CSV, TSV, TXT, XLSX, or Excel HTML files can fill the daily form automatically.</div>
+          <div class="import-status" id="dailyImportStatus">CSV, TSV, TXT, XLSX, Excel HTML, or simple text-based PDF files can fill the daily form automatically.</div>
           <div class="import-preview" id="dailyImportPreview" hidden=""></div>
         </section>
         <form class="formgrid" id="dailyForm">
@@ -2358,10 +2357,78 @@ function bestOption(value,options,fallback=''){value=cleanText(value);if(!value)
 function matchAsset(value){const target=norm(value);if(!target)return null;let best={row:null,score:0};allRows().forEach(r=>{[r.id,label(r),r.displayId,r.type,r.location].filter(Boolean).forEach(v=>{const rn=norm(v);let score=0;if(rn===target)score=100;else if(rn.includes(target)||target.includes(rn))score=80;else{const rt=new Set(rn.split(' ').filter(Boolean));const tt=target.split(' ').filter(Boolean);const hits=tt.filter(t=>rt.has(t)).length;score=Math.round(55*hits/Math.max(tt.length,1))}if(score>best.score)best={row:r,score}})});return best.score>=50?best.row:null}
 function matchImportRow(raw){const asset=matchAsset(raw.asset);const row=asset?current(asset):current(DATA.items[0]);const systemOptions=asset?systemChoicesFor(row):dailySystems();let system=bestOption(raw.system,systemOptions,systemOptions[0]);const mains=Object.keys(activityCatalog[system]||{});let mainActivity=bestOption(raw.mainActivity,mains,mains[0]||'General activity');const subs=(activityCatalog[system]&&activityCatalog[system][mainActivity])||['General progress'];let plannedQty=numberValue(raw.plannedQty),dailyQty=numberValue(raw.dailyQty);const dailyPercent=numberValue(raw.dailyProgress);let uom=bestOption(raw.uom,dropdowns.uoms,'');if(!plannedQty&&!dailyQty&&dailyPercent){plannedQty=100;dailyQty=dailyPercent;uom=uom||'%'}return{rowNo:raw._row,valid:!!asset,assetId:asset?asset.id:'',assetLabel:asset?label(row):raw.asset||'',date:dateValue(raw.date)||today(),projectScope:bestOption(raw.projectScope,dropdowns.projectScopes,'New'),system,specificItem:bestOption(raw.specificItem,specificItems[system]||[],''),stage:bestOption(raw.stage,dropdowns.stages,''),mainActivity,subActivity:bestOption(raw.subActivity,subs,subs[0]||''),plannedQty,dailyQty,uom,cableType:bestOption(raw.cableType,dropdowns.cableTypes,''),tag:raw.tag||'',linkFrom:raw.linkFrom||'',linkTo:raw.linkTo||'',mirrorLink:bestOption(raw.mirrorLink,['Yes','No'],'Yes'),workLocation:raw.workLocation||'',permitNo:raw.permitNo||'',docType:bestOption(raw.docType,dropdowns.docTypes,''),docRef:raw.docRef||'',contractor:bestOption(raw.contractor,dropdowns.contractors,''),partyType:bestOption(raw.partyType,dropdowns.partyTypes,''),remarks:raw.remarks||'',matched:Object.keys(raw._source||{}),missing:asset?[]:['Site Name']}}
 function renderDailyImportPreview(name=''){const box=$('#dailyImportPreview'),status=$('#dailyImportStatus'),allBtn=$('#importAllBtn'),clearBtn=$('#clearDailyImportBtn');if(!box||!status)return;const valid=dailyImportRows.filter(r=>r.valid).length;status.textContent=dailyImportRows.length?name+': '+dailyImportRows.length+' rows read, '+valid+' ready to import. Matched fields are shown in the preview.':'No import loaded.';allBtn.hidden=!valid;clearBtn.hidden=!dailyImportRows.length;box.hidden=!dailyImportRows.length;if(!dailyImportRows.length){box.innerHTML='';return}const preview=dailyImportRows.slice(0,30);box.innerHTML='<table><thead><tr><th>Row</th><th>Date</th><th>Asset</th><th>Scope</th><th>System</th><th>Main / Sub Activity</th><th>Cable/Link</th><th>Qty</th><th>Match</th><th>Action</th></tr></thead><tbody>'+preview.map((r,i)=>'<tr><td>'+html(r.rowNo)+'</td><td>'+html(displayDate(r.date))+'</td><td>'+html(r.assetLabel||'Not matched')+'</td><td>'+html(r.projectScope)+'</td><td>'+html(r.system)+'</td><td>'+html([r.mainActivity,r.subActivity].filter(Boolean).join(' / '))+'</td><td>'+html([r.tag,[r.linkFrom,r.linkTo].filter(Boolean).join(' → ')].filter(Boolean).join(' / '))+'</td><td>'+html(r.dailyQty+' / '+r.plannedQty+' '+(r.uom||''))+'</td><td>'+(r.valid?'<span class="match-badge">Ready</span>':'<span class="match-badge warn">Missing site</span>')+r.matched.slice(0,5).map(x=>'<span class="match-badge">'+html(x)+'</span>').join('')+'</td><td><div class="row-actions">'+(r.valid?'<button class="btn import-fill" type="button" data-idx="'+i+'">Fill form</button>':'')+'</div></td></tr>').join('')+'</tbody></table>'+(dailyImportRows.length>30?'<div class="import-status">Showing first 30 rows.</div>':'');box.querySelectorAll('.import-fill').forEach(b=>b.addEventListener('click',()=>fillDailyFormFromImport(Number(b.dataset.idx))));if(window.lucide)lucide.createIcons()}
-async function handleDailyImportFile(e){const file=e.target.files&&e.target.files[0];if(!file)return;const ext=file.name.split('.').pop().toLowerCase();let rows=[];try{if(['xlsx','xlsm'].includes(ext))rows=await parseXlsxRows(await file.arrayBuffer());else{const text=await file.text();rows=/<table[\s>]/i.test(text)?parseHtmlTableRows(text):parseDelimitedText(text)}}catch(err){dailyImportRows=[];renderDailyImportPreview();$('#dailyImportStatus').textContent='Could not read this file. Try CSV, TSV, TXT, Excel HTML, or a simple XLSX first worksheet.';$('#clearDailyImportBtn').hidden=false;return}const parsed=rowsToObjects(rows);dailyImportRows=parsed.items.map(matchImportRow);renderDailyImportPreview(file.name)}
+async function loadPdfJs(){
+  if(window.pdfjsLib) return window.pdfjsLib;
+  await new Promise((resolve,reject)=>{
+    const existing=document.querySelector('script[data-pdfjs-loader="true"]');
+    if(existing){existing.addEventListener('load',resolve,{once:true});existing.addEventListener('error',reject,{once:true});return;}
+    const script=document.createElement('script');
+    script.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    script.async=true;
+    script.dataset.pdfjsLoader='true';
+    script.onload=resolve;
+    script.onerror=()=>reject(new Error('PDF library could not be loaded'));
+    document.head.appendChild(script);
+  });
+  if(!window.pdfjsLib) throw new Error('PDF library is not available');
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  return window.pdfjsLib;
+}
+async function parsePdfRows(buffer){
+  const pdfjs=await loadPdfJs();
+  const pdf=await pdfjs.getDocument({data:new Uint8Array(buffer)}).promise;
+  const lines=[];
+  for(let p=1;p<=pdf.numPages;p++){
+    const page=await pdf.getPage(p);
+    const content=await page.getTextContent();
+    const grouped={};
+    content.items.forEach(item=>{
+      const text=cleanText(item.str);
+      if(!text) return;
+      const x=item.transform&&item.transform.length>4?item.transform[4]:0;
+      const y=item.transform&&item.transform.length>5?Math.round(item.transform[5]):0;
+      const key=String(y);
+      grouped[key]=grouped[key]||[];
+      grouped[key].push({x,text});
+    });
+    Object.entries(grouped)
+      .sort((a,b)=>Number(b[0])-Number(a[0]))
+      .forEach(([_,items])=>{
+        const line=items.sort((a,b)=>a.x-b.x).map(i=>i.text).join('	').replace(/\s+	/g,'	').replace(/	\s+/g,'	').trim();
+        if(line) lines.push(line);
+      });
+  }
+  return parseDelimitedText(lines.join('\n'));
+}
+async function handleDailyImportFile(e){
+  if(!canAddDailyProgress()){
+    alert('This user is not allowed to import Daily Progress entries.');
+    e.target.value='';
+    return;
+  }
+  const file=e.target.files&&e.target.files[0];
+  if(!file)return;
+  const ext=file.name.split('.').pop().toLowerCase();
+  let rows=[];
+  const status=$('#dailyImportStatus');
+  if(status)status.textContent='Reading '+file.name+' ...';
+  try{
+    if(['xlsx','xlsm'].includes(ext))rows=await parseXlsxRows(await file.arrayBuffer());
+    else if(ext==='pdf')rows=await parsePdfRows(await file.arrayBuffer());
+    else{const text=await file.text();rows=/<table[\s>]/i.test(text)?parseHtmlTableRows(text):parseDelimitedText(text)}
+  }catch(err){
+    dailyImportRows=[];renderDailyImportPreview();
+    $('#dailyImportStatus').textContent='Could not read this file. Try CSV, TSV, TXT, Excel HTML, XLSX first worksheet, or a text-based PDF. Scanned/image PDFs may not import automatically.';
+    $('#clearDailyImportBtn').hidden=false;
+    return
+  }
+  const parsed=rowsToObjects(rows);
+  dailyImportRows=parsed.items.map(matchImportRow);
+  renderDailyImportPreview(file.name);
+}
 function fillDailyFormFromImport(idx){const r=dailyImportRows[idx];if(!r||!r.valid)return;$('#entryDate').value=displayDate(r.date);$('#entryAsset').value=r.assetId;renderSystemChoices();ensureOption($('#entryProjectScope'),r.projectScope);$('#entryProjectScope').value=r.projectScope;ensureOption($('#entrySystem'),r.system);$('#entrySystem').value=r.system;renderSpecificItems();renderMainActivities();ensureOption($('#entrySpecificItem'),r.specificItem);$('#entrySpecificItem').value=r.specificItem||'';ensureOption($('#entryStage'),r.stage);$('#entryStage').value=r.stage||'';ensureOption($('#entryMainActivity'),r.mainActivity);$('#entryMainActivity').value=r.mainActivity||'';renderSubActivities();ensureOption($('#entrySubActivity'),r.subActivity);$('#entrySubActivity').value=r.subActivity||'';ensureOption($('#entryUom'),r.uom);$('#entryUom').value=r.uom||'';ensureOption($('#entryCableType'),r.cableType);$('#entryCableType').value=r.cableType||'';ensureOption($('#entryDocType'),r.docType);$('#entryDocType').value=r.docType||'';ensureOption($('#entryContractor'),r.contractor);$('#entryContractor').value=r.contractor||'';ensureOption($('#entryParty'),r.partyType);$('#entryParty').value=r.partyType||'';$('#entryPlannedQty').value=r.plannedQty||0;$('#entryDailyQty').value=r.dailyQty||0;$('#entryTag').value=r.tag||'';if($('#entryLinkFrom'))$('#entryLinkFrom').value=r.linkFrom||'';if($('#entryLinkTo'))$('#entryLinkTo').value=r.linkTo||'';if($('#entryMirrorLink'))$('#entryMirrorLink').value=r.mirrorLink||'Yes';$('#entryWorkLocation').value=r.workLocation||'';$('#entryPermit').value=r.permitNo||'';$('#entryDocRef').value=r.docRef||'';$('#entryRemarks').value=r.remarks||'';updateProgressPreview();document.getElementById('dailyForm').scrollIntoView({behavior:'smooth',block:'start'})}
 function importEntryFromMatched(r,offset=0){const base=current(DATA.items.find(x=>x.id===r.assetId));const entry={id:Date.now()+offset,date:dateValue(r.date)||today(),assetId:r.assetId,assetLabel:label(base),category:base.category,type:base.type,projectScope:r.projectScope,system:r.system,specificItem:r.specificItem,stage:r.stage,mainActivity:r.mainActivity,subActivity:r.subActivity,plannedQty:Number(r.plannedQty||0),dailyQty:Number(r.dailyQty||0),uom:r.uom,cableType:r.cableType,tag:r.tag,linkFrom:r.linkFrom||'',linkTo:r.linkTo||'',mirrorLink:r.mirrorLink||'Yes',workLocation:r.workLocation,permitNo:r.permitNo,docType:r.docType,docRef:r.docRef,contractor:r.contractor,partyType:r.partyType,dailyProgress:0,previousProgress:0,totalAfter:0,status:'Not Started',owner:base.owner,remarks:r.remarks,attachments:[]};const stats=activityProgressForDraft(entry,null);entry.dailyProgress=stats.dailyProgress;entry.previousProgress=stats.previousProgress;entry.totalAfter=stats.totalAfter;entry.status=statusFromProgress(entry.totalAfter);return entry}
-function importAllValidRows(){const rows=dailyImportRows.filter(r=>r.valid);if(!rows.length)return;const changed=new Set();rows.forEach((r,i)=>{const entry=importEntryFromMatched(r,i);dailyEntries.push(entry);changed.add(entry.assetId)});changed.forEach(recomputeAssetProgress);save();renderAll(false);$('#lastUpdatedLabel').textContent='Imported '+rows.length+' rows on '+displayDateTime(new Date());alert(rows.length+' daily rows imported.')}
+function importAllValidRows(){if(!canAddDailyProgress()){alert('This user is not allowed to import Daily Progress entries.');return;}const rows=dailyImportRows.filter(r=>r.valid);if(!rows.length)return;const changed=new Set();rows.forEach((r,i)=>{const entry=importEntryFromMatched(r,i);dailyEntries.push(entry);changed.add(entry.assetId)});changed.forEach(recomputeAssetProgress);save();renderAll(false);$('#lastUpdatedLabel').textContent='Imported '+rows.length+' rows on '+displayDateTime(new Date());alert(rows.length+' daily rows imported.')}
 function clearDailyImport(){dailyImportRows=[];const file=$('#dailyImportFile');if(file)file.value='';renderDailyImportPreview()}
 function fillSelect(id,values,label='All',selected='all'){const el=$('#'+id);if(!el)return;const current=el.value||selected;el.innerHTML='<option value="all">'+label+'</option>'+values.map(v=>'<option value="'+html(v)+'">'+html(v)+'</option>').join('');el.value=[...el.options].some(o=>o.value===current)?current:'all'}
 function populateReportFilters(){const rows=allRows();fillSelect('dailyFilterSite',rows.map(r=>r.id),'All sites');fillSelect('masterFilterSite',rows.map(r=>r.id),'All sites');fillSelect('dailyFilterSystem',dailySystems(),'All systems');fillSelect('masterFilterSystem',dailySystems(),'All systems');fillSelect('dailyFilterScope',dropdowns.projectScopes,'All scopes');fillSelect('masterFilterScope',dropdowns.projectScopes,'All scopes');fillSelect('dailyFilterContractor',dropdowns.contractors,'All contractors');fillSelect('dailyFilterParty',dropdowns.partyTypes,'All parties')}
