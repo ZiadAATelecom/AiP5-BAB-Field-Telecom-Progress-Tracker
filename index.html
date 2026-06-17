@@ -96,7 +96,7 @@ body.auth-unlocked #appShell{display:grid!important}
 .attachment-list .attachment-row button{min-height:26px;border:1px solid #263640;border-radius:8px;background:#0b151d;color:#f6fbf8;padding:3px 8px}
 .daily-entry-user #clearEntryAttachmentBtn{display:inline-flex!important}
 .field-user #clearEntryAttachmentBtn{display:none!important}
-</style></head><body class="auth-locked">
+</style></head><body class="auth-locked" data-version="V12-MASTER-REPORT-RESTORE">
 <div class="access-gate" id="emailGate">
   <div class="access-card">
     <h1>AiP5 BAB Field Telecom</h1>
@@ -2327,26 +2327,26 @@ function optionList(values,selected=''){return values.map(v=>'<option value="'+h
 function unique(values){return [...new Set(values.filter(Boolean))]}
 const IMPORT_FIELDS=[
   ['date','Date',['date','day','work date','entry date','daily date']],
-  ['asset','Site Name',['site','site name','asset','asset id','asset name','station','station site','well','well id','tag no','location id','site id','site code','shown as']],
+  ['asset','Site Name',['site','site name','asset','asset id','station','station site','well','well id','tag no','location id']],
   ['projectScope','Scope',['scope','project scope','work scope','type of work']],
   ['system','System',['system','telecom system','discipline','network']],
-  ['specificItem','Sub-System / Item',['sub-system / item','subsystem','sub system','item','specific item','sub-system item','equipment','device','cable item','asset item','component']],
+  ['specificItem','Sub-System / Item',['sub-system / item','item','sub-system item','equipment','device','cable item']],
   ['stage','Stage / Work Phase',['stage','stage / work phase','phase','work stage']],
-  ['mainActivity','Activity',['activity','activity description','main activity','work activity','major activity','activity total','activity name']],
-  ['subActivity','Work Step / Detail',['work step','work step / detail','detail','details','sub activity','sub-activity','task','work task']],
-  ['plannedQty','Planned Qty',['planned qty','plan qty','planned quantity','total qty','total quantity','target qty','scope qty','total scope qty','activity planned qty']],
-  ['dailyQty','Daily Qty',['daily qty','today qty','actual qty','actual completed qty','completed qty','done qty','quantity','daily completed qty','progress qty']],
-  ['dailyProgress','Daily %',['daily %','daily progress','daily progress %','progress %','progress percent','daily percentage','daily percent']],
+  ['mainActivity','Activity',['activity','activity','work activity','major activity']],
+  ['subActivity','Work Step / Detail',['work step','work step','work step','task','work task']],
+  ['plannedQty','Planned Qty',['planned qty','plan qty','planned quantity','total qty','total quantity','target qty']],
+  ['dailyQty','Daily Qty',['daily qty','today qty','actual qty','completed qty','done qty','quantity']],
+  ['dailyProgress','Daily %',['daily %','daily progress','daily progress %','progress %','progress percent']],
   ['uom','UoM',['uom','unit','sub uom','sub-uom','unit of measure']],
   ['cableType','Cable Type',['cable type','cable','cable category']],
-  ['tag','Asset / Cable / Item Tag',['asset tag','cable tag','link tag','item tag','equipment tag','tag id','cable id','link id','asset/cable tag','manual tag','tag','tag no','tag number']],
+  ['tag','Asset/Cable Tag',['asset tag','cable tag','link tag','cable id','link id','tag','tag no','tag number']],
   ['linkFrom','Link From Site',['link from','from site','from','end a','site a','source site','origin site','a end','a side']],
   ['linkTo','Link To Site',['link to','to site','to','end b','site b','destination site','target site','b end','b side']],
   ['mirrorLink','Mirror Link',['mirror link','mirror in reports','show both ends','both ends','reflect both ends','mirror']],
   ['workLocation','Location',['location','work location','area','work area']],
   ['permitNo','Permit',['permit','permit no','permit number','ptw','ptw no','ptw number']],
   ['docType','Doc Type',['doc type','document type','document','doc']],
-  ['docRef','Doc Ref',['doc ref','doc ref number','document','document reference','reference','ref no','rfi no','itr no','mc no','sat no','document no','doc no']],
+  ['docRef','Doc Ref',['doc ref','doc ref number','document reference','reference','ref no','rfi no','itr no']],
   ['contractor','Contractor',['contractor','company','vendor','subcontractor']],
   ['partyType','Party Type',['party type','party','responsible party','team']],
   ['remarks','Remarks',['remarks','remark','notes','note','comment','comments','description']]
@@ -2805,267 +2805,136 @@ function applyRoleUI(){
   }
 }
 
-/* === V11 Accurate Progress + Balance + Standard Columns Patch ===
-   Purpose:
-   - Ignore old/manual default progress values unless Daily Progress entries exist.
-   - Calculate progress from actual saved/imported Daily Progress only.
-   - Show balance/remaining quantities in Daily and Master reports.
-   - Standardize report/export column names for old and new entries.
-*/
-const V11_PROGRESS_BALANCE_PATCH = 'V11_ACCURATE_PROGRESS_BALANCE_STANDARD_COLUMNS';
 
-function nval(v){const n=Number(String(v??'').replace(/,/g,'').replace('%','').trim());return isNaN(n)?0:n}
-function entryField(e, names, fallback=''){
-  for(const name of names){
-    if(e && e[name]!==undefined && e[name]!==null && String(e[name]).trim()!=='') return e[name];
-  }
-  return fallback;
+/* === V12 REPORT / MASTER PROGRESS RESTORE PATCH ===
+   - Restores stable v10 master progress behavior.
+   - Adds balance columns without blank print/export pages.
+   - Master progress remains based on all site/system rows; any row with real progress is included in the overall average.
+*/
+function reportCssV12(){
+  return 'body{font-family:Arial,sans-serif;color:#17211f;margin:22px}button{float:right;padding:8px 12px;border:1px solid #d8e2de;background:#fff;border-radius:6px}.muted{color:#60706b}.cards{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin:16px 0}.card{border:1px solid #d8e2de;padding:10px;border-radius:6px}.card strong{display:block;font-size:22px;margin-top:4px}.bar-report{display:grid;gap:8px;margin:12px 0}.bar-line{display:grid;grid-template-columns:150px minmax(120px,1fr) 70px;gap:8px;align-items:center;font-size:11px}.bar{height:11px;background:#dfe8e4;border-radius:99px;overflow:hidden}.bar span{display:block;height:100%;background:#1f7a5c}table{width:100%;border-collapse:collapse;font-size:8.8px;margin-top:10px}th,td{border:1px solid #d8e2de;padding:4px;text-align:left;vertical-align:top}th{background:#edf3f0}.remarks-col{min-width:210px}h1{margin:0 0 4px}h2{font-size:16px;margin-top:20px}.small{font-size:11px;color:#60706b}@page{size:landscape;margin:8mm}@media print{button{display:none}body{margin:0}.bar-report{break-inside:avoid}.cards{break-inside:avoid}}';
 }
-function normalizeEntry(e){
-  e=e||{};
-  const activityRaw=String(entryField(e,['mainActivity','activity'],'')).trim();
-  let specific=String(entryField(e,['specificItem','item','subSystem','subsystem'],'')).trim();
-  let main=activityRaw;
-  let sub=String(entryField(e,['subActivity','workStep','detail','task'],'')).trim();
-  // Backward compatibility: old exports sometimes had Activity as "Item / Activity / Work Step".
-  if((!specific || !sub) && activityRaw.includes('/')){
-    const parts=activityRaw.split('/').map(x=>x.trim()).filter(Boolean);
-    if(!specific && parts[0]) specific=parts[0];
-    if(parts.length>=2) main=parts[1];
-    if(!sub && parts.length>=3) sub=parts.slice(2).join(' / ');
-  }
-  const planned=nval(entryField(e,['plannedQty','planned','totalQty','scopeQty'],0));
-  const daily=nval(entryField(e,['dailyQty','actualQty','completedQty','doneQty','quantity'],0));
-  return Object.assign({},e,{
-    date: dateValue(entryField(e,['date','workDate'],'')) || today(),
-    assetId: String(entryField(e,['assetId','siteId','site','asset'],'')).trim(),
-    assetLabel: String(entryField(e,['assetLabel','siteName','site','asset'],'')).trim() || String(entryField(e,['assetId'],'')).trim(),
-    projectScope: String(entryField(e,['projectScope','scope'],'')),
-    system: String(entryField(e,['system','telecomSystem'],'')),
-    specificItem: specific,
-    mainActivity: main,
-    subActivity: sub,
-    plannedQty: planned,
-    dailyQty: daily,
-    uom: String(entryField(e,['uom','unit'],'')),
-    cableType: String(entryField(e,['cableType'],'')),
-    tag: String(entryField(e,['tag','assetTag','cableTag','itemTag','manualTag'],'')).trim(),
-    linkFrom: String(entryField(e,['linkFrom','fromSite','endA'],'')).trim(),
-    linkTo: String(entryField(e,['linkTo','toSite','endB'],'')).trim(),
-    mirrorLink: String(entryField(e,['mirrorLink'],'Yes')||'Yes'),
-    permitNo: String(entryField(e,['permitNo','permit','ptw'],'')),
-    docType: String(entryField(e,['docType','documentType'],'')),
-    docRef: String(entryField(e,['docRef','docNo','document','documentRef','rfiNo','itrNo'],'')),
-    contractor: String(entryField(e,['contractor','vendor','company'],'')),
-    partyType: String(entryField(e,['partyType','party'],'')),
-    remarks: String(entryField(e,['remarks','remark','notes','comment'],'')),
-  });
+function safeNumberV12(v){const n=Number(v||0);return Number.isFinite(n)?n:0}
+function clampPctV12(v){return Math.max(0,Math.min(100,Math.round(safeNumberV12(v))))}
+function statsForEntryV12(entry, entries){
+  const key=entryKey(entry);
+  const list=(entries||[]).filter(x=>entryKey(x)===key);
+  const st=groupStats(list.length?list:[entry]);
+  const plan=safeNumberV12(st.plan||entry.plannedQty);
+  const qty=safeNumberV12(st.qty||entry.dailyQty);
+  const progress=clampPctV12(st.progress||entry.totalAfter||entry.dailyProgress);
+  const balanceQty=plan>0?Math.max(plan-qty,0):'';
+  const balancePct=Math.max(0,100-progress);
+  return {plan,qty,progress,balanceQty,balancePct};
 }
-function normalizedEntries(list=dailyEntries){return (list||[]).map(normalizeEntry)}
-function baseEntryKey(e){
-  e=normalizeEntry(e);
-  return [e.assetId,e.system,e.specificItem,e.mainActivity,e.subActivity,e.projectScope,e.cableType,e.tag,normalisedLinkEnds(e)].map(v=>String(v||'').trim().toLowerCase()).join('|');
+function dailyHeaderHtmlV12(){
+  return '<tr><th>Date</th><th>Site</th><th>Scope</th><th>System</th><th>Sub-System / Item</th><th>Activity</th><th>Work Step / Detail</th><th>Asset / Cable / Item Tag</th><th>Link From → To</th><th>Shown As</th><th>Planned Qty</th><th>Daily Qty</th><th>Cumulative Done Qty</th><th>Balance Qty</th><th>Daily %</th><th>Activity Total %</th><th>Balance %</th><th>Status</th><th>Permit</th><th>Doc Type</th><th>Doc Ref</th><th>Contractor</th><th>Remarks</th></tr>';
 }
-entryKey = baseEntryKey;
-function groupStatsAccurate(entries){
-  entries=(entries||[]).map(normalizeEntry);
-  const plan=Math.max(...entries.map(e=>nval(e.plannedQty)),0);
-  const qty=entries.reduce((a,e)=>a+nval(e.dailyQty),0);
-  const progress=plan>0?roundPercent(qty/plan*100):roundPercent(entries.reduce((a,e)=>a+nval(e.dailyProgress),0));
-  const balance=plan>0?Math.max(0,roundPercent(plan-qty)):0;
-  return {plan,qty,progress,balance,status:statusFromProgress(progress)};
+function reportDailyRowV12(e, entries){
+  const st=statsForEntryV12(e,entries);
+  const unit=e.uom||'';
+  return '<tr><td>'+html(displayDate(e.date))+'</td><td>'+html(e.assetLabel||e.assetId||'')+'</td><td>'+html(e.projectScope||'')+'</td><td>'+html(e.system||'')+'</td><td>'+html(e.specificItem||'')+'</td><td>'+html(e.mainActivity||'')+'</td><td>'+html(e.subActivity||'')+'</td><td>'+html(e.tag||'')+'</td><td>'+html(linkDisplay(e)||'')+'</td><td>'+html(e.mirrorSide||'Original')+'</td><td>'+html(st.plan||0)+' '+html(unit)+'</td><td>'+html(e.dailyQty||0)+' '+html(unit)+'</td><td>'+html(st.qty||0)+' '+html(unit)+'</td><td>'+html(st.balanceQty===''?'-':st.balanceQty+' '+unit)+'</td><td>'+html(e.dailyProgress||0)+'%</td><td>'+html(st.progress)+'%</td><td>'+html(st.balancePct)+'%</td><td>'+html(statusFromProgress(st.progress))+'</td><td>'+html(e.permitNo||'')+'</td><td>'+html(e.docType||'')+'</td><td>'+html(e.docRef||e.docNo||'')+'</td><td>'+html(e.contractor||'')+'</td><td>'+html(e.remarks||'')+'</td></tr>';
 }
-groupStats = groupStatsAccurate;
-groupProgress = function(entries){return groupStatsAccurate(entries).progress};
-function groupedByEntryKeyAccurate(entries){
-  const groups={};
-  normalizedEntries(entries).forEach(e=>{const key=baseEntryKey(e);(groups[key]||(groups[key]=[])).push(e)});
-  return groups;
+function detailHeaderHtmlV12(){
+  return '<tr><th>Site</th><th>System</th><th>Sub-System / Item</th><th>Activity</th><th>Work Step / Detail</th><th>Asset / Cable / Item Tag</th><th>Link From → To</th><th>Shown As</th><th>Planned Qty</th><th>Done Qty</th><th>Balance Qty</th><th>Progress</th><th>Balance</th><th>Status</th><th>Latest Update</th></tr>';
 }
-groupedByEntryKey = groupedByEntryKeyAccurate;
-function aggregateGroupedProgressAccurate(groups){
-  const stats=Object.values(groups||{}).map(groupStatsAccurate).filter(s=>s.plan>0 || s.qty>0 || s.progress>0);
-  const planned=stats.reduce((a,s)=>a+nval(s.plan),0);
-  if(planned>0){
-    const done=stats.reduce((a,s)=>a+Math.min(nval(s.qty),nval(s.plan)||nval(s.qty)),0);
-    return roundPercent(done/planned*100);
-  }
-  return stats.length?roundPercent(stats.reduce((a,s)=>a+nval(s.progress),0)/stats.length):0;
-}
-aggregateGroupedProgress = aggregateGroupedProgressAccurate;
-function actualEntriesForAsset(assetId, includeMirrors=true){
-  const source=includeMirrors ? reportEntriesWithMirrors(normalizedEntries()) : normalizedEntries();
-  return source.filter(e=>String(e.assetId||'').toLowerCase()===String(assetId||'').toLowerCase());
-}
-function actualProgressForAsset(assetId){
-  return aggregateGroupedProgressAccurate(groupedByEntryKeyAccurate(actualEntriesForAsset(assetId,true)));
-}
-function actualLatestEntryForAsset(assetId){
-  return actualEntriesForAsset(assetId,true).sort((a,b)=>dateValue(b.date).localeCompare(dateValue(a.date))||String(b.id).localeCompare(String(a.id)))[0]||null;
-}
-// Current row is now based on real daily entries only. Old/default progress in DATA or localStorage is ignored.
-current = function(row){
-  const src=Object.assign({},row,edits[row.id]||{});
-  if(src.category==='Station'&&!edits[row.id]?.system){src.system=STATION_SYSTEMS.join(', ')}
-  delete src.progress; delete src.status;
-  const latest=actualLatestEntryForAsset(row.id);
-  const progress=actualProgressForAsset(row.id);
-  return Object.assign({},src,{
-    progress,
-    status:statusFromProgress(progress),
-    lastUpdate:latest ? latest.date : '',
-    scope: latest?.projectScope || src.scope,
-    permitNo: latest?.permitNo || src.permitNo || '',
-    docType: latest?.docType || src.docType || '',
-    contractor: latest?.contractor || src.contractor || '',
-    partyType: latest?.partyType || src.partyType || ''
-  });
-};
-recomputeAssetProgress = function(assetId){
-  // Keep row metadata synced, but progress is calculated dynamically from daily entries.
-  const latest=actualLatestEntryForAsset(assetId);
-  edits[assetId]=Object.assign({},edits[assetId]||{},latest?{
-    scope:latest.projectScope,
-    permitNo:latest.permitNo,
-    docType:latest.docType,
-    contractor:latest.contractor,
-    partyType:latest.partyType,
-    lastUpdate:latest.date
-  }:{lastUpdate:''});
-};
-rowDate = function(row){return dateValue(row.lastUpdate)||dateValue(actualLatestEntryForAsset(row.id)?.date)||''};
-function rowBalanceForGroup(e){
-  e=normalizeEntry(e);
-  const groups=groupedByEntryKeyAccurate(normalizedEntries().filter(x=>baseEntryKey(x)===baseEntryKey(e)));
-  const st=groupStatsAccurate(Object.values(groups)[0]||[e]);
-  return st;
-}
-function activityLabel(e){e=normalizeEntry(e);return [e.specificItem,e.mainActivity].filter(Boolean).join(' / ')}
-function activityFullLabel(e){e=normalizeEntry(e);return [e.specificItem,e.mainActivity,e.subActivity].filter(Boolean).join(' / ')}
-function qtyText(q,u){return html((nval(q)||0)+' '+(u||''));}
-function reportEntriesWithMirrorsV11(entries){
-  const out=[];
-  normalizedEntries(entries).forEach(e=>{
-    out.push(Object.assign({},e,{mirrorSide:e.mirrorSide||'Original'}));
-    if((e.mirrorLink||'Yes')==='No')return;
-    const ends=[e.linkFrom,e.linkTo].map(v=>String(v||'').trim()).filter(Boolean);
-    ends.forEach((end,idx)=>{
-      const matched=matchAsset(end);
-      const endId=matched?matched.id:end;
-      const endLabel=matched?label(current(matched)):end;
-      if(!endId||String(endId).toLowerCase()===String(e.assetId||'').toLowerCase())return;
-      out.push(Object.assign({},e,{id:String(e.id)+'-mirror-'+idx+'-'+endId,assetId:endId,assetLabel:endLabel,mirrorSide:'Mirrored'}));
-    });
-  });
-  return out;
-}
-reportEntriesWithMirrors = reportEntriesWithMirrorsV11;
-function reportDailyRowV11(e){
-  e=normalizeEntry(e);
-  const st=rowBalanceForGroup(e);
-  return '<tr><td>'+html(displayDate(e.date))+'</td><td>'+html(e.assetLabel||e.assetId||'')+'</td><td>'+html(e.projectScope||'')+'</td><td>'+html(e.system||'')+'</td><td>'+html(activityLabel(e))+'</td><td>'+html(e.subActivity||'')+'</td><td>'+html(e.tag||'')+'</td><td>'+html(linkDisplay(e)||'')+'</td><td>'+html(e.mirrorSide||'Original')+'</td><td>'+qtyText(e.plannedQty,e.uom)+'</td><td>'+qtyText(e.dailyQty,e.uom)+'</td><td>'+qtyText(st.qty,e.uom)+'</td><td>'+qtyText(st.balance,e.uom)+'</td><td>'+html(progressFromQty(e.plannedQty,e.dailyQty))+'%</td><td>'+html(st.progress)+'%</td><td>'+html(st.status)+'</td><td>'+html(e.permitNo||'')+'</td><td>'+html(e.docType||'')+'</td><td>'+html(e.docRef||'')+'</td><td>'+html(e.contractor||'')+'</td><td>'+html(e.remarks||'')+'</td></tr>';
-}
-reportDailyRow = reportDailyRowV11;
-function reportTableCss(){return 'body{font-family:Arial,sans-serif;color:#17211f;margin:22px}button{float:right;padding:8px 12px}.muted{color:#60706b}.cards{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin:16px 0}.card{border:1px solid #d8e2de;padding:10px;border-radius:6px}.card strong{display:block;font-size:22px;margin-top:4px}.bar-report{display:grid;gap:8px;margin:12px 0}.bar-line{display:grid;grid-template-columns:150px minmax(120px,1fr) 70px;gap:8px;align-items:center;font-size:11px}.bar{height:11px;background:#dfe8e4;border-radius:99px;overflow:hidden}.bar span{display:block;height:100%;background:#1f7a5c}table{width:100%;border-collapse:collapse;font-size:8.8px;margin-top:10px}th,td{border:1px solid #d8e2de;padding:4px;text-align:left;vertical-align:top}th{background:#edf3f0}.remarks-col{min-width:210px}h1{margin:0 0 4px}h2{font-size:16px;margin-top:20px}@page{size:landscape;margin:8mm}@media print{button{display:none}body{margin:0}.bar-report{break-inside:avoid}}'}
-function dailyHeaderHtml(){
-  return '<tr><th>Date</th><th>Site</th><th>Scope</th><th>System</th><th>Sub-System / Item + Activity</th><th>Work Step / Detail</th><th>Asset / Cable / Item Tag</th><th>Link From → To</th><th>Shown As</th><th>Planned Qty</th><th>Daily Qty</th><th>Cumulative Done Qty</th><th>Balance Qty</th><th>Daily %</th><th>Activity Total %</th><th>Status</th><th>Permit No</th><th>Doc Type</th><th>Doc Ref</th><th>Contractor</th><th>Remarks</th></tr>';
-}
-dailyReportHtml = function(){
-  const rows=reportEntriesWithMirrorsV11(filteredDailyEntries('daily')).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
-  const body=rows.length?rows.map(reportDailyRowV11).join(''):'<tr><td colspan="21">No daily entries available.</td></tr>';
-  return '<!doctype html><html><head><meta charset="utf-8"><title>Daily Progress Report</title><style>'+reportTableCss()+'</style></head><body><button onclick="window.print()">Print / Save PDF</button><h1>Daily Progress Report</h1><p class="muted">Generated '+html(displayDateTime(new Date()))+' | Filters: '+html(filterSummary('daily'))+' | Entries: '+rows.length+'</p><table><thead>'+dailyHeaderHtml()+'</thead><tbody>'+body+'</tbody></table></body></html>';
-};
-function allActivityGroupsForEntries(entries){
-  const groups=groupedByEntryKeyAccurate(entries);
+function groupedDetailRowsV12(entries){
+  const groups=groupedByEntryKey(entries||[]);
   return Object.values(groups).map(list=>{
-    const normalized=list.map(normalizeEntry);
-    const latest=normalized.slice().sort((a,b)=>dateValue(b.date).localeCompare(dateValue(a.date))||String(b.id).localeCompare(String(a.id)))[0]||{};
-    const st=groupStatsAccurate(normalized);
-    return {latest,plan:st.plan,qty:st.qty,balance:st.balance,progress:st.progress,status:st.status};
+    const sorted=list.slice().sort((a,b)=>dateValue(b.date).localeCompare(dateValue(a.date))||String(b.id).localeCompare(String(a.id)));
+    const latest=sorted[0]||{};
+    const st=groupStats(list);
+    const plan=safeNumberV12(st.plan);
+    const qty=safeNumberV12(st.qty);
+    const progress=clampPctV12(st.progress);
+    const balanceQty=plan>0?Math.max(plan-qty,0):'';
+    return {latest,plan,qty,progress,balanceQty,balancePct:Math.max(0,100-progress)};
   }).sort((a,b)=>String(a.latest.assetLabel||'').localeCompare(String(b.latest.assetLabel||''))||String(a.latest.system||'').localeCompare(String(b.latest.system||''))||String(a.latest.specificItem||'').localeCompare(String(b.latest.specificItem||''))||String(a.latest.tag||'').localeCompare(String(b.latest.tag||'')));
 }
-groupedMasterDetailRows = function(entries){return allActivityGroupsForEntries(entries)};
-function detailRowsHtml(entries){
-  const groups=allActivityGroupsForEntries(entries);
-  return groups.map(g=>{const e=normalizeEntry(g.latest);return '<tr><td>'+html(e.assetLabel||e.assetId||'')+'</td><td>'+html(e.system||'')+'</td><td>'+html(e.specificItem||'')+'</td><td>'+html(e.mainActivity||'')+'</td><td>'+html(e.subActivity||'')+'</td><td>'+html(e.tag||'')+'</td><td>'+html(linkDisplay(e)||'')+'</td><td>'+html(e.mirrorSide||'Original')+'</td><td>'+qtyText(g.plan,e.uom)+'</td><td>'+qtyText(g.qty,e.uom)+'</td><td>'+qtyText(g.balance,e.uom)+'</td><td>'+html(g.progress)+'%</td><td>'+html(g.status)+'</td><td>'+html(displayDate(e.date)||'-')+'</td></tr>'}).join('')||'<tr><td colspan="14">No detailed item/activity progress available.</td></tr>';
+function detailRowHtmlV12(g){
+  const e=g.latest||{};const unit=e.uom||'';
+  return '<tr><td>'+html(e.assetLabel||e.assetId||'')+'</td><td>'+html(e.system||'')+'</td><td>'+html(e.specificItem||'')+'</td><td>'+html(e.mainActivity||'')+'</td><td>'+html(e.subActivity||'')+'</td><td>'+html(e.tag||'')+'</td><td>'+html(linkDisplay(e)||'')+'</td><td>'+html(e.mirrorSide||'Original')+'</td><td>'+html(g.plan||0)+' '+html(unit)+'</td><td>'+html(g.qty||0)+' '+html(unit)+'</td><td>'+html(g.balanceQty===''?'-':g.balanceQty+' '+unit)+'</td><td>'+html(g.progress)+'%</td><td>'+html(g.balancePct)+'%</td><td>'+html(statusFromProgress(g.progress))+'</td><td>'+html(displayDate(e.date)||'-')+'</td></tr>';
 }
-function assetSummaryRowsHtml(rows, entries){
+function assetSystemRowsV12(rows,entries){
   return rows.map(r=>{
-    const systems=reportSystemsForAsset(r,entries).sort((a,b)=>a.localeCompare(b));
+    const systems=reportSystemsForAsset(r,entries).sort((a,b)=>{
+      const ad=dateValue(latestReportEntry(entries,r.id,a)?.date),bd=dateValue(latestReportEntry(entries,r.id,b)?.date);
+      return (ad?0:1)-(bd?0:1)||bd.localeCompare(ad)||a.localeCompare(b);
+    });
+    if(!systems.length){
+      const p=clampPctV12(r.progress||0),bal=Math.max(0,100-p);
+      return '<tr><td>'+html(label(r))+'</td><td>'+html(r.category)+'</td><td>'+html(r.type)+'</td><td>'+html(r.location)+'</td><td>'+html(r.system||'')+'</td><td>'+html(r.scope||'')+'</td><td>'+p+'%</td><td>'+bal+'%</td><td>'+html(statusFromProgress(p))+'</td><td>'+html(displayDate(rowDate(r))||'-')+'</td><td>'+html(r.remarks||'')+'</td></tr>';
+    }
     return systems.map((sys,idx)=>{
-      const related=reportEntriesForAsset(entries,r.id,sys);
-      const progress=aggregateGroupedProgressAccurate(groupedByEntryKeyAccurate(related));
-      const status=statusFromProgress(progress);
       const latest=latestReportEntry(entries,r.id,sys);
+      let progress=systemProgressForAsset(entries,r.id,sys);
+      if(!progress && Number(r.progress||0)>0 && String(r.system||'').includes(sys)) progress=clampPctV12(r.progress);
+      const balance=Math.max(0,100-progress);
+      const status=statusFromProgress(progress);
       const span=systems.length;
-      const identity=idx===0?'<td rowspan="'+span+'">'+html(label(r))+'</td><td rowspan="'+span+'">'+html(r.category)+'</td><td rowspan="'+span+'">'+html(r.type)+'</td><td rowspan="'+span+'">'+html(r.location)+'</td>':'';
-      return '<tr>'+identity+'<td>'+html(sys)+'</td><td>'+html(latest?.projectScope||r.scope||'')+'</td><td>'+progress+'%</td><td>'+html(100-progress)+'%</td><td>'+html(status)+'</td><td>'+html(displayDate(latest?latest.date:rowDate(r))||'-')+'</td><td>'+html(reportAssetRemarks(r,entries,sys))+'</td></tr>';
-    }).join('')
+      const identity=idx===0?'<td rowspan="'+span+'">'+html(label(r))+'</td><td rowspan="'+span+'">'+html(r.category)+'</td><td rowspan="'+span+'">'+html(r.type)+'</td>':'';
+      return '<tr>'+identity+'<td>'+html(r.location)+'</td><td>'+html(sys)+'</td><td>'+html(latest?.projectScope||r.scope||'')+'</td><td>'+progress+'%</td><td>'+balance+'%</td><td>'+html(status)+'</td><td>'+html(displayDate(latest?latest.date:rowDate(r))||'-')+'</td><td>'+html(reportAssetRemarks(r,entries,sys))+'</td></tr>';
+    }).join('');
   }).join('')||'<tr><td colspan="11">No matching assets.</td></tr>';
 }
-masterReportHtml = function(){
-  const baseRows=filteredMasterRows();
-  const rowIds=new Set(baseRows.map(r=>r.id));
-  const entries=reportEntriesWithMirrorsV11(filteredDailyEntries('master')).filter(e=>!rowIds.size||rowIds.has(e.assetId)).sort((a,b)=>dateValue(b.date).localeCompare(dateValue(a.date))||String(b.id).localeCompare(String(a.id)));
-  const rows=sortReportAssetsByActivity(baseRows,entries);
-  const avg=rows.length?Math.round(rows.reduce((a,r)=>a+nval(r.progress),0)/rows.length):0;
-  const balance=100-avg;
-  const complete=rows.filter(r=>nval(r.progress)>=100).length;
-  const inProgress=rows.filter(r=>nval(r.progress)>0&&nval(r.progress)<100).length;
-  const zero=rows.length-complete-inProgress;
-  const latestRows=entries.slice(0,10).map(reportDailyRowV11).join('')||'<tr><td colspan="21">No matching daily entries.</td></tr>';
-  const details=detailRowsHtml(entries);
-  const assetRows=assetSummaryRowsHtml(rows,entries);
-  return '<!doctype html><html><head><meta charset="utf-8"><title>Master Progress Report</title><style>'+reportTableCss()+'</style></head><body><button onclick="window.print()">Print / Save PDF</button><h1>Master Progress Report</h1><p class="muted">Generated '+html(displayDateTime(new Date()))+'</p><p class="muted">Filters: '+html(filterSummary('master'))+'</p><div class="cards"><div class="card">Master Progress<strong>'+avg+'%</strong></div><div class="card">Balance<strong>'+balance+'%</strong></div><div class="card">Total Assets<strong>'+rows.length+'</strong></div><div class="card">Complete<strong>'+complete+'</strong></div><div class="card">In Progress<strong>'+inProgress+'</strong></div><div class="card">Not Started<strong>'+zero+'</strong></div></div>'+barChartHtml('Scope Progress Chart',scopeAverageData(rows))+barChartHtml('System Progress Chart',systemAverageData(rows))+'<h2>Latest Daily Entries (Max 10)</h2><table><thead>'+dailyHeaderHtml()+'</thead><tbody>'+latestRows+'</tbody></table><h2>Detailed Item / Activity Progress</h2><table><thead><tr><th>Site</th><th>System</th><th>Sub-System / Item</th><th>Activity</th><th>Work Step / Detail</th><th>Asset / Cable / Item Tag</th><th>Link From → To</th><th>Shown As</th><th>Planned Qty</th><th>Done Qty</th><th>Balance Qty</th><th>Progress</th><th>Status</th><th>Latest Update</th></tr></thead><tbody>'+details+'</tbody></table><h2>All Site / System Progress Summary</h2><table><thead><tr><th>Site</th><th>Category</th><th>Type</th><th>Location</th><th>System</th><th>Scope</th><th>Progress</th><th>Balance</th><th>Status</th><th>Latest Update</th><th class="remarks-col">Remarks</th></tr></thead><tbody>'+assetRows+'</tbody></table></body></html>';
-};
-reportHtml = function(){
-  const entries=reportEntriesWithMirrorsV11(filteredDailyEntries('daily'));
-  const assetIds=new Set(entries.map(e=>e.assetId));
-  const rows=allRows().filter(r=>assetIds.has(r.id));
-  const avg=rows.length?Math.round(rows.reduce((a,r)=>a+nval(r.progress),0)/rows.length):0;
-  const complete=rows.filter(r=>nval(r.progress)>=100).length;
-  const assetRows=assetSummaryRowsHtml(rows,entries);
-  const logRows=entries.map(reportDailyRowV11).join('')||'<tr><td colspan="21">No daily entries match the filters.</td></tr>';
-  return '<!doctype html><html><head><meta charset="utf-8"><title>Daily Progress Report</title><style>'+reportTableCss()+'</style></head><body><button onclick="window.print()">Print / Save PDF</button><h1>Daily Progress Report</h1><p class="muted">Generated '+html(displayDateTime(new Date()))+'</p><p class="muted">Filters: '+html(filterSummary('daily'))+'</p><div class="cards"><div class="card">Matching Assets<strong>'+rows.length+'</strong></div><div class="card">Average Progress<strong>'+avg+'%</strong></div><div class="card">Balance<strong>'+(100-avg)+'%</strong></div><div class="card">Complete Assets<strong>'+complete+'</strong></div><div class="card">Daily Entries<strong>'+entries.length+'</strong></div><div class="card">Scope Basis<strong>Actual Entries</strong></div></div><h2>Filtered Asset Progress</h2><table><thead><tr><th>Site</th><th>Category</th><th>Type</th><th>Location</th><th>System</th><th>Scope</th><th>Progress</th><th>Balance</th><th>Status</th><th>Latest Update</th><th>Remarks</th></tr></thead><tbody>'+assetRows+'</tbody></table><h2>Filtered Daily Progress Log</h2><table><thead>'+dailyHeaderHtml()+'</thead><tbody>'+logRows+'</tbody></table></body></html>';
-};
-renderKpis = function(){
-  const rows=allRows();
-  const avg=rows.length?Math.round(rows.reduce((a,r)=>a+nval(r.progress),0)/rows.length):0;
-  const complete=rows.filter(r=>nval(r.progress)>=100).length;
-  const entriesCount=normalizedEntries().length;
-  $('#healthScore').textContent=avg;
-  $('#sideBar').style.setProperty('--p',avg+'%');
-  $('#sideText').textContent=avg+'% complete, '+(100-avg)+'% balance across '+rows.length+' tracked assets';
-  $('#kTotal').textContent=rows.length;
-  $('#kEntries').textContent=entriesCount;
-  $('#kComplete').textContent=complete;
-  $('#healthLabel').textContent=complete+' complete assets';
-};
-renderRows = function(){
-  const rows=filtered();
-  $('#rows').innerHTML=rows.map(r=>'<tr><td><strong>'+html(label(r))+'</strong></td><td>'+html(r.category)+'</td><td>'+html(r.type)+'</td><td>'+html(r.location)+'</td><td>'+html(r.system)+'<br><span style="color:var(--muted);font-size:12px">'+html(r.scope)+'</span></td><td><div class="progress-cell"><input class="requires-edit" type="range" min="0" max="100" value="'+nval(r.progress)+'" data-id="'+html(r.id)+'"><span>'+nval(r.progress)+'%</span></div><small style="color:var(--muted)">Balance '+(100-nval(r.progress))+'%</small></td><td><span class="status '+statusClass(r.status)+'">'+html(r.status)+'</span></td><td>'+html(r.owner)+'</td><td>'+html(displayDate(rowDate(r))||'-')+'</td><td><button class="icon edit-row" title="Edit item" data-id="'+html(r.id)+'"><i data-lucide="pencil"></i></button></td></tr>').join('');
-  $('#rows').querySelectorAll('input[type=range]').forEach(sl=>sl.addEventListener('input',e=>{if(!requireEdit())return;alert('Progress is calculated from Daily Progress entries only. Please add/update a Daily Progress record instead.');renderRows()}));
-  $('#rows').querySelectorAll('.edit-row').forEach(btn=>btn.addEventListener('click',()=>openEdit(btn.dataset.id)));
-  if(window.lucide)lucide.createIcons();
-};
-function splitImportActivity(raw){
-  const activity=cleanText(raw.mainActivity||'');
-  if(activity.includes('/')){
-    const parts=activity.split('/').map(x=>x.trim()).filter(Boolean);
-    if(!raw.specificItem && parts[0]) raw.specificItem=parts[0];
-    if(parts.length>=2) raw.mainActivity=parts[1];
-    if(!raw.subActivity && parts.length>=3) raw.subActivity=parts.slice(2).join(' / ');
-  }
-  return raw;
+function dailyReportHtml(){
+  const entries=reportEntriesWithMirrors(filteredDailyEntries('daily')).sort((a,b)=>dateValue(b.date).localeCompare(dateValue(a.date))||String(b.id).localeCompare(String(a.id)));
+  const groups=groupedDetailRowsV12(entries);
+  const avg=groups.length?Math.round(groups.reduce((a,g)=>a+g.progress,0)/groups.length):0;
+  const balance=Math.max(0,100-avg);
+  const table=entries.length?entries.map(e=>reportDailyRowV12(e,entries)).join(''):'<tr><td colspan="23">No daily entries match the filters.</td></tr>';
+  const details=groups.length?groups.map(detailRowHtmlV12).join(''):'<tr><td colspan="15">No detailed item/activity progress available.</td></tr>';
+  return '<!doctype html><html><head><meta charset="utf-8"><title>Daily Progress Report</title><style>'+reportCssV12()+'</style></head><body><button onclick="window.print()">Print / Save PDF</button><h1>Daily Progress Report</h1><p class="muted">Generated '+html(displayDateTime(new Date()))+'</p><p class="muted">Filters: '+html(filterSummary('daily'))+'</p><div class="cards"><div class="card">Daily Entries<strong>'+entries.length+'</strong></div><div class="card">Activities / Tags<strong>'+groups.length+'</strong></div><div class="card">Avg Activity Progress<strong>'+avg+'%</strong></div><div class="card">Avg Balance<strong>'+balance+'%</strong></div><div class="card">Complete Activities<strong>'+groups.filter(g=>g.progress>=100).length+'</strong></div><div class="card">In Progress<strong>'+groups.filter(g=>g.progress>0&&g.progress<100).length+'</strong></div></div><h2>Daily Progress Log</h2><table><thead>'+dailyHeaderHtmlV12()+'</thead><tbody>'+table+'</tbody></table><h2>Activity / Tag Balance Summary</h2><table><thead>'+detailHeaderHtmlV12()+'</thead><tbody>'+details+'</tbody></table></body></html>';
 }
-const _matchImportRowOriginal = matchImportRow;
-matchImportRow = function(raw){
-  raw=splitImportActivity(raw||{});
-  // Backward-compatible aliases from older exports
-  if(!raw.docRef && raw.document) raw.docRef=raw.document;
-  if(!raw.tag && raw.manualTag) raw.tag=raw.manualTag;
-  return _matchImportRowOriginal(raw);
-};
+function masterReportHtml(){
+  const rows=filteredMasterRows();
+  const rowIds=new Set(rows.map(r=>r.id));
+  const entries=reportEntriesWithMirrors(filteredDailyEntries('master')).filter(e=>!rowIds.size||rowIds.has(e.assetId)).sort((a,b)=>dateValue(b.date).localeCompare(dateValue(a.date))||String(b.id).localeCompare(String(a.id)));
+  const avg=rows.length?Math.round(rows.reduce((a,r)=>a+Number(r.progress||0),0)/rows.length):0;
+  const balance=Math.max(0,100-avg);
+  const complete=rows.filter(r=>Number(r.progress||0)>=100).length;
+  const inProgress=rows.filter(r=>Number(r.progress||0)>0&&Number(r.progress||0)<100).length;
+  const zero=rows.length-complete-inProgress;
+  const latestRows=entries.slice(0,20).map(e=>reportDailyRowV12(e,entries)).join('')||'<tr><td colspan="23">No matching daily entries.</td></tr>';
+  const groups=groupedDetailRowsV12(entries);
+  const details=groups.length?groups.map(detailRowHtmlV12).join(''):'<tr><td colspan="15">No detailed item/activity progress available.</td></tr>';
+  const assetRows=assetSystemRowsV12(rows,entries);
+  return '<!doctype html><html><head><meta charset="utf-8"><title>Master Progress Report</title><style>'+reportCssV12()+'</style></head><body><button onclick="window.print()">Print / Save PDF</button><h1>Master Progress Report</h1><p class="muted">Generated '+html(displayDateTime(new Date()))+'</p><p class="muted">Filters: '+html(filterSummary('master'))+'</p><div class="cards"><div class="card">Master Progress<strong>'+avg+'%</strong></div><div class="card">Balance<strong>'+balance+'%</strong></div><div class="card">Matching Assets<strong>'+rows.length+'</strong></div><div class="card">Complete<strong>'+complete+'</strong></div><div class="card">In Progress<strong>'+inProgress+'</strong></div><div class="card">Not Started<strong>'+zero+'</strong></div></div>'+barChartHtml('Scope Progress Chart',scopeAverageData(rows))+barChartHtml('System Progress Chart',systemAverageData(rows))+'<h2>Latest Daily Entries</h2><table><thead>'+dailyHeaderHtmlV12()+'</thead><tbody>'+latestRows+'</tbody></table><h2>Detailed Item / Activity Progress & Balance</h2><table><thead>'+detailHeaderHtmlV12()+'</thead><tbody>'+details+'</tbody></table><h2>All Site / System Progress Summary</h2><table><thead><tr><th>Site</th><th>Category</th><th>Type</th><th>Location</th><th>System</th><th>Scope</th><th>Progress</th><th>Balance</th><th>Status</th><th>Latest Update</th><th class="remarks-col">Remarks</th></tr></thead><tbody>'+assetRows+'</tbody></table></body></html>';
+}
+function reportHtml(){return dailyReportHtml()}
+function safeOpenHtmlReportV12(htmlText,print){
+  const w=window.open('','_blank');
+  if(!w){
+    const blob=new Blob([htmlText],{type:'text/html'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='telecom-progress-report.html';a.click();URL.revokeObjectURL(a.href);
+    alert('Popup was blocked. The report was downloaded as an HTML file instead.');
+    return;
+  }
+  w.document.open();
+  w.document.write(htmlText);
+  w.document.close();
+  if(print){w.focus();setTimeout(()=>{try{w.print()}catch(err){console.error(err)}},450)}
+}
+function openDailyReport(print=true){if(!requireExport())return;try{safeOpenHtmlReportV12(dailyReportHtml(),print)}catch(err){console.error(err);alert('Daily report generation failed: '+err.message)}}
+function exportDailyExcel(){if(!requireExport())return;try{const blob=new Blob(['\ufeff'+dailyReportHtml()],{type:'application/vnd.ms-excel'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='daily-progress-report.xls';a.click();URL.revokeObjectURL(a.href)}catch(err){console.error(err);alert('Daily export failed: '+err.message)}}
+function openMasterReport(print=true){if(!requireExport())return;try{safeOpenHtmlReportV12(masterReportHtml(),print)}catch(err){console.error(err);alert('Master report generation failed: '+err.message)}}
+function exportMasterExcel(){if(!requireExport())return;try{const blob=new Blob(['\ufeff'+masterReportHtml()],{type:'application/vnd.ms-excel'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='master-progress-report.xls';a.click();URL.revokeObjectURL(a.href)}catch(err){console.error(err);alert('Master export failed: '+err.message)}}
+function openReport(print=true){return openDailyReport(print)}
+function exportExcel(){return exportDailyExcel()}
+function trendData(){
+  const dates=unique(dailyEntries.map(e=>dateValue(e.date)).filter(Boolean)).sort((a,b)=>a.localeCompare(b)).slice(-12);
+  if(!dates.length)return [];
+  const totalAssets=(DATA.items||[]).length||1;
+  return dates.map(d=>{
+    const entriesUpTo=dailyEntries.filter(e=>dateValue(e.date)<=d);
+    const assetIds=unique(entriesUpTo.map(e=>e.assetId).filter(Boolean));
+    const assetProgress=assetIds.reduce((sum,id)=>{
+      const related=entriesUpTo.filter(e=>e.assetId===id);
+      return sum+aggregateGroupedProgress(groupedByEntryKey(related));
+    },0);
+    return {date:d,total:Math.min(100,Math.round(assetProgress/totalAssets))};
+  });
+}
 
 initGate();
 $('#dailyForm').addEventListener('submit',addDaily);$('#dailyImportFile').addEventListener('change',handleDailyImportFile);$('#entryAttachment')?.addEventListener('change',handleEntryAttachmentChange);$('#clearEntryAttachmentBtn')?.addEventListener('click',clearEntryAttachments);$('#clearDailyImportBtn').addEventListener('click',clearDailyImport);$('#importAllBtn').addEventListener('click',importAllValidRows);$('#cancelDailyEditBtn').addEventListener('click',resetDailyForm);$('#entryAsset').addEventListener('change',()=>{renderSystemChoices();updateProgressPreview()});$('#entrySystem').addEventListener('change',()=>{renderSpecificItems();renderMainActivities();updateProgressPreview()});$('#entryMainActivity').addEventListener('change',()=>{renderSubActivities();updateProgressPreview()});const entrySpecificItemEl=$('#entrySpecificItem');if(entrySpecificItemEl)entrySpecificItemEl.addEventListener('change',()=>{renderMainActivities();updateProgressPreview()});['entryDate','dailyFilterFrom','dailyFilterTo','masterFilterFrom','masterFilterTo'].forEach(id=>$('#'+id).addEventListener('blur',()=>normalizeDateField(id)));['entryPlannedQty','entryDailyQty','entrySpecificItem','entryProjectScope','entryStage','entryCableType','entryTag','entryLinkFrom','entryLinkTo','entryMirrorLink'].forEach(id=>{const el=$('#'+id);if(el)el.addEventListener('input',updateProgressPreview)});['q','category','statusFilter'].forEach(id=>$('#'+id).addEventListener('input',renderRows));['dailyFilterSite','dailyFilterSystem','dailyFilterScope','dailyFilterContractor','dailyFilterParty','dailyFilterMin','dailyFilterMax','dailyFilterFrom','dailyFilterTo'].forEach(id=>$('#'+id).addEventListener('input',renderLog));['masterFilterSite','masterFilterSystem','masterFilterScope','masterFilterStatus','masterFilterMin','masterFilterMax','masterFilterFrom','masterFilterTo','masterFilterSort'].forEach(id=>$('#'+id).addEventListener('input',()=>{renderChart();}));$('#clearDailyFiltersBtn').addEventListener('click',()=>clearReportFilters('daily'));$('#clearMasterFiltersBtn').addEventListener('click',()=>clearReportFilters('master'));
