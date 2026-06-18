@@ -112,6 +112,11 @@ body.auth-unlocked #appShell{display:grid!important}
 .field-user #documentRegisterForm,.field-user #saveDocumentBtn,.field-user #clearDocumentAttachmentBtn{display:none!important}
 .daily-entry-user #documentRegisterForm{display:grid!important}
 .daily-entry-user #saveDocumentBtn,.daily-entry-user #clearDocumentAttachmentBtn{display:inline-flex!important}
+
+/* === V16 Master multi-select filters === */
+#masterFilterSite[multiple],#masterFilterSystem[multiple],#masterFilterScope[multiple],#masterFilterStatus[multiple]{min-height:96px;padding:6px 8px;line-height:1.25;background:#fff}
+#masterFilterStatus[multiple]{min-height:78px}
+#master .filter-note{grid-column:1/-1}
 </style></head><body class="auth-locked" data-version="V12-MASTER-REPORT-RESTORE">
 <div class="access-gate" id="emailGate">
   <div class="access-card">
@@ -183,17 +188,17 @@ body.auth-unlocked #appShell{display:grid!important}
       </div>
       <div class="report-filters">
         <div class="filter-grid">
-          <label>Site<select id="masterFilterSite"><option value="all">All sites</option><option value="BB-2175">BB-2175</option><option value="BB-2121">BB-2121</option><option value="BB-2120">BB-2120</option><option value="BB-2111">BB-2111</option><option value="BB-2112">BB-2112</option><option value="BB-2177">BB-2177</option><option value="BB-2183">BB-2183</option><option value="BB-2096">BB-2096</option><option value="BB-2178">BB-2178</option><option value="BB-2184">BB-2184</option><option value="BB-2180">BB-2180</option><option value="BB-2094">BB-2094</option><option value="BB-2181">BB-2181</option><option value="BB-2047">BB-2047</option><option value="BB-2126">BB-2126</option><option value="BB-2185">BB-2185</option><option value="BB-2085">BB-2085</option><option value="BB-2186">BB-2186</option><option value="BB-2037">BB-2037</option><option value="BB-2118">BB-2118</option><option value="BB-2174">BB-2174</option><option value="BB-2138">BB-2138</option><option value="BB-2040">BB-2040</option><option value="BB-2156">BB-2156</option><option value="BB-2082">BB-2082</option><option value="BB-1926">BB-1926</option><option value="BB-2179">BB-2179</option><option value="BB-537">BB-537</option><option value="BB-441">BB-441</option><option value="BB-460">BB-460</option><option value="BB-442">BB-442</option><option value="BB-550">BB-550</option><option value="BB-452">BB-452</option><option value="BB-435">BB-435</option><option value="BB-601">BB-601</option><option value="BB-2091">BB-2091</option><option value="BB-2092">BB-2092</option><option value="BB-2089">BB-2089</option><option value="BB-2095">BB-2095</option><option value="BB-2077">BB-2077</option><option value="BB-439">BB-439</option><option value="BB-2160">BB-2160</option><option value="BB-2159">BB-2159</option><option value="BB-2147">BB-2147</option><option value="BB-2176">BB-2176</option><option value="BB-2161">BB-2161</option><option value="BB-2093">BB-2093</option><option value="BB-2182">BB-2182</option><option value="BB-2088">BB-2088</option><option value="BB-2076">BB-2076</option><option value="BB-2043">BB-2043</option><option value="BB-2123">BB-2123</option><option value="BB-2169">BB-2169</option><option value="BB-2163">BB-2163</option><option value="BB-2146">BB-2146</option><option value="BB-2162">BB-2162</option><option value="BB-2150">BB-2150</option><option value="BB-2170">BB-2170</option><option value="BB-2141">BB-2141</option><option value="BB-2142">BB-2142</option><option value="BB-2157">BB-2157</option><option value="BB-2151">BB-2151</option><option value="BB-2155">BB-2155</option><option value="BB-2131">BB-2131</option><option value="BB-2171">BB-2171</option><option value="BB-2173">BB-2173</option><option value="BB-2129">BB-2129</option><option value="BB-2140">BB-2140</option><option value="BB-2132">BB-2132</option><option value="BB-2153">BB-2153</option><option value="BB-2063">BB-2063</option><option value="BB-2075">BB-2075</option><option value="BB-2127">BB-2127</option><option value="BB-2124">BB-2124</option><option value="BB-2167">BB-2167</option><option value="BB-2148">BB-2148</option><option value="BB-2105">BB-2105</option><option value="BB-2149">BB-2149</option><option value="BB-2087">BB-2087</option><option value="BB-2038">BB-2038</option><option value="BB-2145">BB-2145</option><option value="BB-2100">BB-2100</option><option value="BB-2166">BB-2166</option><option value="BB-2172">BB-2172</option><option value="BB-2168">BB-2168</option><option value="BB-2152">BB-2152</option><option value="BB-2125">BB-2125</option><option value="BB-2108">BB-2108</option><option value="BB-2106">BB-2106</option><option value="BB-2154">BB-2154</option><option value="BB-2139">BB-2139</option><option value="BCDS">BCDS</option><option value="PAD-103">PAD-103</option><option value="MP-109">MP-109</option><option value="MP-119">MP-119</option><option value="MP-125">MP-125</option><option value="MP-137">MP-137</option><option value="MP-156">MP-156</option><option value="MP-121">MP-121</option><option value="RDS-1">RDS-1</option><option value="RDS-10">RDS-10</option><option value="RDS-2">RDS-2</option><option value="RDS-3">RDS-3</option><option value="RDS-4">RDS-4</option><option value="RDS-5">RDS-5</option><option value="RDS-6">RDS-6</option><option value="RDS-8">RDS-8</option><option value="RDS-9">RDS-9</option><option value="WB-128">WB-128</option><option value="WB-159">WB-159</option><option value="WB-160">WB-160</option><option value="WB-161">WB-161</option><option value="WB-162">WB-162</option><option value="WB-165">WB-165</option><option value="WB-167">WB-167</option></select></label>
-          <label>System<select id="masterFilterSystem"><option value="all">All systems</option><option value="Civil / Infrastructure">Civil / Infrastructure</option><option value="ACS">ACS</option><option value="CCTV">CCTV</option><option value="FOC">FOC</option><option value="DWDM">DWDM</option><option value="SDH">SDH</option><option value="LDS">LDS</option><option value="PAGA">PAGA</option><option value="Telephone">Telephone</option><option value="LAN">LAN</option><option value="5G Wireless - Off Pad Wells">5G Wireless - Off Pad Wells</option></select></label>
-          <label>Scope<select id="masterFilterScope"><option value="all">All scopes</option><option value="New">New</option><option value="Modification">Modification</option><option value="Relocation">Relocation</option><option value="Demolish">Demolish</option></select></label>
-          <label>Status<select id="masterFilterStatus"><option value="all">All statuses</option><option>Not Started</option><option>In Progress</option><option>Complete</option></select></label>
+          <label>Site<select id="masterFilterSite" multiple size="6" title="Hold Ctrl/Cmd to choose multiple sites. Leave empty or select All for all sites."><option value="all">All sites</option><option value="BB-2175">BB-2175</option><option value="BB-2121">BB-2121</option><option value="BB-2120">BB-2120</option><option value="BB-2111">BB-2111</option><option value="BB-2112">BB-2112</option><option value="BB-2177">BB-2177</option><option value="BB-2183">BB-2183</option><option value="BB-2096">BB-2096</option><option value="BB-2178">BB-2178</option><option value="BB-2184">BB-2184</option><option value="BB-2180">BB-2180</option><option value="BB-2094">BB-2094</option><option value="BB-2181">BB-2181</option><option value="BB-2047">BB-2047</option><option value="BB-2126">BB-2126</option><option value="BB-2185">BB-2185</option><option value="BB-2085">BB-2085</option><option value="BB-2186">BB-2186</option><option value="BB-2037">BB-2037</option><option value="BB-2118">BB-2118</option><option value="BB-2174">BB-2174</option><option value="BB-2138">BB-2138</option><option value="BB-2040">BB-2040</option><option value="BB-2156">BB-2156</option><option value="BB-2082">BB-2082</option><option value="BB-1926">BB-1926</option><option value="BB-2179">BB-2179</option><option value="BB-537">BB-537</option><option value="BB-441">BB-441</option><option value="BB-460">BB-460</option><option value="BB-442">BB-442</option><option value="BB-550">BB-550</option><option value="BB-452">BB-452</option><option value="BB-435">BB-435</option><option value="BB-601">BB-601</option><option value="BB-2091">BB-2091</option><option value="BB-2092">BB-2092</option><option value="BB-2089">BB-2089</option><option value="BB-2095">BB-2095</option><option value="BB-2077">BB-2077</option><option value="BB-439">BB-439</option><option value="BB-2160">BB-2160</option><option value="BB-2159">BB-2159</option><option value="BB-2147">BB-2147</option><option value="BB-2176">BB-2176</option><option value="BB-2161">BB-2161</option><option value="BB-2093">BB-2093</option><option value="BB-2182">BB-2182</option><option value="BB-2088">BB-2088</option><option value="BB-2076">BB-2076</option><option value="BB-2043">BB-2043</option><option value="BB-2123">BB-2123</option><option value="BB-2169">BB-2169</option><option value="BB-2163">BB-2163</option><option value="BB-2146">BB-2146</option><option value="BB-2162">BB-2162</option><option value="BB-2150">BB-2150</option><option value="BB-2170">BB-2170</option><option value="BB-2141">BB-2141</option><option value="BB-2142">BB-2142</option><option value="BB-2157">BB-2157</option><option value="BB-2151">BB-2151</option><option value="BB-2155">BB-2155</option><option value="BB-2131">BB-2131</option><option value="BB-2171">BB-2171</option><option value="BB-2173">BB-2173</option><option value="BB-2129">BB-2129</option><option value="BB-2140">BB-2140</option><option value="BB-2132">BB-2132</option><option value="BB-2153">BB-2153</option><option value="BB-2063">BB-2063</option><option value="BB-2075">BB-2075</option><option value="BB-2127">BB-2127</option><option value="BB-2124">BB-2124</option><option value="BB-2167">BB-2167</option><option value="BB-2148">BB-2148</option><option value="BB-2105">BB-2105</option><option value="BB-2149">BB-2149</option><option value="BB-2087">BB-2087</option><option value="BB-2038">BB-2038</option><option value="BB-2145">BB-2145</option><option value="BB-2100">BB-2100</option><option value="BB-2166">BB-2166</option><option value="BB-2172">BB-2172</option><option value="BB-2168">BB-2168</option><option value="BB-2152">BB-2152</option><option value="BB-2125">BB-2125</option><option value="BB-2108">BB-2108</option><option value="BB-2106">BB-2106</option><option value="BB-2154">BB-2154</option><option value="BB-2139">BB-2139</option><option value="BCDS">BCDS</option><option value="PAD-103">PAD-103</option><option value="MP-109">MP-109</option><option value="MP-119">MP-119</option><option value="MP-125">MP-125</option><option value="MP-137">MP-137</option><option value="MP-156">MP-156</option><option value="MP-121">MP-121</option><option value="RDS-1">RDS-1</option><option value="RDS-10">RDS-10</option><option value="RDS-2">RDS-2</option><option value="RDS-3">RDS-3</option><option value="RDS-4">RDS-4</option><option value="RDS-5">RDS-5</option><option value="RDS-6">RDS-6</option><option value="RDS-8">RDS-8</option><option value="RDS-9">RDS-9</option><option value="WB-128">WB-128</option><option value="WB-159">WB-159</option><option value="WB-160">WB-160</option><option value="WB-161">WB-161</option><option value="WB-162">WB-162</option><option value="WB-165">WB-165</option><option value="WB-167">WB-167</option></select></label>
+          <label>System<select id="masterFilterSystem" multiple size="6" title="Hold Ctrl/Cmd to choose multiple systems. Leave empty or select All for all systems."><option value="all">All systems</option><option value="Civil / Infrastructure">Civil / Infrastructure</option><option value="ACS">ACS</option><option value="CCTV">CCTV</option><option value="FOC">FOC</option><option value="DWDM">DWDM</option><option value="SDH">SDH</option><option value="LDS">LDS</option><option value="PAGA">PAGA</option><option value="Telephone">Telephone</option><option value="LAN">LAN</option><option value="5G Wireless - Off Pad Wells">5G Wireless - Off Pad Wells</option></select></label>
+          <label>Scope<select id="masterFilterScope" multiple size="5" title="Hold Ctrl/Cmd to choose multiple scopes. Leave empty or select All for all scopes."><option value="all">All scopes</option><option value="New">New</option><option value="Modification">Modification</option><option value="Relocation">Relocation</option><option value="Demolish">Demolish</option></select></label>
+          <label>Status<select id="masterFilterStatus" multiple size="4" title="Hold Ctrl/Cmd to choose multiple statuses. Leave empty or select All for all statuses."><option value="all">All statuses</option><option>Not Started</option><option>In Progress</option><option>Complete</option></select></label>
           <label>Progress From<input id="masterFilterMin" type="number" min="0" max="100" placeholder="0"></label>
           <label>Progress To<input id="masterFilterMax" type="number" min="0" max="100" placeholder="100"></label>
           <label>From Date<input id="masterFilterFrom" placeholder="11-Jun-26"></label>
           <label>To Date<input id="masterFilterTo" placeholder="11-Jun-26"></label>
           <label>Sort<select id="masterFilterSort"><option value="progressLatest">In progress first, latest</option><option value="latest">Latest to oldest</option><option value="progressDesc">Highest progress</option><option value="progressAsc">Lowest progress</option><option value="site">Site name</option></select></label>
         </div>
-        <div class="filter-actions"><button class="btn" type="button" id="clearMasterFiltersBtn"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="filter-x" aria-hidden="true" class="lucide lucide-filter-x"><path d="M12.531 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14v6a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341l.427-.473"></path><path d="m16.5 3.5 5 5"></path><path d="m21.5 3.5-5 5"></path></svg><span>Clear master filters</span></button></div>
+        <p class="filter-note">Master filters support multiple selections. Hold Ctrl/Cmd to select more than one site, system, scope, or status. Mirrored link activities are included in the master report and progress details.</p><div class="filter-actions"><button class="btn" type="button" id="clearMasterFiltersBtn"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="filter-x" aria-hidden="true" class="lucide lucide-filter-x"><path d="M12.531 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14v6a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341l.427-.473"></path><path d="m16.5 3.5 5 5"></path><path d="m21.5 3.5-5 5"></path></svg><span>Clear master filters</span></button></div>
       </div>
       <div class="chart-grid">
         <div class="master-charts">
@@ -2610,7 +2615,354 @@ function systemProgressForAsset(entries,assetId,system){const related=reportEntr
 function reportAssetRemarks(row,entries,system){const related=reportEntriesForAsset(entries,row.id,system);const notes=related.slice(0,3).map(e=>{const activity=[e.specificItem,e.mainActivity,e.subActivity].filter(Boolean).join(' / ');const progress='Daily '+Number(e.dailyProgress||0)+'%, total '+Number(e.totalAfter||0)+'%';const link=[e.tag,linkDisplay(e)].filter(Boolean).join(' / ');return [displayDate(e.date),activity,link,progress,e.remarks].filter(Boolean).join(' - ')}).join(' | ');return notes||row.remarks||''}
 function sortReportAssetsByActivity(rows,entries){const original=new Map(rows.map((r,i)=>[r.id,i]));return rows.slice().sort((a,b)=>{const ae=latestReportEntry(entries,a.id),be=latestReportEntry(entries,b.id);const ad=ae?dateValue(ae.date):'',bd=be?dateValue(be.date):'';return (ad?0:1)-(bd?0:1)||bd.localeCompare(ad)||masterProgressRank(a)-masterProgressRank(b)||Number(b.progress||0)-Number(a.progress||0)||(original.get(a.id)||0)-(original.get(b.id)||0)})}
 function groupedMasterDetailRows(entries){const groups=groupedByEntryKey(entries);return Object.values(groups).map(list=>{const latest=list.slice().sort((a,b)=>dateValue(b.date).localeCompare(dateValue(a.date))||String(b.id).localeCompare(String(a.id)))[0]||{};const st=groupStats(list);return{latest,plan:st.plan,qty:st.qty,progress:st.progress}}).sort((a,b)=>String(a.latest.assetLabel||'').localeCompare(String(b.latest.assetLabel||''))||String(a.latest.system||'').localeCompare(String(b.latest.system||''))||String(a.latest.specificItem||'').localeCompare(String(b.latest.specificItem||'')))}
+function masterReportHtml(){const baseRows=filteredMasterRows();const rowIds=new Set(baseRows.map(r=>r.id));const entries=reportEntriesWithMirrors(filteredDailyEntries('master')).filter(e=>!rowIds.size||rowIds.has(e.assetId)).sort((a,b)=>dateValue(b.date).localeCompare(dateValue(a.date))||String(b.id).localeCompare(String(a.id)));const rows=sortReportAssetsByActivity(baseRows,entries);const avg=rows.length?Math.round(rows.reduce((a,r)=>a+Number(r.progress||0),0)/rows.length):0;const complete=rows.filter(r=>Number(r.progress||0)>=100).length;const inProgress=rows.filter(r=>Number(r.progress||0)>0&&Number(r.progress||0)<100).length;const zero=rows.length-complete-inProgress;const latestRows=entries.slice(0,10).map(reportDailyRow).join('')||'<tr><td colspan="17">No matching daily entries.</td></tr>';const detailRows=groupedMasterDetailRows(entries).map(g=>{const e=g.latest;return '<tr><td>'+html(e.assetLabel||e.assetId||'')+'</td><td>'+html(e.system||'')+'</td><td>'+html(e.specificItem||'')+'</td><td>'+html([e.specificItem,e.mainActivity].filter(Boolean).join(' / '))+'</td><td>'+html(e.subActivity||'')+'</td><td>'+html(e.tag||'')+'</td><td>'+html(linkDisplay(e)||'')+'</td><td>'+html(e.mirrorSide||'Original')+'</td><td>'+html(g.plan||0)+' '+html(e.uom||'')+'</td><td>'+html(g.qty||0)+' '+html(e.uom||'')+'</td><td>'+html(g.progress)+'%</td><td>'+html(statusFromProgress(g.progress))+'</td><td>'+html(displayDate(e.date)||'-')+'</td></tr>'}).join('')||'<tr><td colspan="13">No detailed item/activity progress available.</td></tr>';const assetRows=rows.map(r=>{const systems=reportSystemsForAsset(r,entries).sort((a,b)=>{const ad=dateValue(latestReportEntry(entries,r.id,a)?.date),bd=dateValue(latestReportEntry(entries,r.id,b)?.date);return (ad?0:1)-(bd?0:1)||bd.localeCompare(ad)||a.localeCompare(b)});return systems.map((sys,idx)=>{const latest=latestReportEntry(entries,r.id,sys);const progress=systemProgressForAsset(entries,r.id,sys);const status=statusFromProgress(progress);const span=systems.length;const identity=idx===0?'<td rowspan="'+span+'">'+html(label(r))+'</td><td rowspan="'+span+'">'+html(r.category)+'</td><td rowspan="'+span+'">'+html(r.type)+'</td>':'';return '<tr>'+identity+'<td>'+html(r.location)+'</td><td>'+html(sys)+'</td><td>'+html(latest?.projectScope||r.scope||'')+'</td><td>'+progress+'%</td><td>'+html(status)+'</td><td>'+html(displayDate(latest?latest.date:rowDate(r))||'-')+'</td><td>'+html(reportAssetRemarks(r,entries,sys))+'</td></tr>'}).join('')}).join('')||'<tr><td colspan="10">No matching assets.</td></tr>';return '<!doctype html><html><head><meta charset="utf-8"><title>AiP5 Master Progress Report</title><style>body{font-family:Arial,sans-serif;color:#17211f;margin:22px}button{float:right;padding:8px 12px}.muted{color:#60706b}.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:16px 0}.card{border:1px solid #d8e2de;padding:10px;border-radius:6px}.card strong{display:block;font-size:22px;margin-top:4px}.bar-report{display:grid;gap:8px;margin:12px 0}.bar-line{display:grid;grid-template-columns:150px minmax(120px,1fr) 70px;gap:8px;align-items:center;font-size:11px}.bar{height:11px;background:#dfe8e4;border-radius:99px;overflow:hidden}.bar span{display:block;height:100%;background:#1f7a5c}table{width:100%;border-collapse:collapse;font-size:9.3px;margin-top:10px}th,td{border:1px solid #d8e2de;padding:4px;text-align:left;vertical-align:top}th{background:#edf3f0}.remarks-col{min-width:210px}h1{margin:0 0 4px}h2{font-size:16px;margin-top:20px}@page{size:landscape;margin:8mm}@media print{button{display:none}body{margin:0}.bar-report{break-inside:avoid}}
+/* === Document Register v14 === */
+.doc-register{margin-top:14px;border:1px solid #263640;border-radius:8px;background:#0b151d;padding:14px;color:#f6fbf8}
+.doc-register .head{margin-bottom:10px}
+.doc-register .head h3{color:#fff}
+.doc-register .footnote,.doc-register label{color:#d4e1dc}
+.doc-register input,.doc-register select,.doc-register textarea{background:#0b151d!important;border-color:#263640!important;color:#f6fbf8!important}
+.doc-register-list{display:grid;gap:8px;max-height:260px;overflow:auto;margin-top:10px}
+.doc-card{border:1px solid #263640;border-radius:8px;background:#08131a;padding:10px;display:grid;gap:5px;font-size:12px}
+.doc-card strong{font-size:13px;color:#f6fbf8}
+.doc-card span{color:#b9c9c3;line-height:1.4}
+.doc-card-actions{display:flex;gap:7px;justify-content:flex-end}
+.doc-card-actions button{min-height:28px;border:1px solid #263640;border-radius:7px;background:#0b151d;color:#f6fbf8;padding:4px 8px}
+.field-user #documentRegisterForm,.field-user #saveDocumentBtn,.field-user #clearDocumentAttachmentBtn{display:none!important}
+.daily-entry-user #documentRegisterForm{display:grid!important}
+.daily-entry-user #saveDocumentBtn,.daily-entry-user #clearDocumentAttachmentBtn{display:inline-flex!important}
+</style></head><body><button onclick="window.print()">Print / Save PDF</button><h1>AiP5 BAB Field Master Progress Report</h1><p class="muted">Generated '+html(displayDateTime(new Date()))+'</p><p class="muted">Filters: '+html(filterSummary('master'))+'</p><div class="cards"><div class="card">Master Progress<strong>'+avg+'%</strong></div><div class="card">Matching Assets<strong>'+rows.length+'</strong></div><div class="card">Complete<strong>'+complete+'</strong></div><div class="card">In Progress<strong>'+inProgress+'</strong></div><div class="card">Not Started<strong>'+zero+'</strong></div></div>'+barChartHtml('Scope Progress Chart',scopeAverageData(rows))+barChartHtml('System Progress Chart',systemAverageData(rows))+'<h2>Latest Daily Entries (Max 10)</h2><table><thead><tr><th>Date</th><th>Asset</th><th>Scope</th><th>System</th><th>Activity</th><th>Work Step / Detail</th><th>Manual Tag</th><th>Link From → To</th><th>Shown As</th><th>Daily Qty</th><th>Daily %</th><th>Activity Total %</th><th>Permit</th><th>Doc Type</th><th>Doc Ref</th><th>Contractor</th><th>Remarks</th></tr></thead><tbody>'+latestRows+'</tbody></table><h2>Detailed Item / Activity Progress</h2><table><thead><tr><th>Site</th><th>System</th><th>Sub-System / Item</th><th>Activity</th><th>Work Step / Detail</th><th>Manual Tag</th><th>Link From → To</th><th>Shown As</th><th>Planned Qty</th><th>Done Qty</th><th>Progress</th><th>Status</th><th>Latest Update</th></tr></thead><tbody>'+detailRows+'</tbody></table><h2>Progressed Assets</h2><table><thead><tr><th>Asset</th><th>Category</th><th>Type</th><th>Location</th><th>System</th><th>Scope</th><th>Progress</th><th>Status</th><th>Latest update</th><th class="remarks-col">Remarks</th></tr></thead><tbody>'+assetRows+'</tbody></table>
+<script>
+/* === V15 REPORT/EXCEL/ROLE COLOR/FILTER/SITE VISIT PATCH === */
+(function(){
+  const V15_MARKER = 'REPORT_EXCEL_COLOR_FILTER_SITEVISIT_V16';
 
+  function safeHtml(v){
+    try { return html(v == null ? '' : String(v)); }
+    catch(e){ return String(v == null ? '' : v).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
+  }
+  function num(v){ const n = Number(v || 0); return isFinite(n) ? n : 0; }
+  function pct(v){ return Math.max(0, Math.min(100, Math.round(num(v)))); }
+  function safeDisplayDate(v){ try { return displayDate(v || ''); } catch(e){ return v || ''; } }
+  function safeDateValue(v){ try { return dateValue(v || ''); } catch(e){ return String(v || ''); } }
+  function safeStatus(p){ try { return statusFromProgress(p); } catch(e){ return p >= 100 ? 'Complete' : p > 0 ? 'In Progress' : 'Not Started'; } }
+  function uniq(arr){ return [...new Set((arr || []).filter(Boolean))]; }
+  function roleLabel(role){
+    const r = String(role || '').toLowerCase();
+    if(r === 'admin') return 'Admin entry';
+    if(r === 'daily_entry') return 'Daily entry user';
+    if(r === 'viewer') return 'Viewer';
+    return 'Legacy / unspecified';
+  }
+  function roleClass(role){
+    const r = String(role || '').toLowerCase();
+    if(r === 'admin') return 'role-admin-row';
+    if(r === 'daily_entry') return 'role-daily-row';
+    return 'role-legacy-row';
+  }
+  function roleRowStyle(role){
+    const r = String(role || '').toLowerCase();
+    if(r === 'admin') return 'border-left:6px solid #111827;background:#f7f7f7;';
+    if(r === 'daily_entry') return 'border-left:6px solid #1677c8;background:#edf7ff;';
+    return 'border-left:6px solid #9ca3af;background:#ffffff;';
+  }
+  function entryRole(e){ return e.enteredByRole || e.createdByRole || e.userRole || e.role || ''; }
+  function entryBy(e){ return e.enteredByEmail || e.createdByEmail || e.createdBy || e.userEmail || ''; }
+  function siteLabel(e){ return e.assetLabel || e.assetId || e.site || e.location || ''; }
+  function activityText(e){ return [e.specificItem, e.mainActivity, e.subActivity].filter(Boolean).join(' / ') || '-'; }
+  function linkText(e){ try { return linkDisplay(e) || ''; } catch(err){ return [e.linkFrom, e.linkTo].filter(Boolean).join(' → '); } }
+  function groupKey(e){ return [e.assetId || e.assetLabel || '', e.system || '', e.specificItem || '', e.mainActivity || '', e.subActivity || '', e.tag || '', linkText(e)].join('||'); }
+  function groupEntries(entries){
+    const map = new Map();
+    (entries || []).forEach(e => {
+      const k = groupKey(e);
+      if(!map.has(k)) map.set(k, []);
+      map.get(k).push(e);
+    });
+    return [...map.values()].map(list => {
+      const sorted = list.slice().sort((a,b)=>safeDateValue(b.date).localeCompare(safeDateValue(a.date)) || String(b.id||'').localeCompare(String(a.id||'')));
+      const latest = sorted[0] || {};
+      const plan = Math.max(...list.map(x => num(x.plannedQty)), 0);
+      const done = list.reduce((a,x)=> a + num(x.dailyQty), 0);
+      const progress = plan > 0 ? pct(done / plan * 100) : pct(latest.totalAfter || latest.dailyProgress || 0);
+      const balanceQty = plan > 0 ? Math.max(plan - done, 0) : 0;
+      const balancePct = Math.max(100 - progress, 0);
+      return {latest, list, plan, done, progress, balanceQty, balancePct, status:safeStatus(progress)};
+    }).sort((a,b)=>String(siteLabel(a.latest)).localeCompare(String(siteLabel(b.latest))) || String(a.latest.system||'').localeCompare(String(b.latest.system||'')) || String(a.latest.tag||'').localeCompare(String(b.latest.tag||'')));
+  }
+  function groupBy(entries, getter){
+    const out = new Map();
+    (entries || []).forEach(e => {
+      const key = getter(e) || 'Unspecified';
+      if(!out.has(key)) out.set(key, []);
+      out.get(key).push(e);
+    });
+    return [...out.entries()].map(([label, list]) => {
+      const groups = groupEntries(list);
+      const avg = groups.length ? Math.round(groups.reduce((a,g)=>a+g.progress,0)/groups.length) : 0;
+      const done = groups.reduce((a,g)=>a+g.done,0);
+      const plan = groups.reduce((a,g)=>a+g.plan,0);
+      const balance = groups.reduce((a,g)=>a+g.balanceQty,0);
+      return {label, count:list.length, progress:avg, done, plan, balance};
+    }).sort((a,b)=>b.progress-a.progress || b.count-a.count || String(a.label).localeCompare(String(b.label)));
+  }
+  function chartBars(title, rows, valueKey='progress', suffix='%'){
+    rows = (rows || []).slice(0,8);
+    if(!rows.length) return '<div class="chart-box"><h3>'+safeHtml(title)+'</h3><p class="muted">No data available for this chart.</p></div>';
+    return '<div class="chart-box"><h3>'+safeHtml(title)+'</h3><div class="bar-chart">'+rows.map(r=>{
+      const v = valueKey === 'count' ? num(r.count) : valueKey === 'balance' ? num(r.balance) : pct(r[valueKey]);
+      const width = valueKey === 'progress' ? pct(v) : pct((v / Math.max(...rows.map(x=>num(valueKey==='count'?x.count:x.balance)),1))*100);
+      const shown = valueKey === 'progress' ? v + suffix : v;
+      return '<div class="chart-row"><div class="chart-label">'+safeHtml(r.label)+'</div><div class="chart-track"><span style="width:'+width+'%"></span></div><div class="chart-value">'+safeHtml(shown)+'</div></div>';
+    }).join('')+'</div></div>';
+  }
+  function reportStyles(){
+    return '<style>'+[
+      '@page{size:A4 landscape;margin:7mm}',
+      '*{box-sizing:border-box}',
+      'body{font-family:Arial,Helvetica,sans-serif;color:#17211f;margin:14px;font-size:11.2px;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact}',
+      'button.print-btn{float:right;background:#1f7a5c;color:white;border:0;border-radius:6px;padding:8px 12px;font-weight:bold}',
+      'h1{margin:0;font-size:22px;line-height:1.15}',
+      'h2{font-size:15px;margin:16px 0 8px;border-bottom:2px solid #d8e2de;padding-bottom:4px}',
+      'h3{font-size:12px;margin:0 0 8px}',
+      '.muted{color:#60706b}',
+      '.header{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;border-bottom:3px solid #1f7a5c;padding-bottom:10px;margin-bottom:10px}',
+      '.meta{font-size:10.5px;color:#60706b;text-align:right}',
+      '.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:10px 0}',
+      '.card{border:1px solid #cfd9d5;background:#f8fbf9;border-radius:7px;padding:8px;min-height:58px}',
+      '.card span{display:block;color:#60706b;font-size:10px;font-weight:bold}',
+      '.card strong{display:block;font-size:18px;margin-top:4px;color:#17211f}',
+      '.legend{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:8px 0 12px;font-size:10.5px}',
+      '.legend span{display:inline-flex;align-items:center;gap:5px}',
+      '.sw{display:inline-block;width:18px;height:10px;border-radius:3px}',
+      '.sw-admin{background:#111827}.sw-daily{background:#1677c8}.sw-legacy{background:#9ca3af}',
+      '.charts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0;page-break-inside:avoid}',
+      '.chart-box{border:1px solid #d8e2de;border-radius:8px;background:#fbfdfc;padding:9px;min-height:125px;page-break-inside:avoid}',
+      '.chart-row{display:grid;grid-template-columns:175px 1fr 45px;gap:8px;align-items:center;margin:5px 0;font-size:9.8px}',
+      '.chart-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+      '.chart-track{height:9px;background:#e6eee9;border-radius:999px;overflow:hidden}',
+      '.chart-track span{display:block;height:100%;background:#1f7a5c;border-radius:999px}',
+      'table.report-table{width:100%;border-collapse:collapse;table-layout:fixed;margin-top:8px;font-size:10.1px}',
+      '.report-table th,.report-table td{border:1px solid #bfcac5;padding:4px 5px;text-align:left;vertical-align:top;word-break:break-word;overflow-wrap:anywhere}',
+      '.report-table th{background:#e8f1ed;color:#17211f;font-weight:bold}',
+      '.role-admin-row td{background:#f7f7f7!important}',
+      '.role-daily-row td{background:#edf7ff!important}',
+      '.role-legacy-row td{background:#fff!important}',
+      '.role-cell{font-weight:bold}',
+      '.admin-badge{color:#111827}.daily-badge{color:#1677c8}.legacy-badge{color:#6b7280}',
+      '.page-break{page-break-before:always}',
+      '@media print{button.print-btn{display:none}body{margin:0;font-size:10.7px}.header,.charts,.card,.chart-box{page-break-inside:avoid}thead{display:table-header-group}tr{page-break-inside:avoid}.report-table{font-size:9.8px}.report-table th,.report-table td{padding:3.5px}}'
+    ].join('')+'</style>';
+  }
+  function excelStyles(){
+    return '<style>'+[
+      'body{font-family:Arial,Helvetica,sans-serif;color:#17211f;font-size:11px}',
+      'h1{font-size:20px;color:#17211f}',
+      'h2{font-size:15px;color:#1f7a5c;border-bottom:2px solid #1f7a5c}',
+      '.cards{display:block;margin:8px 0}.card{display:inline-block;border:1px solid #1f7a5c;background:#edf7f2;padding:8px;margin:3px;min-width:120px}.card span{font-weight:bold;color:#60706b}.card strong{font-size:18px;color:#17211f}',
+      '.legend{margin:8px 0}.sw{display:inline-block;width:18px;height:10px}.sw-admin{background:#111827}.sw-daily{background:#1677c8}.sw-legacy{background:#9ca3af}',
+      '.charts{display:block}.chart-box{border:1px solid #bfcac5;background:#fbfdfc;padding:8px;margin:8px 0}.chart-row{display:block;margin:4px 0}.chart-label{display:inline-block;width:220px}.chart-track{display:inline-block;width:260px;height:11px;background:#e6eee9}.chart-track span{display:block;height:11px;background:#1f7a5c}.chart-value{display:inline-block;width:55px;text-align:right}',
+      'table.report-table{border-collapse:collapse;width:100%;font-size:10.5px}',
+      '.report-table th{background:#1f7a5c;color:white;font-weight:bold;border:1px solid #9fb4ac;padding:5px}',
+      '.report-table td{border:1px solid #bfcac5;padding:5px;mso-number-format:"\\@";vertical-align:top}',
+      '.role-admin-row td{background:#f2f2f2}.role-daily-row td{background:#e8f5ff}.role-legacy-row td{background:white}'
+    ].join('')+'</style>';
+  }
+  function reportShell(title, subtitle, cards, charts, sections, excel=false){
+    return '<!doctype html><html><head><meta charset="utf-8"><title>'+safeHtml(title)+'</title>'+(excel?excelStyles():reportStyles())+'</head><body>'+(
+      excel ? '' : '<button class="print-btn" onclick="window.print()">Print / Save PDF</button>'
+    )+'<div class="header"><div><h1>'+safeHtml(title)+'</h1><div class="muted">'+safeHtml(subtitle||'')+'</div></div><div class="meta">Generated: '+safeHtml(new Date().toLocaleString())+'<br>Project Telecom Progress Tracker</div></div>'+cards+'<div class="legend"><strong>Entry color coding:</strong><span><i class="sw sw-admin"></i> Admin entry</span><span><i class="sw sw-daily"></i> Authorized daily entry user</span><span><i class="sw sw-legacy"></i> Legacy / unspecified entry</span></div><div class="charts">'+charts+'</div>'+sections+'</body></html>';
+  }
+  function makeCards(items){ return '<div class="cards">'+items.map(c=>'<div class="card"><span>'+safeHtml(c.label)+'</span><strong>'+safeHtml(c.value)+'</strong></div>').join('')+'</div>'; }
+  function dailyRowsHtml(entries){
+    if(!entries.length) return '<tr><td colspan="18">No daily entries available.</td></tr>';
+    return entries.map(e=>{
+      const role = entryRole(e);
+      const badge = roleLabel(role);
+      return '<tr class="'+roleClass(role)+'" style="'+roleRowStyle(role)+'"><td>'+safeHtml(safeDisplayDate(e.date))+'</td><td>'+safeHtml(siteLabel(e))+'</td><td>'+safeHtml(e.system||'')+'</td><td>'+safeHtml(e.specificItem||'')+'</td><td>'+safeHtml(e.mainActivity||'')+'</td><td>'+safeHtml(e.subActivity||'')+'</td><td>'+safeHtml(e.tag||'')+'</td><td>'+safeHtml(linkText(e))+'</td><td>'+safeHtml(e.mirrorSide||'Original')+'</td><td>'+safeHtml((e.plannedQty||0)+' '+(e.uom||''))+'</td><td>'+safeHtml((e.dailyQty||0)+' '+(e.uom||''))+'</td><td>'+safeHtml((e.previousProgress||0)+'%')+'</td><td>'+safeHtml((e.dailyProgress||0)+'%')+'</td><td>'+safeHtml((e.totalAfter||0)+'%')+'</td><td>'+safeHtml(e.status||'')+'</td><td>'+safeHtml(e.docType||'')+' '+safeHtml(e.docRef||e.docNo||'')+'</td><td>'+safeHtml(e.contractor||'')+'</td><td class="role-cell">'+safeHtml(badge)+'</td></tr>';
+    }).join('');
+  }
+  function detailRowsHtml(groups){
+    if(!groups.length) return '<tr><td colspan="17">No detailed item/activity progress available.</td></tr>';
+    return groups.map(g=>{ const e = g.latest; const role = entryRole(e); return '<tr class="'+roleClass(role)+'" style="'+roleRowStyle(role)+'"><td>'+safeHtml(siteLabel(e))+'</td><td>'+safeHtml(e.system||'')+'</td><td>'+safeHtml(e.specificItem||'')+'</td><td>'+safeHtml(e.mainActivity||'')+'</td><td>'+safeHtml(e.subActivity||'')+'</td><td>'+safeHtml(e.tag||'')+'</td><td>'+safeHtml(linkText(e))+'</td><td>'+safeHtml(e.mirrorSide||'Original')+'</td><td>'+safeHtml((g.plan||0)+' '+(e.uom||''))+'</td><td>'+safeHtml((g.done||0)+' '+(e.uom||''))+'</td><td>'+safeHtml((g.balanceQty||0)+' '+(e.uom||''))+'</td><td>'+safeHtml(g.progress+'%')+'</td><td>'+safeHtml(g.balancePct+'%')+'</td><td>'+safeHtml(g.status)+'</td><td>'+safeHtml(safeDisplayDate(e.date)||'-')+'</td><td>'+safeHtml(roleLabel(role))+'</td><td>'+safeHtml(e.remarks||'')+'</td></tr>'; }).join('');
+  }
+  function documentSection(){
+    try{
+      const docs = (typeof documentEntries !== 'undefined' ? documentEntries : []) || [];
+      if(!docs.length) return '';
+      return '<h2>Document register</h2><table class="report-table"><thead><tr><th>Date</th><th>Type</th><th>Reference</th><th>Title</th><th>Signature Date</th><th>Status</th><th>Related Site</th><th>System</th><th>Remarks</th></tr></thead><tbody>'+docs.map(d=>'<tr><td>'+safeHtml(safeDisplayDate(d.date||d.receivedDate||''))+'</td><td>'+safeHtml(d.type||d.docType||'')+'</td><td>'+safeHtml(d.ref||d.docRef||d.number||'')+'</td><td>'+safeHtml(d.title||'')+'</td><td>'+safeHtml(safeDisplayDate(d.signatureDate||d.signedDate||''))+'</td><td>'+safeHtml(d.status||'')+'</td><td>'+safeHtml(d.assetLabel||d.assetId||d.site||'')+'</td><td>'+safeHtml(d.system||'')+'</td><td>'+safeHtml(d.remarks||'')+'</td></tr>').join('')+'</tbody></table>';
+    }catch(e){ return ''; }
+  }
+  function dailyChartHtml(entries){
+    const bySystem = groupBy(entries, e=>e.system);
+    const bySite = groupBy(entries, e=>siteLabel(e));
+    const top = groupEntries(entries).map(g=>({label:[siteLabel(g.latest), g.latest.system, g.latest.tag || g.latest.specificItem].filter(Boolean).join(' / '), progress:g.progress, balance:g.balanceQty, count:g.list.length})).sort((a,b)=>b.progress-a.progress).slice(0,8);
+    const balance = groupEntries(entries).map(g=>({label:[siteLabel(g.latest), g.latest.system, g.latest.tag || g.latest.specificItem].filter(Boolean).join(' / '), progress:g.progress, balance:g.balanceQty, count:g.list.length})).sort((a,b)=>b.balance-a.balance).slice(0,8);
+    return chartBars('Progress by system', bySystem) + chartBars('Progress by site', bySite) + chartBars('Top site / activity / tag progress', top) + chartBars('Highest remaining balance', balance, 'balance', '');
+  }
+  function dailyReportRows(){
+    let entries = [];
+    try { entries = reportEntriesWithMirrors(filteredDailyEntries('daily')); }
+    catch(e){ entries = (typeof dailyEntries !== 'undefined' ? dailyEntries : []); }
+    return entries.slice().sort((a,b)=>safeDateValue(b.date).localeCompare(safeDateValue(a.date)) || String(b.id||'').localeCompare(String(a.id||'')));
+  }
+  function masterReportRows(){
+    let entries = [];
+    try { entries = reportEntriesWithMirrors(filteredDailyEntries('master')); }
+    catch(e){ entries = (typeof dailyEntries !== 'undefined' ? dailyEntries : []); }
+    return entries.slice().sort((a,b)=>safeDateValue(b.date).localeCompare(safeDateValue(a.date)) || String(b.id||'').localeCompare(String(a.id||'')));
+  }
+
+  try {
+    const originalCollectDailyEntry = collectDailyEntry;
+    collectDailyEntry = function(existing=null, preview=false){
+      const entry = originalCollectDailyEntry(existing, preview);
+      if(!preview){
+        entry.enteredByEmail = existing?.enteredByEmail || (typeof currentUserEmail !== 'undefined' ? currentUserEmail : '') || '';
+        entry.enteredByRole = existing?.enteredByRole || (typeof currentUserRole !== 'undefined' ? currentUserRole : '') || '';
+        entry.enteredAt = existing?.enteredAt || new Date().toISOString();
+      }
+      return entry;
+    };
+  } catch(err) { console.warn(V15_MARKER, 'collectDailyEntry patch skipped', err); }
+
+  try {
+    const originalSystemChoicesFor = systemChoicesFor;
+    systemChoicesFor = function(row){
+      const base = originalSystemChoicesFor(row) || [];
+      return uniq(['Site Visit / Pre-Work', ...base]);
+    };
+    if(typeof specificItems !== 'undefined'){
+      specificItems['Site Visit / Pre-Work'] = [
+        'Pre-work site visit',
+        'Route / location walkdown',
+        'Constructability review',
+        'Existing facility verification',
+        'Engineering clarification / redline',
+        'Permit / access coordination',
+        'HSE / SIMOPS review',
+        'Site visit report / action list'
+      ];
+    }
+    if(typeof subsystemActivityCatalog !== 'undefined'){
+      subsystemActivityCatalog['Site Visit / Pre-Work'] = {
+        'Pre-work site visit': {'Site visit': ['Visit request / schedule','Site walkdown','Photo record','Action list','Visit report']},
+        'Route / location walkdown': {'Route walkdown': ['Route verification','Existing obstruction check','Tie-in point verification','Access confirmation','Redline markup']},
+        'Constructability review': {'Constructability review': ['Installation feasibility check','Space / clearance check','Cable route feasibility','Required materials note','Construction recommendation']},
+        'Existing facility verification': {'Existing facility check': ['Existing cabinet check','Existing cable / port check','Power availability check','Grounding availability check','Interface verification']},
+        'Engineering clarification / redline': {'Engineering clarification': ['Drawing review','Site redline','TQ/RFI input','Engineering action follow-up','Final clarification record']},
+        'Permit / access coordination': {'Permit coordination': ['PTW requirement check','Access coordination','SIMOPS coordination','Workfront readiness','Permit status update']},
+        'HSE / SIMOPS review': {'HSE / SIMOPS review': ['Hazard identification','SIMOPS constraint review','Work method alignment','Safety observation','HSE clearance note']},
+        'Site visit report / action list': {'Report and actions': ['Report preparation','Photo attachment','Action owner assignment','Due date follow-up','Close-out update']}
+      };
+    }
+  } catch(err) { console.warn(V15_MARKER, 'site visit patch skipped', err); }
+
+  dailyReportHtml = function(excel=false){
+    const entries = dailyReportRows();
+    const groups = groupEntries(entries);
+    const avg = groups.length ? Math.round(groups.reduce((a,g)=>a+g.progress,0)/groups.length) : 0;
+    const cards = makeCards([
+      {label:'Selected entries', value:entries.length},
+      {label:'Activity groups', value:groups.length},
+      {label:'Average activity progress', value:avg+'%'},
+      {label:'Systems covered', value:groupBy(entries,e=>e.system).length},
+      {label:'Sites covered', value:groupBy(entries,e=>siteLabel(e)).length}
+    ]);
+    const sections = '<h2>Daily progress entries</h2><table class="report-table"><thead><tr><th>Date</th><th>Site</th><th>System</th><th>Sub-System / Item</th><th>Activity</th><th>Work Step</th><th>Manual Tag</th><th>Link From → To</th><th>Shown As</th><th>Planned Qty</th><th>Daily Qty</th><th>Previous %</th><th>Daily %</th><th>Total %</th><th>Status</th><th>Document</th><th>Contractor</th><th>Entry Color</th></tr></thead><tbody>'+dailyRowsHtml(entries)+'</tbody></table>'+documentSection();
+    return reportShell('Daily Progress Report','Filtered daily progress entries with site/system/activity/tag color coding.',cards,dailyChartHtml(entries),sections,excel);
+  };
+  reportHtml = function(){ return dailyReportHtml(false); };
+
+  masterReportHtml = function(excel=false){
+    const entries = masterReportRows();
+    const groups = groupEntries(entries);
+    let baseRows = [];
+    try { baseRows = filteredMasterRows(); } catch(e){ baseRows = []; }
+    const avg = groups.length ? Math.round(groups.reduce((a,g)=>a+g.progress,0)/groups.length) : 0;
+    const complete = groups.filter(g=>g.progress>=100).length;
+    const inProgress = groups.filter(g=>g.progress>0&&g.progress<100).length;
+    const balanceQty = groups.reduce((a,g)=>a+g.balanceQty,0);
+    const cards = makeCards([
+      {label:'Total tracked assets', value:baseRows.length || 'All'},
+      {label:'Activity groups with progress', value:groups.length},
+      {label:'Average activity progress', value:avg+'%'},
+      {label:'Completed activity groups', value:complete},
+      {label:'Remaining balance qty', value:Math.round(balanceQty*100)/100}
+    ]);
+    const charts = chartBars('Master progress by system', groupBy(entries,e=>e.system)) + chartBars('Master progress by site', groupBy(entries,e=>siteLabel(e))) + chartBars('Top site / activity / tag progress', groups.map(g=>({label:[siteLabel(g.latest), g.latest.system, g.latest.tag || g.latest.specificItem].filter(Boolean).join(' / '), progress:g.progress, balance:g.balanceQty, count:g.list.length})).sort((a,b)=>b.progress-a.progress).slice(0,8)) + chartBars('Highest remaining balance', groups.map(g=>({label:[siteLabel(g.latest), g.latest.system, g.latest.tag || g.latest.specificItem].filter(Boolean).join(' / '), progress:g.progress, balance:g.balanceQty, count:g.list.length})).sort((a,b)=>b.balance-a.balance).slice(0,8),'balance','');
+    const detailSection = '<h2>Detailed item / activity progress</h2><table class="report-table"><thead><tr><th>Site</th><th>System</th><th>Sub-System / Item</th><th>Activity</th><th>Work Step</th><th>Manual Tag</th><th>Link From → To</th><th>Shown As</th><th>Planned Qty</th><th>Cumulative Done Qty</th><th>Balance Qty</th><th>Progress %</th><th>Balance %</th><th>Status</th><th>Latest Date</th><th>Entry Color</th><th>Remarks</th></tr></thead><tbody>'+detailRowsHtml(groups)+'</tbody></table>';
+    const latestSection = '<h2>Latest daily entries</h2><table class="report-table"><thead><tr><th>Date</th><th>Site</th><th>System</th><th>Sub-System / Item</th><th>Activity</th><th>Work Step</th><th>Manual Tag</th><th>Link From → To</th><th>Shown As</th><th>Planned Qty</th><th>Daily Qty</th><th>Previous %</th><th>Daily %</th><th>Total %</th><th>Status</th><th>Document</th><th>Contractor</th><th>Entry Color</th></tr></thead><tbody>'+dailyRowsHtml(entries.slice(0,50))+'</tbody></table>';
+    return reportShell('Master Progress Report','Overall progress based on saved daily entries, grouped by site/system/activity/tag.',cards,charts,detailSection+latestSection+documentSection(),excel);
+  };
+
+  openDailyReport = function(print=true){ if(!requireExport())return; const w=window.open('','_blank'); w.document.write(dailyReportHtml(false)); w.document.close(); if(print){w.focus();setTimeout(()=>w.print(),350);} };
+  exportDailyExcel = function(){ if(!requireExport())return; const blob=new Blob(['\ufeff'+dailyReportHtml(true)],{type:'application/vnd.ms-excel;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='telecom-daily-progress-styled-report.xls'; a.click(); URL.revokeObjectURL(a.href); };
+  openMasterReport = function(print=true){ if(!requireExport())return; const w=window.open('','_blank'); w.document.write(masterReportHtml(false)); w.document.close(); if(print){w.focus();setTimeout(()=>w.print(),350);} };
+  exportMasterExcel = function(){ if(!requireExport())return; const blob=new Blob(['\ufeff'+masterReportHtml(true)],{type:'application/vnd.ms-excel;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='telecom-master-progress-styled-report.xls'; a.click(); URL.revokeObjectURL(a.href); };
+  openReport = function(print=true){ return openDailyReport(print); };
+  exportExcel = function(){ return exportDailyExcel(); };
+
+  function addDailyFilterReportButtons(){
+    try{
+      const actions = document.querySelector('#clearDailyFiltersBtn')?.parentElement;
+      if(actions && !document.querySelector('#dailyLogPrintBtn')){
+        const printBtn = document.createElement('button');
+        printBtn.className='btn'; printBtn.type='button'; printBtn.id='dailyLogPrintBtn'; printBtn.innerHTML='<span>Print filtered daily</span>';
+        const exportBtn = document.createElement('button');
+        exportBtn.className='btn'; exportBtn.type='button'; exportBtn.id='dailyLogExportBtn'; exportBtn.innerHTML='<span>Export filtered daily</span>';
+        actions.insertBefore(printBtn, actions.firstChild);
+        actions.insertBefore(exportBtn, actions.children[1] || null);
+        printBtn.addEventListener('click',()=>openDailyReport(true));
+        exportBtn.addEventListener('click',()=>exportDailyExcel());
+      }
+    }catch(err){ console.warn(V15_MARKER, 'daily filter buttons skipped', err); }
+  }
+  function addEntryRoleNotice(){
+    try{
+      const notice = document.querySelector('#viewerNotice');
+      if(notice && String(typeof currentUserRole !== 'undefined' ? currentUserRole : '') === 'daily_entry'){
+        notice.style.display='block';
+        notice.textContent='Daily Entry mode: entries saved by this user are color-coded blue in reports.';
+      }
+    }catch(err){}
+  }
+  document.addEventListener('DOMContentLoaded',()=>{ setTimeout(()=>{ addDailyFilterReportButtons(); addEntryRoleNotice(); try{ if(typeof renderSystemChoices==='function') renderSystemChoices(); }catch(e){} },600); });
+  setTimeout(()=>{ addDailyFilterReportButtons(); },1500);
+
+  window[V15_MARKER] = true;
+})();
+
+</script>
+</body></html>'}
+
+function dailyReportHtml(){
+  const rows=reportEntriesWithMirrors([...dailyEntries]).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+  const table=rows.length?rows.map(e=>'<tr><td>'+html(displayDate(e.date||''))+'</td><td>'+html(e.assetLabel||e.assetId||'')+'</td><td>'+html(e.system||'')+'</td><td>'+html([e.specificItem,e.mainActivity,e.subActivity].filter(Boolean).join(' / '))+'</td><td>'+html(e.tag||'')+'</td><td>'+html(linkDisplay(e)||'')+'</td><td>'+html(e.mirrorSide||'Original')+'</td><td>'+html((e.dailyQty||0)+' '+(e.uom||''))+'</td><td>'+html((e.previousProgress||0)+'%')+'</td><td>'+html((e.dailyProgress||0)+'%')+'</td><td>'+html((e.totalAfter||0)+'%')+'</td><td>'+html(e.status||'')+'</td><td>'+html(e.permitNo||'')+'</td><td>'+html(e.docRef||e.docNo||'')+'</td><td>'+html(e.contractor||'')+'</td><td>'+html(e.remarks||'')+'</td></tr>').join(''):'<tr><td colspan="16">No daily entries available.</td></tr>';
+  return '<!doctype html><html><head><meta charset="utf-8"><title>Daily Progress Report</title><style>body{font-family:Arial,sans-serif;margin:24px;color:#17211f}h1{margin:0 0 6px;font-size:22px}p{margin:0 0 16px;color:#60706b}table{border-collapse:collapse;width:100%;font-size:11px}th,td{border:1px solid #d8e2de;padding:7px;text-align:left;vertical-align:top}th{background:#f7faf8;color:#60706b}.meta{margin-bottom:14px;font-size:12px;color:#60706b}
+/* === Document Register v14 === */
+.doc-register{margin-top:14px;border:1px solid #263640;border-radius:8px;background:#0b151d;padding:14px;color:#f6fbf8}
+.doc-register .head{margin-bottom:10px}
+.doc-register .head h3{color:#fff}
+.doc-register .footnote,.doc-register label{color:#d4e1dc}
+.doc-register input,.doc-register select,.doc-register textarea{background:#0b151d!important;border-color:#263640!important;color:#f6fbf8!important}
+.doc-register-list{display:grid;gap:8px;max-height:260px;overflow:auto;margin-top:10px}
+.doc-card{border:1px solid #263640;border-radius:8px;background:#08131a;padding:10px;display:grid;gap:5px;font-size:12px}
+.doc-card strong{font-size:13px;color:#f6fbf8}
+.doc-card span{color:#b9c9c3;line-height:1.4}
+.doc-card-actions{display:flex;gap:7px;justify-content:flex-end}
+.doc-card-actions button{min-height:28px;border:1px solid #263640;border-radius:7px;background:#0b151d;color:#f6fbf8;padding:4px 8px}
+.field-user #documentRegisterForm,.field-user #saveDocumentBtn,.field-user #clearDocumentAttachmentBtn{display:none!important}
+.daily-entry-user #documentRegisterForm{display:grid!important}
+.daily-entry-user #saveDocumentBtn,.daily-entry-user #clearDocumentAttachmentBtn{display:inline-flex!important}
+</style></head><body><h1>Daily Progress Report</h1><p>Telecom progress daily log</p><div class="meta">Generated: '+html(new Date().toLocaleString())+' | Entries: '+rows.length+'</div><table><thead><tr><th>Date</th><th>Site</th><th>System</th><th>Activity</th><th>Manual Tag</th><th>Link From → To</th><th>Shown As</th><th>Daily Qty</th><th>Previous</th><th>Daily %</th><th>Total</th><th>Status</th><th>Permit</th><th>Document</th><th>Contractor</th><th>Remarks</th></tr></thead><tbody>'+table+'</tbody></table></body></html>';
+}
+function openDailyReport(print=true){if(!requireExport())return;const w=window.open('','_blank');w.document.write(dailyReportHtml());w.document.close();if(print){w.focus();setTimeout(()=>w.print(),250)}}
+function exportDailyExcel(){if(!requireExport())return;const blob=new Blob(['\ufeff'+dailyReportHtml()],{type:'application/vnd.ms-excel'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='aip5-daily-progress-report.xls';a.click();URL.revokeObjectURL(a.href)}
+function openMasterReport(print=true){if(!requireExport())return;const w=window.open('','_blank');w.document.write(masterReportHtml());w.document.close();if(print){w.focus();setTimeout(()=>w.print(),250)}}
+function exportMasterExcel(){if(!requireExport())return;const blob=new Blob(['\ufeff'+masterReportHtml()],{type:'application/vnd.ms-excel'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='aip5-master-progress-report.xls';a.click();URL.revokeObjectURL(a.href)}
+function openReport(print=true){if(!requireExport())return;const w=window.open('','_blank');w.document.write(reportHtml());w.document.close();if(print){w.focus();setTimeout(()=>w.print(),250)}}
+function exportExcel(){if(!requireExport())return;const blob=new Blob(['\ufeff'+reportHtml()],{type:'application/vnd.ms-excel'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='aip5-telecom-progress-report.xls';a.click();URL.revokeObjectURL(a.href)}
 function renderAll(full=true){renderKpis();renderRows();renderAttention();renderLog();renderChart();renderDocumentRegister();if(full){renderSummary();renderMatrix();renderActivities()}showAppControls()}
 function showAppControls(){const app=$('#appShell');if(app)app.classList.remove('readonly')}
 /* === Email Access Gate === */
@@ -3047,7 +3399,23 @@ function dailyReportHtml(){
   const table=entries.length?entries.map(e=>reportDailyRowV12(e,entries)).join(''):'<tr><td colspan="23">No daily entries match the filters.</td></tr>';
   const details=groups.length?groups.map(detailRowHtmlV12).join(''):'<tr><td colspan="15">No detailed item/activity progress available.</td></tr>';
   const charts='<div class="charts-grid">'+barChartHtml('Progress by system',entrySystemChartDataV13(entries))+barChartHtml('Top activity / tag progress',activityChartDataV13(groups))+'</div><div class="charts-grid">'+barChartHtml('Highest remaining balance',balanceChartDataV13(groups))+barChartHtml('Scope progress',scopeAverageData(allRows()))+'</div>';
-  return '<!doctype html><html><head><meta charset="utf-8"><title>Daily Progress Report</title><style>'+reportCssV12()+'</style></head><body>'+reportHeaderHtmlV13('Daily Progress Report','Daily entries, activity/tag progress, balance, and supporting details.','daily')+'<div class="cards avoid-break"><div class="card">Daily Entries<strong>'+entries.length+'</strong></div><div class="card">Activities / Tags<strong>'+groups.length+'</strong></div><div class="card">Avg Activity Progress<strong>'+avg+'%</strong></div><div class="card">Avg Balance<strong>'+balance+'%</strong></div><div class="card">Complete Activities<strong>'+completeCount+'</strong></div><div class="card">In Progress<strong>'+inProgressCount+'</strong></div></div>'+charts+'<h2 class="section-title">Daily Progress Log</h2><div class="wide-note">This table is fitted for A4 landscape print/PDF. Long remarks and tags wrap inside the cells instead of cutting the page.</div><table class="report-table compact-table"><thead>'+dailyHeaderHtmlV12()+'</thead><tbody>'+table+'</tbody></table><h2 class="section-title page-break">Activity / Tag Balance Summary</h2><table class="report-table summary-table"><thead>'+detailHeaderHtmlV12()+'</thead><tbody>'+details+'</tbody></table>'+documentRegisterReportSection('daily')+documentRegisterReportSection('master')+reportFooterHtmlV13()+'</body></html>';
+  return '<!doctype html><html><head><meta charset="utf-8"><title>Daily Progress Report</title><style>'+reportCssV12()+'
+/* === Document Register v14 === */
+.doc-register{margin-top:14px;border:1px solid #263640;border-radius:8px;background:#0b151d;padding:14px;color:#f6fbf8}
+.doc-register .head{margin-bottom:10px}
+.doc-register .head h3{color:#fff}
+.doc-register .footnote,.doc-register label{color:#d4e1dc}
+.doc-register input,.doc-register select,.doc-register textarea{background:#0b151d!important;border-color:#263640!important;color:#f6fbf8!important}
+.doc-register-list{display:grid;gap:8px;max-height:260px;overflow:auto;margin-top:10px}
+.doc-card{border:1px solid #263640;border-radius:8px;background:#08131a;padding:10px;display:grid;gap:5px;font-size:12px}
+.doc-card strong{font-size:13px;color:#f6fbf8}
+.doc-card span{color:#b9c9c3;line-height:1.4}
+.doc-card-actions{display:flex;gap:7px;justify-content:flex-end}
+.doc-card-actions button{min-height:28px;border:1px solid #263640;border-radius:7px;background:#0b151d;color:#f6fbf8;padding:4px 8px}
+.field-user #documentRegisterForm,.field-user #saveDocumentBtn,.field-user #clearDocumentAttachmentBtn{display:none!important}
+.daily-entry-user #documentRegisterForm{display:grid!important}
+.daily-entry-user #saveDocumentBtn,.daily-entry-user #clearDocumentAttachmentBtn{display:inline-flex!important}
+</style></head><body>'+reportHeaderHtmlV13('Daily Progress Report','Daily entries, activity/tag progress, balance, and supporting details.','daily')+'<div class="cards avoid-break"><div class="card">Daily Entries<strong>'+entries.length+'</strong></div><div class="card">Activities / Tags<strong>'+groups.length+'</strong></div><div class="card">Avg Activity Progress<strong>'+avg+'%</strong></div><div class="card">Avg Balance<strong>'+balance+'%</strong></div><div class="card">Complete Activities<strong>'+completeCount+'</strong></div><div class="card">In Progress<strong>'+inProgressCount+'</strong></div></div>'+charts+'<h2 class="section-title">Daily Progress Log</h2><div class="wide-note">This table is fitted for A4 landscape print/PDF. Long remarks and tags wrap inside the cells instead of cutting the page.</div><table class="report-table compact-table"><thead>'+dailyHeaderHtmlV12()+'</thead><tbody>'+table+'</tbody></table><h2 class="section-title page-break">Activity / Tag Balance Summary</h2><table class="report-table summary-table"><thead>'+detailHeaderHtmlV12()+'</thead><tbody>'+details+'</tbody></table>'+documentRegisterReportSection('daily')+documentRegisterReportSection('master')+reportFooterHtmlV13()+'</body></html>';
 }
 function masterReportHtml(){
   const rows=filteredMasterRows();
@@ -3063,7 +3431,23 @@ function masterReportHtml(){
   const details=groups.length?groups.map(detailRowHtmlV12).join(''):'<tr><td colspan="15">No detailed item/activity progress available.</td></tr>';
   const assetRows=assetSystemRowsV12(rows,entries);
   const charts='<div class="charts-grid">'+barChartHtml('Master progress by scope',scopeAverageData(rows))+barChartHtml('Master progress by system',systemAverageData(rows))+'</div><div class="charts-grid">'+barChartHtml('Activity / tag progress',activityChartDataV13(groups))+barChartHtml('Highest remaining balance',balanceChartDataV13(groups))+'</div>';
-  return '<!doctype html><html><head><meta charset="utf-8"><title>Master Progress Report</title><style>'+reportCssV12()+'</style></head><body>'+reportHeaderHtmlV13('Master Progress Report','Overall site/system progress, activity/tag balance, latest daily entries, and detailed progress summary.','master')+'<div class="cards avoid-break"><div class="card">Master Progress<strong>'+avg+'%</strong></div><div class="card">Balance<strong>'+balance+'%</strong></div><div class="card">Matching Assets<strong>'+rows.length+'</strong></div><div class="card">Complete<strong>'+complete+'</strong></div><div class="card">In Progress<strong>'+inProgress+'</strong></div><div class="card">Not Started<strong>'+zero+'</strong></div></div>'+charts+'<h2 class="section-title">Latest Daily Entries</h2><table class="report-table compact-table"><thead>'+dailyHeaderHtmlV12()+'</thead><tbody>'+latestRows+'</tbody></table><h2 class="section-title page-break">Detailed Item / Activity Progress & Balance</h2><table class="report-table summary-table"><thead>'+detailHeaderHtmlV12()+'</thead><tbody>'+details+'</tbody></table><h2 class="section-title page-break">All Site / System Progress Summary</h2><table class="report-table summary-table"><thead><tr><th>Site</th><th>Category</th><th>Type</th><th>Location</th><th>System</th><th>Scope</th><th>Progress</th><th>Balance</th><th>Status</th><th>Latest Update</th><th class="remarks-col">Remarks</th></tr></thead><tbody>'+assetRows+'</tbody></table>'+reportFooterHtmlV13()+'</body></html>';
+  return '<!doctype html><html><head><meta charset="utf-8"><title>Master Progress Report</title><style>'+reportCssV12()+'
+/* === Document Register v14 === */
+.doc-register{margin-top:14px;border:1px solid #263640;border-radius:8px;background:#0b151d;padding:14px;color:#f6fbf8}
+.doc-register .head{margin-bottom:10px}
+.doc-register .head h3{color:#fff}
+.doc-register .footnote,.doc-register label{color:#d4e1dc}
+.doc-register input,.doc-register select,.doc-register textarea{background:#0b151d!important;border-color:#263640!important;color:#f6fbf8!important}
+.doc-register-list{display:grid;gap:8px;max-height:260px;overflow:auto;margin-top:10px}
+.doc-card{border:1px solid #263640;border-radius:8px;background:#08131a;padding:10px;display:grid;gap:5px;font-size:12px}
+.doc-card strong{font-size:13px;color:#f6fbf8}
+.doc-card span{color:#b9c9c3;line-height:1.4}
+.doc-card-actions{display:flex;gap:7px;justify-content:flex-end}
+.doc-card-actions button{min-height:28px;border:1px solid #263640;border-radius:7px;background:#0b151d;color:#f6fbf8;padding:4px 8px}
+.field-user #documentRegisterForm,.field-user #saveDocumentBtn,.field-user #clearDocumentAttachmentBtn{display:none!important}
+.daily-entry-user #documentRegisterForm{display:grid!important}
+.daily-entry-user #saveDocumentBtn,.daily-entry-user #clearDocumentAttachmentBtn{display:inline-flex!important}
+</style></head><body>'+reportHeaderHtmlV13('Master Progress Report','Overall site/system progress, activity/tag balance, latest daily entries, and detailed progress summary.','master')+'<div class="cards avoid-break"><div class="card">Master Progress<strong>'+avg+'%</strong></div><div class="card">Balance<strong>'+balance+'%</strong></div><div class="card">Matching Assets<strong>'+rows.length+'</strong></div><div class="card">Complete<strong>'+complete+'</strong></div><div class="card">In Progress<strong>'+inProgress+'</strong></div><div class="card">Not Started<strong>'+zero+'</strong></div></div>'+charts+'<h2 class="section-title">Latest Daily Entries</h2><table class="report-table compact-table"><thead>'+dailyHeaderHtmlV12()+'</thead><tbody>'+latestRows+'</tbody></table><h2 class="section-title page-break">Detailed Item / Activity Progress & Balance</h2><table class="report-table summary-table"><thead>'+detailHeaderHtmlV12()+'</thead><tbody>'+details+'</tbody></table><h2 class="section-title page-break">All Site / System Progress Summary</h2><table class="report-table summary-table"><thead><tr><th>Site</th><th>Category</th><th>Type</th><th>Location</th><th>System</th><th>Scope</th><th>Progress</th><th>Balance</th><th>Status</th><th>Latest Update</th><th class="remarks-col">Remarks</th></tr></thead><tbody>'+assetRows+'</tbody></table>'+reportFooterHtmlV13()+'</body></html>';
 }
 function reportHtml(){return dailyReportHtml()}
 function safeOpenHtmlReportV12(htmlText,print){
@@ -3099,6 +3483,176 @@ function trendData(){
     return {date:d,total:Math.min(100,Math.round(assetProgress/totalAssets))};
   });
 }
+
+
+/* === V16 MASTER MULTI-FILTER + MIRROR ACTIVITY PATCH === */
+(function(){
+  const __origReportEntriesWithMirrors = typeof reportEntriesWithMirrors === 'function' ? reportEntriesWithMirrors : null;
+  function multiValues(id){
+    const el = document.getElementById(id);
+    if(!el) return [];
+    if(el.multiple){
+      return Array.from(el.selectedOptions || []).map(o=>o.value).filter(v=>v && v !== 'all');
+    }
+    const v = el.value || '';
+    return v && v !== 'all' ? [v] : [];
+  }
+  function anySelected(list, value){
+    if(!list || !list.length) return true;
+    return list.includes(value);
+  }
+  function entryStatus(e){
+    try{return statusFromProgress(Number(e.totalAfter || e.progress || e.dailyProgress || 0));}
+    catch(err){const p=Number(e.totalAfter || e.progress || e.dailyProgress || 0);return p>=100?'Complete':p>0?'In Progress':'Not Started';}
+  }
+  function rowSystemList(r){return String(r && r.system || '').split(',').map(x=>x.trim()).filter(Boolean);}
+  function rawMirroredEntries(entries){
+    if(__origReportEntriesWithMirrors) return __origReportEntriesWithMirrors(entries || []);
+    return entries || [];
+  }
+  function matchesMasterEntry(e,f){
+    if(!anySelected(f.sites, e.assetId)) return false;
+    if(f.systems.length && !f.systems.includes(e.system)) return false;
+    if(f.scopes.length && !f.scopes.includes(e.projectScope)) return false;
+    if(f.statuses.length && !f.statuses.includes(entryStatus(e))) return false;
+    const p = Number(e.totalAfter || e.dailyProgress || 0);
+    if(f.min!=null && p < f.min) return false;
+    if(f.max!=null && p > f.max) return false;
+    if(!inDateRange(e.date, f.from, f.to)) return false;
+    return true;
+  }
+  function masterFilterState(){
+    return {
+      sites: multiValues('masterFilterSite'),
+      systems: multiValues('masterFilterSystem'),
+      scopes: multiValues('masterFilterScope'),
+      statuses: multiValues('masterFilterStatus'),
+      min: numberOrNull(valueOf('masterFilterMin')),
+      max: numberOrNull(valueOf('masterFilterMax')),
+      from: valueOf('masterFilterFrom'),
+      to: valueOf('masterFilterTo'),
+      sort: valueOf('masterFilterSort') || 'progressLatest'
+    };
+  }
+  const __oldFilterState = typeof filterState === 'function' ? filterState : null;
+  filterState = function(prefix){
+    if(prefix === 'master') return masterFilterState();
+    return __oldFilterState ? __oldFilterState(prefix) : {};
+  };
+  const __oldEntryMatches = typeof entryMatches === 'function' ? entryMatches : null;
+  entryMatches = function(e,f){
+    if(f && (Array.isArray(f.sites) || Array.isArray(f.systems) || Array.isArray(f.scopes) || Array.isArray(f.statuses))) return matchesMasterEntry(e,f);
+    return __oldEntryMatches ? __oldEntryMatches(e,f) : true;
+  };
+  const __oldRowMatches = typeof rowMatches === 'function' ? rowMatches : null;
+  rowMatches = function(r,f){
+    if(!(f && (Array.isArray(f.sites) || Array.isArray(f.systems) || Array.isArray(f.scopes) || Array.isArray(f.statuses)))){
+      return __oldRowMatches ? __oldRowMatches(r,f) : true;
+    }
+    const related = rawMirroredEntries(dailyEntries || []).filter(e=>String(e.assetId||'') === String(r.id||''));
+    if(!anySelected(f.sites, r.id)) return false;
+    if(f.systems.length){
+      const direct = rowSystemList(r).some(sys=>f.systems.includes(sys));
+      const fromEntry = related.some(e=>f.systems.includes(e.system));
+      if(!direct && !fromEntry) return false;
+    }
+    if(f.scopes.length){
+      const direct = f.scopes.includes(r.scope || 'New');
+      const fromEntry = related.some(e=>f.scopes.includes(e.projectScope));
+      if(!direct && !fromEntry) return false;
+    }
+    if(f.statuses.length){
+      const rp = related.length ? aggregateGroupedProgress(groupedByEntryKey(related)) : Number(r.progress || 0);
+      if(!f.statuses.includes(statusFromProgress(rp))) return false;
+    }
+    const progress = related.length ? aggregateGroupedProgress(groupedByEntryKey(related)) : Number(r.progress || 0);
+    if(f.min!=null && progress < f.min) return false;
+    if(f.max!=null && progress > f.max) return false;
+    const latest = related.map(e=>dateValue(e.date)).filter(Boolean).sort().pop() || rowDate(r);
+    if(!inDateRange(latest, f.from, f.to)) return false;
+    return true;
+  };
+  filteredDailyEntries = function(prefix='daily'){
+    const f = filterState(prefix);
+    if(prefix === 'master'){
+      return rawMirroredEntries(dailyEntries || [])
+        .filter(e=>entryMatches(e,f))
+        .sort((a,b)=>dateValue(b.date).localeCompare(dateValue(a.date)) || String(b.id).localeCompare(String(a.id)));
+    }
+    return (dailyEntries || []).filter(e=>entryMatches(e,f)).sort((a,b)=>dateValue(b.date).localeCompare(dateValue(a.date)) || Number(b.id)-Number(a.id));
+  };
+  filteredMasterRows = function(){
+    const f = filterState('master');
+    const mirrored = rawMirroredEntries(dailyEntries || []);
+    const rows = allRows().filter(r=>rowMatches(r,f)).map(r=>{
+      const related = mirrored.filter(e=>String(e.assetId||'') === String(r.id||'') && matchesMasterEntry(e,Object.assign({},f,{sites:[]})));
+      if(!related.length) return r;
+      const progress = aggregateGroupedProgress(groupedByEntryKey(related));
+      const latest = related.slice().sort((a,b)=>dateValue(b.date).localeCompare(dateValue(a.date))||String(b.id).localeCompare(String(a.id)))[0] || {};
+      return Object.assign({}, r, {
+        progress,
+        status: statusFromProgress(progress),
+        scope: latest.projectScope || r.scope,
+        lastUpdate: latest.date || r.lastUpdate
+      });
+    });
+    return sortMasterRows(rows);
+  };
+  reportEntriesWithMirrors = function(entries){
+    if((entries || []).some(e=>e && e.mirrorSide === 'Mirrored')) return entries || [];
+    return rawMirroredEntries(entries || []);
+  };
+  const __oldReportSystemsForAsset = typeof reportSystemsForAsset === 'function' ? reportSystemsForAsset : null;
+  reportSystemsForAsset = function(row,entries=[]){
+    const selected = multiValues('masterFilterSystem');
+    const active = unique((entries || []).filter(e=>e.assetId===row.id).map(e=>e.system).filter(Boolean));
+    if(selected.length) return active.filter(sys=>selected.includes(sys));
+    if(active.length) return active;
+    return __oldReportSystemsForAsset ? __oldReportSystemsForAsset(row,entries) : unique(rowSystemList(row).length ? rowSystemList(row) : ['Unspecified']);
+  };
+  filterSummary = function(prefix){
+    const f = filterState(prefix);
+    const parts=[];
+    function join(label, values){if(values && values.length) parts.push(label+': '+values.join(', '));}
+    if(prefix === 'master'){
+      join('Sites', f.sites);
+      join('Systems', f.systems);
+      join('Scopes', f.scopes);
+      join('Statuses', f.statuses);
+    }else{
+      if(f.site&&f.site!=='all'){const row=allRows().find(r=>r.id===f.site);parts.push('Site: '+(row?label(row):f.site));}
+      if(f.system&&f.system!=='all')parts.push('System: '+f.system);
+      if(f.scope&&f.scope!=='all')parts.push('Scope: '+f.scope);
+      if(f.status&&f.status!=='all')parts.push('Status: '+f.status);
+      if(f.contractor&&f.contractor!=='all')parts.push('Contractor: '+f.contractor);
+      if(f.party&&f.party!=='all')parts.push('Party: '+f.party);
+    }
+    if(f.min!=null)parts.push('Progress from '+f.min+'%');
+    if(f.max!=null)parts.push('Progress to '+f.max+'%');
+    if(f.from)parts.push('From '+displayDate(f.from));
+    if(f.to)parts.push('To '+displayDate(f.to));
+    return parts.join(' | ') || 'No filters applied';
+  };
+  clearReportFilters = function(prefix){
+    ['Site','System','Scope','Status','Contractor','Party'].forEach(k=>{
+      const el=document.getElementById(prefix+'Filter'+k);
+      if(!el) return;
+      if(el.multiple) Array.from(el.options).forEach(o=>o.selected=false);
+      else el.value='all';
+    });
+    const sort=document.getElementById(prefix+'FilterSort'); if(sort) sort.value='progressLatest';
+    ['Min','Max','From','To'].forEach(k=>{const el=document.getElementById(prefix+'Filter'+k);if(el)el.value=''});
+    renderLog();
+    renderChart();
+  };
+  // Make the multi-select behaviour clear after the page renders.
+  document.addEventListener('DOMContentLoaded',()=>{
+    ['masterFilterSite','masterFilterSystem','masterFilterScope','masterFilterStatus'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el){el.multiple=true;if(!el.size)el.size=id==='masterFilterStatus'?4:6;}
+    });
+  });
+})();
 
 initGate();
 $('#dailyForm').addEventListener('submit',addDaily);$('#dailyImportFile').addEventListener('change',handleDailyImportFile);$('#entryAttachment')?.addEventListener('change',handleEntryAttachmentChange);$('#clearEntryAttachmentBtn')?.addEventListener('click',clearEntryAttachments);$('#documentRegisterForm')?.addEventListener('submit',saveDocumentRecord);$('#docEntryAttachment')?.addEventListener('change',handleDocumentAttachmentChange);$('#clearDocumentAttachmentBtn')?.addEventListener('click',clearDocumentAttachments);$('#resetDocumentBtn')?.addEventListener('click',resetDocumentForm);['docEntryDate','docEntrySignedDate'].forEach(id=>$('#'+id)?.addEventListener('blur',()=>normalizeDateField(id)));$('#clearDailyImportBtn').addEventListener('click',clearDailyImport);$('#importAllBtn').addEventListener('click',importAllValidRows);$('#cancelDailyEditBtn').addEventListener('click',resetDailyForm);$('#entryAsset').addEventListener('change',()=>{renderSystemChoices();updateProgressPreview()});$('#entrySystem').addEventListener('change',()=>{renderSpecificItems();renderMainActivities();updateProgressPreview()});$('#entryMainActivity').addEventListener('change',()=>{renderSubActivities();updateProgressPreview()});const entrySpecificItemEl=$('#entrySpecificItem');if(entrySpecificItemEl)entrySpecificItemEl.addEventListener('change',()=>{renderMainActivities();updateProgressPreview()});['entryDate','dailyFilterFrom','dailyFilterTo','masterFilterFrom','masterFilterTo'].forEach(id=>$('#'+id).addEventListener('blur',()=>normalizeDateField(id)));['entryPlannedQty','entryDailyQty','entrySpecificItem','entryProjectScope','entryStage','entryCableType','entryTag','entryLinkFrom','entryLinkTo','entryMirrorLink'].forEach(id=>{const el=$('#'+id);if(el)el.addEventListener('input',updateProgressPreview)});['q','category','statusFilter'].forEach(id=>$('#'+id).addEventListener('input',renderRows));['dailyFilterSite','dailyFilterSystem','dailyFilterScope','dailyFilterContractor','dailyFilterParty','dailyFilterMin','dailyFilterMax','dailyFilterFrom','dailyFilterTo'].forEach(id=>$('#'+id).addEventListener('input',renderLog));['masterFilterSite','masterFilterSystem','masterFilterScope','masterFilterStatus','masterFilterMin','masterFilterMax','masterFilterFrom','masterFilterTo','masterFilterSort'].forEach(id=>$('#'+id).addEventListener('input',()=>{renderChart();}));$('#clearDailyFiltersBtn').addEventListener('click',()=>clearReportFilters('daily'));$('#clearMasterFiltersBtn').addEventListener('click',()=>clearReportFilters('master'));
