@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- saved from url=(0038)http://127.0.0.1:8095/aip5telecom-zaa/ -->
-<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="tracker-version" content="LOGIN-RESTORED-V14C"><title>AiP5 BAB Field Telecom Progress Control - DATA-ENTRY-PDF-V9</title><!-- LOGIN-STABLE-V8 --><link rel="preconnect" href="https://fonts.googleapis.com/"><link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin=""><link href="./css2" rel="stylesheet"><script src="./lucide.min.js.download"></script><style>
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="tracker-version" content="LOGIN-RESTORED-V16C"><title>AiP5 BAB Field Telecom Progress Control - V16C Login Restored</title><!-- LOGIN-STABLE-V8 --><link rel="preconnect" href="https://fonts.googleapis.com/"><link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin=""><link href="./css2" rel="stylesheet"><script src="./lucide.min.js.download"></script><style>
 :root{--ink:#17211f;--muted:#60706b;--line:#d8e2de;--deep:#11231f;--green:#1f7a5c;--mint:#39aa7d;--cyan:#18788d;--gold:#b27616;--red:#b53d49;--soft:#edf3f0;--shadow:0 18px 44px rgba(23,33,31,.1)}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,sans-serif;background:var(--soft);color:var(--ink);letter-spacing:0}button,input,select,textarea{font:inherit}button{cursor:pointer}
 .access-gate{min-height:100vh;display:grid;place-items:center;background:linear-gradient(135deg,#071016,#12231f);color:#f6fbf8;padding:22px}.access-card{width:min(500px,100%);border:1px solid #263640;background:#0b151d;border-radius:8px;padding:22px;box-shadow:0 18px 44px rgba(0,0,0,.28)}.access-card h1{font-size:25px;margin:0 0 6px}.access-card p{color:#b9c9c3;margin:0 0 18px;font-size:13px;line-height:1.5}.access-card label{display:grid;gap:6px;font-size:12px;font-weight:800;color:#d4e1dc;margin-top:10px}.access-card input,.access-card select{min-height:40px;border:1px solid #263640;border-radius:8px;background:#071016;color:#f6fbf8;padding:9px 11px}.access-error{min-height:18px;color:#ffb3b9;font-size:12px;margin-top:10px}.access-meta{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:14px;color:#9cafaa;font-size:11px}.access-table{width:100%;border-collapse:collapse;font-size:12px}.access-table th,.access-table td{border-bottom:1px solid var(--line);padding:8px;text-align:left;white-space:normal}.access-table th{color:var(--muted);font-weight:800;background:#f7faf8}.readonly .requires-edit,.readonly .edit-row,.readonly .edit-entry,.readonly .delete-entry,.readonly #saveDailyBtn,.readonly #clearLogBtn,.readonly #cancelDailyEditBtn,.readonly #resetBtn,.readonly .entry-config{display:none!important}.access-denied{display:none!important}
@@ -2333,6 +2333,241 @@ function mergeSimple(base,extra){const out=clone(base);Object.entries(extra||{})
 function mergeCatalog(base,extra){const out=clone(base);Object.entries(extra||{}).forEach(([sys,mains])=>{out[sys]=Object.assign({},out[sys]||{});Object.entries(mains||{}).forEach(([main,subs])=>{if(Array.isArray(subs))out[sys][main]=subs})});return out}
 function mergeNestedCatalog(base,extra){const out=clone(base);Object.entries(extra||{}).forEach(([sys,items])=>{out[sys]=Object.assign({},out[sys]||{});Object.entries(items||{}).forEach(([item,acts])=>{out[sys][item]=Object.assign({},out[sys][item]||{});Object.entries(acts||{}).forEach(([act,steps])=>{if(Array.isArray(steps))out[sys][item][act]=steps})})});return out}
 function saveSettings(){localStorage.setItem(dropdownKey,JSON.stringify(dropdowns));localStorage.setItem(fieldKey,JSON.stringify(fieldConfig));localStorage.setItem(fieldLabelKey,JSON.stringify(fieldLabels));localStorage.setItem(specificItemKey,JSON.stringify(specificItems));localStorage.setItem(activityCatalogKey,JSON.stringify(activityCatalog));localStorage.setItem(subsystemActivityCatalogKey,JSON.stringify(subsystemActivityCatalog))}
+const ACCESS_USERS = [
+  // ADMIN: full access, configuration, editing, daily progress, print/export. PIN: 220321
+  { email:'ziadseller@gmail.com', role:'admin', pinHash:'cfb5fa17062e5a82840a9bb662e1794637f847acdfc219d3d7467186994c5b9f' },
+
+  // VIEWER: review, print, and export only. No PIN.
+  { email:'jetawi333@yahoo.com', role:'viewer' },
+  { email:'kyahiya@adnoc.ae', role:'viewer' },
+
+  // DAILY ENTRY VIEWER: review, print/export, plus Daily Progress entry only. PIN: 326587
+  { email:'ebbygeorge17@gmail.com', role:'daily_entry', pinHash:'b37498eb7aa01b762ff22b2e95bba73f16051130e456fd60a2ec17db545c5928' }
+
+  // Future examples:
+  // { email:'manager@company.com', role:'viewer' },
+  // { email:'site.engineer@company.com', role:'daily_entry', pinHash:'PUT_SHA256_PIN_HASH_HERE' },
+  // { email:'admin2@company.com', role:'admin', pinHash:'PUT_SHA256_PIN_HASH_HERE' }
+];
+const ADMIN_EMAILS = ACCESS_USERS.filter(u=>u.role==='admin').map(u=>u.email.toLowerCase());
+const VIEWER_EMAILS = ACCESS_USERS.filter(u=>u.role!=='admin').map(u=>u.email.toLowerCase());
+const ADMIN_PIN_HASH = 'cfb5fa17062e5a82840a9bb662e1794637f847acdfc219d3d7467186994c5b9f';
+let currentUserEmail = null;
+let currentUserRole = 'viewer'; // 'admin', 'viewer', or 'daily_entry'
+let fbDb = null;
+let fbListeners = [];
+let pendingAdminEmail = null;
+function isAdmin(){ return currentUserRole === 'admin'; }
+function waitForFirebase(cb){
+  let called=false;
+  function done(){
+    if(called) return;
+    called=true;
+    cb();
+  }
+  if(window._fbReady){ done(); return; }
+  document.addEventListener('firebase-ready', done, { once: true });
+  // Fallback: do not block login if Firebase/CDN is slow or unavailable.
+  // The tracker will open using local browser storage and sync when Firebase is available.
+  setTimeout(done, 2500);
+}
+const GATE_SESSION_KEY='aip5_gate_email';
+const ROLE_SESSION_KEY='aip5_gate_role';
+async function hashPin(pin){
+  // Uses browser SHA-256. GitHub Pages runs on HTTPS, so crypto.subtle is normally available.
+  if(!window.crypto || !crypto.subtle){
+    throw new Error('Secure browser crypto is not available. Please open the site using https://');
+  }
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pin));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function bootApp(){
+  const gateError=$('#gateError');
+  const gateBtn=$('#gateSubmit');
+  if(gateError) gateError.textContent='Opening tracker...';
+
+  function finishOpen(){
+    try{
+      populateForms();
+      renderConfigPanel();
+      renderAll();
+      showApp();
+    }catch(err){
+      console.error('Tracker opening error:', err);
+      showApp();
+    }
+    try{ setupRealtimeSync(); }catch(err){ console.warn('Realtime sync skipped:', err); }
+    if(gateBtn){ gateBtn.disabled=false; gateBtn.textContent='Enter'; }
+    if(gateError) gateError.textContent='';
+  }
+
+  // Do not wait for Firebase/CDN to load before opening the app.
+  // This prevents the login screen from getting stuck if Firebase is slow or blocked.
+  try{ fbDb = window._fbDb || null; }catch(e){ fbDb = null; }
+  loadFromFirebase(finishOpen);
+
+  // If Firebase becomes ready after the page opens, attach sync later.
+  document.addEventListener('firebase-ready',()=>{
+    try{
+      fbDb = window._fbDb || null;
+      if(fbDb) setupRealtimeSync();
+    }catch(e){}
+  }, { once:true });
+}
+function loadFromFirebase(cb){
+  if(!fbDb){ try{edits=JSON.parse(localStorage.getItem(itemKey)||'{}');dailyEntries=JSON.parse(localStorage.getItem(logKey)||'[]');documentEntries=JSON.parse(localStorage.getItem(documentLogKey)||'[]');}catch(e){} cb();return; }
+  const rootRef=window._fbRef(fbDb,'/data');
+  window._fbGet(rootRef).then(snap=>{
+    const val=snap.val()||{};
+    if(val){
+      if(val.edits) edits=val.edits;
+      if(val.dailyEntries) dailyEntries=Object.values(val.dailyEntries);
+      if(val.documentEntries) documentEntries=Object.values(val.documentEntries);
+      if(val.dropdowns) dropdowns=val.dropdowns;
+      if(val.fieldConfig) fieldConfig=val.fieldConfig;
+      if(val.specificItems) specificItems=val.specificItems;
+      if(val.activityCatalog) activityCatalog=val.activityCatalog;
+    }
+    cb();
+  }).catch(()=>{ try{edits=JSON.parse(localStorage.getItem(itemKey)||'{}');dailyEntries=JSON.parse(localStorage.getItem(logKey)||'[]');documentEntries=JSON.parse(localStorage.getItem(documentLogKey)||'[]');}catch(e){} cb(); });
+}
+function setupRealtimeSync(){
+  if(!fbDb) return;
+  const rootRef=window._fbRef(fbDb,'/data');
+  window._fbOnValue(rootRef, snap=>{
+    const val=snap.val()||{};
+    if(val){
+      if(val.edits) edits=val.edits;
+      if(val.dailyEntries) dailyEntries=Object.values(val.dailyEntries);
+      if(val.documentEntries) documentEntries=Object.values(val.documentEntries);
+      if(val.dropdowns) dropdowns=val.dropdowns;
+      if(val.fieldConfig) fieldConfig=val.fieldConfig;
+      if(val.specificItems) specificItems=val.specificItems;
+      if(val.activityCatalog) activityCatalog=val.activityCatalog;
+    }
+    renderAll();
+  });
+}
+function getAccessUser(email){return ACCESS_USERS.find(u=>u.email.toLowerCase()===String(email||'').trim().toLowerCase())||null}
+function initGate(){
+  // Always start with the login prompt when the page opens.
+  sessionStorage.removeItem(GATE_SESSION_KEY);
+  sessionStorage.removeItem(ROLE_SESSION_KEY);
+  document.body.classList.add('auth-locked');
+  document.body.classList.remove('auth-unlocked');
+  const gateBtn=$('#gateSubmit');
+  const gateInput=$('#gateEmail');
+  const pinInput=$('#gatePin');
+  const pinSection=$('#pinSection');
+  const gateError=$('#gateError');
+  function resetGateButton(){gateBtn.disabled=false;gateBtn.textContent='Enter'}
+  async function tryAccess(){
+    const email=(gateInput.value||'').trim().toLowerCase();
+    const user=getAccessUser(email);
+    if(!email){gateError.textContent='Please enter your email address.';return}
+    if(!user){gateError.textContent='Access denied. Contact admin to request access.';resetGateButton();return}
+
+    const requiresPin = !!user.pinHash;
+    if(requiresPin && !pinSection.dataset.shown){
+      pinSection.style.display='block';
+      pinSection.dataset.shown='1';
+      pinInput.focus();
+      gateError.textContent='';
+      gateBtn.textContent='Verify PIN';
+      return;
+    }
+
+    if(requiresPin){
+      const pin=(pinInput.value||'').trim();
+      if(!pin){gateError.textContent='Please enter your PIN.';return}
+      gateBtn.disabled=true;gateBtn.textContent='Verifying...';
+      let hash='';
+      try{
+        hash=await hashPin(pin);
+      }catch(err){
+        gateError.textContent='PIN verification failed. Please open the website using https:// and try again.';
+        gateBtn.disabled=false;gateBtn.textContent='Verify PIN';
+        return;
+      }
+      if(hash!==user.pinHash){
+        gateError.textContent='Incorrect PIN. Please try again.';
+        pinInput.value='';pinInput.focus();
+        gateBtn.disabled=false;gateBtn.textContent='Verify PIN';
+        return;
+      }
+    }
+
+    currentUserEmail=email;
+    currentUserRole=user.role || 'viewer';
+    sessionStorage.setItem(GATE_SESSION_KEY,email);
+    sessionStorage.setItem(ROLE_SESSION_KEY,currentUserRole);
+    applyRoleUI();bootApp();
+  }
+  gateBtn.addEventListener('click',tryAccess);
+  gateInput.addEventListener('keydown',e=>{if(e.key==='Enter')tryAccess()});
+  pinInput.addEventListener('keydown',e=>{if(e.key==='Enter')tryAccess()});
+  gateInput.addEventListener('input',()=>{
+    const email=(gateInput.value||'').trim().toLowerCase();
+    const user=getAccessUser(email);
+    gateError.textContent='';
+    pinInput.value='';
+    if(user && user.pinHash){
+      pinSection.style.display='none';
+      delete pinSection.dataset.shown;
+      gateBtn.textContent='Enter';
+    } else {
+      pinSection.style.display='none';
+      delete pinSection.dataset.shown;
+      gateBtn.textContent='Enter';
+    }
+  });
+}
+function applyRoleUI(){
+  const app=$('#appShell');
+  if(!app) return;
+
+  app.classList.remove('admin-user','field-user','viewer-user','daily-entry-user','readonly');
+
+  if(currentUserRole==='admin'){
+    app.classList.add('admin-user');
+  } else if(currentUserRole==='daily_entry'){
+    app.classList.add('daily-entry-user');
+  } else {
+    app.classList.add('field-user','viewer-user','readonly');
+  }
+
+  const brand=$('.brand');
+  if(brand){
+    let badge=brand.querySelector('.role-badge');
+    if(!badge){badge=document.createElement('span');brand.appendChild(badge)}
+    badge.className='role-badge '+(currentUserRole==='admin'?'role-admin':'role-field');
+    badge.textContent=currentUserRole==='admin'?'Admin':(currentUserRole==='daily_entry'?'Daily Entry':'Viewer');
+  }
+
+  const notice=$('#viewerNotice')||$('#fieldViewerNotice');
+  if(notice){
+    if(currentUserRole==='admin'){
+      notice.style.display='none';
+    } else if(currentUserRole==='daily_entry'){
+      notice.style.display='block';
+      notice.textContent='Daily Entry mode: you can review, print/export, and enter Daily Progress only. Editing/configuration is disabled.';
+    } else {
+      notice.style.display='block';
+      notice.textContent='Viewer mode: review, print, and export only. Editing is disabled.';
+    }
+  }
+}
+
+// Start login gate after the DOM is ready. If the script loads after DOMContentLoaded, start immediately.
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initGate);
+} else {
+  initGate();
+}
+// Expose a small debug marker so you can verify this file is loaded from GitHub.
+window.AIP5_LOGIN_PATCH = 'V16C_LOGIN_RESTORED';
+
+
 function isViewer(){return currentUserRole === 'viewer'}
 function isDailyEntry(){return currentUserRole === 'daily_entry'}
 function canEditData(){return isAdmin()}
