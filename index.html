@@ -2615,24 +2615,9 @@ function systemProgressForAsset(entries,assetId,system){const related=reportEntr
 function reportAssetRemarks(row,entries,system){const related=reportEntriesForAsset(entries,row.id,system);const notes=related.slice(0,3).map(e=>{const activity=[e.specificItem,e.mainActivity,e.subActivity].filter(Boolean).join(' / ');const progress='Daily '+Number(e.dailyProgress||0)+'%, total '+Number(e.totalAfter||0)+'%';const link=[e.tag,linkDisplay(e)].filter(Boolean).join(' / ');return [displayDate(e.date),activity,link,progress,e.remarks].filter(Boolean).join(' - ')}).join(' | ');return notes||row.remarks||''}
 function sortReportAssetsByActivity(rows,entries){const original=new Map(rows.map((r,i)=>[r.id,i]));return rows.slice().sort((a,b)=>{const ae=latestReportEntry(entries,a.id),be=latestReportEntry(entries,b.id);const ad=ae?dateValue(ae.date):'',bd=be?dateValue(be.date):'';return (ad?0:1)-(bd?0:1)||bd.localeCompare(ad)||masterProgressRank(a)-masterProgressRank(b)||Number(b.progress||0)-Number(a.progress||0)||(original.get(a.id)||0)-(original.get(b.id)||0)})}
 function groupedMasterDetailRows(entries){const groups=groupedByEntryKey(entries);return Object.values(groups).map(list=>{const latest=list.slice().sort((a,b)=>dateValue(b.date).localeCompare(dateValue(a.date))||String(b.id).localeCompare(String(a.id)))[0]||{};const st=groupStats(list);return{latest,plan:st.plan,qty:st.qty,progress:st.progress}}).sort((a,b)=>String(a.latest.assetLabel||'').localeCompare(String(b.latest.assetLabel||''))||String(a.latest.system||'').localeCompare(String(b.latest.system||''))||String(a.latest.specificItem||'').localeCompare(String(b.latest.specificItem||'')))}
-function masterReportHtml(){const baseRows=filteredMasterRows();const rowIds=new Set(baseRows.map(r=>r.id));const entries=reportEntriesWithMirrors(filteredDailyEntries('master')).filter(e=>!rowIds.size||rowIds.has(e.assetId)).sort((a,b)=>dateValue(b.date).localeCompare(dateValue(a.date))||String(b.id).localeCompare(String(a.id)));const rows=sortReportAssetsByActivity(baseRows,entries);const avg=rows.length?Math.round(rows.reduce((a,r)=>a+Number(r.progress||0),0)/rows.length):0;const complete=rows.filter(r=>Number(r.progress||0)>=100).length;const inProgress=rows.filter(r=>Number(r.progress||0)>0&&Number(r.progress||0)<100).length;const zero=rows.length-complete-inProgress;const latestRows=entries.slice(0,10).map(reportDailyRow).join('')||'<tr><td colspan="17">No matching daily entries.</td></tr>';const detailRows=groupedMasterDetailRows(entries).map(g=>{const e=g.latest;return '<tr><td>'+html(e.assetLabel||e.assetId||'')+'</td><td>'+html(e.system||'')+'</td><td>'+html(e.specificItem||'')+'</td><td>'+html([e.specificItem,e.mainActivity].filter(Boolean).join(' / '))+'</td><td>'+html(e.subActivity||'')+'</td><td>'+html(e.tag||'')+'</td><td>'+html(linkDisplay(e)||'')+'</td><td>'+html(e.mirrorSide||'Original')+'</td><td>'+html(g.plan||0)+' '+html(e.uom||'')+'</td><td>'+html(g.qty||0)+' '+html(e.uom||'')+'</td><td>'+html(g.progress)+'%</td><td>'+html(statusFromProgress(g.progress))+'</td><td>'+html(displayDate(e.date)||'-')+'</td></tr>'}).join('')||'<tr><td colspan="13">No detailed item/activity progress available.</td></tr>';const assetRows=rows.map(r=>{const systems=reportSystemsForAsset(r,entries).sort((a,b)=>{const ad=dateValue(latestReportEntry(entries,r.id,a)?.date),bd=dateValue(latestReportEntry(entries,r.id,b)?.date);return (ad?0:1)-(bd?0:1)||bd.localeCompare(ad)||a.localeCompare(b)});return systems.map((sys,idx)=>{const latest=latestReportEntry(entries,r.id,sys);const progress=systemProgressForAsset(entries,r.id,sys);const status=statusFromProgress(progress);const span=systems.length;const identity=idx===0?'<td rowspan="'+span+'">'+html(label(r))+'</td><td rowspan="'+span+'">'+html(r.category)+'</td><td rowspan="'+span+'">'+html(r.type)+'</td>':'';return '<tr>'+identity+'<td>'+html(r.location)+'</td><td>'+html(sys)+'</td><td>'+html(latest?.projectScope||r.scope||'')+'</td><td>'+progress+'%</td><td>'+html(status)+'</td><td>'+html(displayDate(latest?latest.date:rowDate(r))||'-')+'</td><td>'+html(reportAssetRemarks(r,entries,sys))+'</td></tr>'}).join('')}).join('')||'<tr><td colspan="10">No matching assets.</td></tr>';return '<!doctype html><html><head><meta charset="utf-8"><title>AiP5 Master Progress Report</title><style>body{font-family:Arial,sans-serif;color:#17211f;margin:22px}button{float:right;padding:8px 12px}.muted{color:#60706b}.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:16px 0}.card{border:1px solid #d8e2de;padding:10px;border-radius:6px}.card strong{display:block;font-size:22px;margin-top:4px}.bar-report{display:grid;gap:8px;margin:12px 0}.bar-line{display:grid;grid-template-columns:150px minmax(120px,1fr) 70px;gap:8px;align-items:center;font-size:11px}.bar{height:11px;background:#dfe8e4;border-radius:99px;overflow:hidden}.bar span{display:block;height:100%;background:#1f7a5c}table{width:100%;border-collapse:collapse;font-size:9.3px;margin-top:10px}th,td{border:1px solid #d8e2de;padding:4px;text-align:left;vertical-align:top}th{background:#edf3f0}.remarks-col{min-width:210px}h1{margin:0 0 4px}h2{font-size:16px;margin-top:20px}@page{size:landscape;margin:8mm}@media print{button{display:none}body{margin:0}.bar-report{break-inside:avoid}}
-/* === Document Register v14 === */
-.doc-register{margin-top:14px;border:1px solid #263640;border-radius:8px;background:#0b151d;padding:14px;color:#f6fbf8}
-.doc-register .head{margin-bottom:10px}
-.doc-register .head h3{color:#fff}
-.doc-register .footnote,.doc-register label{color:#d4e1dc}
-.doc-register input,.doc-register select,.doc-register textarea{background:#0b151d!important;border-color:#263640!important;color:#f6fbf8!important}
-.doc-register-list{display:grid;gap:8px;max-height:260px;overflow:auto;margin-top:10px}
-.doc-card{border:1px solid #263640;border-radius:8px;background:#08131a;padding:10px;display:grid;gap:5px;font-size:12px}
-.doc-card strong{font-size:13px;color:#f6fbf8}
-.doc-card span{color:#b9c9c3;line-height:1.4}
-.doc-card-actions{display:flex;gap:7px;justify-content:flex-end}
-.doc-card-actions button{min-height:28px;border:1px solid #263640;border-radius:7px;background:#0b151d;color:#f6fbf8;padding:4px 8px}
-.field-user #documentRegisterForm,.field-user #saveDocumentBtn,.field-user #clearDocumentAttachmentBtn{display:none!important}
-.daily-entry-user #documentRegisterForm{display:grid!important}
-.daily-entry-user #saveDocumentBtn,.daily-entry-user #clearDocumentAttachmentBtn{display:inline-flex!important}
-</style></head><body><button onclick="window.print()">Print / Save PDF</button><h1>AiP5 BAB Field Master Progress Report</h1><p class="muted">Generated '+html(displayDateTime(new Date()))+'</p><p class="muted">Filters: '+html(filterSummary('master'))+'</p><div class="cards"><div class="card">Master Progress<strong>'+avg+'%</strong></div><div class="card">Matching Assets<strong>'+rows.length+'</strong></div><div class="card">Complete<strong>'+complete+'</strong></div><div class="card">In Progress<strong>'+inProgress+'</strong></div><div class="card">Not Started<strong>'+zero+'</strong></div></div>'+barChartHtml('Scope Progress Chart',scopeAverageData(rows))+barChartHtml('System Progress Chart',systemAverageData(rows))+'<h2>Latest Daily Entries (Max 10)</h2><table><thead><tr><th>Date</th><th>Asset</th><th>Scope</th><th>System</th><th>Activity</th><th>Work Step / Detail</th><th>Manual Tag</th><th>Link From → To</th><th>Shown As</th><th>Daily Qty</th><th>Daily %</th><th>Activity Total %</th><th>Permit</th><th>Doc Type</th><th>Doc Ref</th><th>Contractor</th><th>Remarks</th></tr></thead><tbody>'+latestRows+'</tbody></table><h2>Detailed Item / Activity Progress</h2><table><thead><tr><th>Site</th><th>System</th><th>Sub-System / Item</th><th>Activity</th><th>Work Step / Detail</th><th>Manual Tag</th><th>Link From → To</th><th>Shown As</th><th>Planned Qty</th><th>Done Qty</th><th>Progress</th><th>Status</th><th>Latest Update</th></tr></thead><tbody>'+detailRows+'</tbody></table><h2>Progressed Assets</h2><table><thead><tr><th>Asset</th><th>Category</th><th>Type</th><th>Location</th><th>System</th><th>Scope</th><th>Progress</th><th>Status</th><th>Latest update</th><th class="remarks-col">Remarks</th></tr></thead><tbody>'+assetRows+'</tbody></table>
-<script>
+function masterReportHtml(){
+  return '<!doctype html><html><head><meta charset="utf-8"><title>Master Progress Report</title></head><body><h1>Master Progress Report</h1><p>Report engine is loading...</p></body></html>';
+}
 /* === V15 REPORT/EXCEL/ROLE COLOR/FILTER/SITE VISIT PATCH === */
 (function(){
   const V15_MARKER = 'REPORT_EXCEL_COLOR_FILTER_SITEVISIT_V16';
@@ -3583,19 +3568,7 @@ function trendData(){
   };
   filteredMasterRows = function(){
     const f = filterState('master');
-    const mirrored = rawMirroredEntries(dailyEntries || []);
-    const rows = allRows().filter(r=>rowMatches(r,f)).map(r=>{
-      const related = mirrored.filter(e=>String(e.assetId||'') === String(r.id||'') && matchesMasterEntry(e,Object.assign({},f,{sites:[]})));
-      if(!related.length) return r;
-      const progress = aggregateGroupedProgress(groupedByEntryKey(related));
-      const latest = related.slice().sort((a,b)=>dateValue(b.date).localeCompare(dateValue(a.date))||String(b.id).localeCompare(String(a.id)))[0] || {};
-      return Object.assign({}, r, {
-        progress,
-        status: statusFromProgress(progress),
-        scope: latest.projectScope || r.scope,
-        lastUpdate: latest.date || r.lastUpdate
-      });
-    });
+    const rows = allRows().filter(r=>rowMatches(r,f));
     return sortMasterRows(rows);
   };
   reportEntriesWithMirrors = function(entries){
