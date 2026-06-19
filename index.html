@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- V19_REPORTS_NO_ENTRY_COLOR_EXCEL_CHARTS -->
 <!-- saved from url=(0038)http://127.0.0.1:8095/aip5telecom-zaa/ -->
 <html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="tracker-version" content="LOGIN-RESTORED-V16C"><title>AiP5 BAB Field Telecom Progress Control - V16C Login Restored</title><!-- LOGIN-STABLE-V8 --><link rel="preconnect" href="https://fonts.googleapis.com/"><link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin=""><link href="./css2" rel="stylesheet"><script src="./lucide.min.js.download"></script><style>
 :root{--ink:#17211f;--muted:#60706b;--line:#d8e2de;--deep:#11231f;--green:#1f7a5c;--mint:#39aa7d;--cyan:#18788d;--gold:#b27616;--red:#b53d49;--soft:#edf3f0;--shadow:0 18px 44px rgba(23,33,31,.1)}
@@ -2984,14 +2985,15 @@ function masterReportHtml(){
     }).sort((a,b)=>b.progress-a.progress || b.count-a.count || String(a.label).localeCompare(String(b.label)));
   }
   function chartBars(title, rows, valueKey='progress', suffix='%'){
-    rows = (rows || []).slice(0,8);
+    rows = (rows || []).slice(0,10);
     if(!rows.length) return '<div class="chart-box"><h3>'+safeHtml(title)+'</h3><p class="muted">No data available for this chart.</p></div>';
-    return '<div class="chart-box"><h3>'+safeHtml(title)+'</h3><div class="bar-chart">'+rows.map(r=>{
-      const v = valueKey === 'count' ? num(r.count) : valueKey === 'balance' ? num(r.balance) : pct(r[valueKey]);
-      const width = valueKey === 'progress' ? pct(v) : pct((v / Math.max(...rows.map(x=>num(valueKey==='count'?x.count:x.balance)),1))*100);
-      const shown = valueKey === 'progress' ? v + suffix : v;
-      return '<div class="chart-row"><div class="chart-label">'+safeHtml(r.label)+'</div><div class="chart-track"><span style="width:'+width+'%"></span></div><div class="chart-value">'+safeHtml(shown)+'</div></div>';
-    }).join('')+'</div></div>';
+    const maxVal = Math.max(...rows.map(x=>num(valueKey==='count'?x.count:(valueKey==='balance'?x.balance:x[valueKey]))), 1);
+    return '<div class="chart-box"><h3>'+safeHtml(title)+'</h3><table class="chart-table"><thead><tr><th>Item</th><th>Visual</th><th>Value</th></tr></thead><tbody>'+rows.map(r=>{
+      const rawVal = valueKey === 'count' ? num(r.count) : valueKey === 'balance' ? num(r.balance) : pct(r[valueKey]);
+      const width = valueKey === 'progress' ? pct(rawVal) : pct((rawVal / maxVal) * 100);
+      const shown = valueKey === 'progress' ? rawVal + suffix : rawVal;
+      return '<tr><td class="chart-label">'+safeHtml(r.label)+'</td><td class="chart-bar-cell"><div class="chart-track"><span style="width:'+width+'%"></span></div></td><td class="chart-value">'+safeHtml(shown)+'</td></tr>';
+    }).join('')+'</tbody></table></div>';
   }
   function reportStyles(){
     return '<style>'+[
@@ -3015,10 +3017,14 @@ function masterReportHtml(){
       '.sw-admin{background:#111827}.sw-daily{background:#1677c8}.sw-legacy{background:#9ca3af}',
       '.charts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0;page-break-inside:avoid}',
       '.chart-box{border:1px solid #d8e2de;border-radius:8px;background:#fbfdfc;padding:9px;min-height:125px;page-break-inside:avoid}',
-      '.chart-row{display:grid;grid-template-columns:175px 1fr 45px;gap:8px;align-items:center;margin:5px 0;font-size:9.8px}',
-      '.chart-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
-      '.chart-track{height:9px;background:#e6eee9;border-radius:999px;overflow:hidden}',
+      'table.chart-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:9.7px}',
+      '.chart-table th,.chart-table td{border:1px solid #d8e2de;padding:3px 4px;vertical-align:middle}',
+      '.chart-table th{background:#e8f1ed;font-weight:bold}',
+      '.chart-label{width:44%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+      '.chart-bar-cell{width:42%}',
+      '.chart-track{height:10px;background:#e6eee9;border-radius:999px;overflow:hidden}',
       '.chart-track span{display:block;height:100%;background:#1f7a5c;border-radius:999px}',
+      '.chart-value{width:14%;text-align:right;font-weight:bold}',
       'table.report-table{width:100%;border-collapse:collapse;table-layout:fixed;margin-top:8px;font-size:10.1px}',
       '.report-table th,.report-table td{border:1px solid #bfcac5;padding:4px 5px;text-align:left;vertical-align:top;word-break:break-word;overflow-wrap:anywhere}',
       '.report-table th{background:#e8f1ed;color:#17211f;font-weight:bold}',
@@ -3033,14 +3039,16 @@ function masterReportHtml(){
   }
   function excelStyles(){
     return '<style>'+[
-      'body{font-family:Arial,Helvetica,sans-serif;color:#17211f;font-size:11px}',
-      'h1{font-size:20px;color:#17211f}',
+      'body{font-family:Arial,Helvetica,sans-serif;color:#17211f;font-size:11px;background:#ffffff}',
+      '@page{mso-page-orientation:landscape;margin:.35in .25in .35in .25in}',
+      'h1{font-size:22px;color:#17211f;border-bottom:3px solid #1f7a5c;padding-bottom:6px}',
       'h2{font-size:15px;color:#1f7a5c;border-bottom:2px solid #1f7a5c}',
       '.cards{display:block;margin:8px 0}.card{display:inline-block;border:1px solid #1f7a5c;background:#edf7f2;padding:8px;margin:3px;min-width:120px}.card span{font-weight:bold;color:#60706b}.card strong{font-size:18px;color:#17211f}',
       '.legend{margin:8px 0}.sw{display:inline-block;width:18px;height:10px}.sw-admin{background:#111827}.sw-daily{background:#1677c8}.sw-legacy{background:#9ca3af}',
-      '.charts{display:block}.chart-box{border:1px solid #bfcac5;background:#fbfdfc;padding:8px;margin:8px 0}.chart-row{display:block;margin:4px 0}.chart-label{display:inline-block;width:220px}.chart-track{display:inline-block;width:260px;height:11px;background:#e6eee9}.chart-track span{display:block;height:11px;background:#1f7a5c}.chart-value{display:inline-block;width:55px;text-align:right}',
-      'table.report-table{border-collapse:collapse;width:100%;font-size:10.5px}',
-      '.report-table th{background:#1f7a5c;color:white;font-weight:bold;border:1px solid #9fb4ac;padding:5px}',
+      '.charts{display:block}.chart-box{border:2px solid #1f7a5c;background:#fbfdfc;padding:8px;margin:10px 0}.chart-box h3{background:#1f7a5c;color:white;padding:6px;margin:0 0 6px 0}',
+      'table.chart-table{border-collapse:collapse;width:100%;font-size:10.5px}.chart-table th{background:#dcefe7;color:#17211f;border:1px solid #9fb4ac;padding:5px}.chart-table td{border:1px solid #bfcac5;padding:5px;mso-number-format:"\@"}.chart-label{width:280px}.chart-bar-cell{width:280px}.chart-track{width:260px;height:12px;background:#e6eee9;border:1px solid #c3d2cb}.chart-track span{display:block;height:12px;background:#1f7a5c}.chart-value{text-align:right;font-weight:bold}',
+      'table.report-table{border-collapse:collapse;width:100%;font-size:10.5px;mso-displayed-decimal-separator:".";mso-displayed-thousand-separator:","}',
+      '.report-table th{background:#1f7a5c;color:white;font-weight:bold;border:1px solid #9fb4ac;padding:6px;text-align:center}',
       '.report-table td{border:1px solid #bfcac5;padding:5px;mso-number-format:"\\@";vertical-align:top}',
       '.role-admin-row td{background:#f2f2f2}.role-daily-row td{background:#e8f5ff}.role-legacy-row td{background:white}'
     ].join('')+'</style>';
@@ -3052,16 +3060,19 @@ function masterReportHtml(){
   }
   function makeCards(items){ return '<div class="cards">'+items.map(c=>'<div class="card"><span>'+safeHtml(c.label)+'</span><strong>'+safeHtml(c.value)+'</strong></div>').join('')+'</div>'; }
   function dailyRowsHtml(entries){
-    if(!entries.length) return '<tr><td colspan="18">No daily entries available.</td></tr>';
+    if(!entries.length) return '<tr><td colspan="17">No daily entries available.</td></tr>';
     return entries.map(e=>{
       const role = entryRole(e);
-      const badge = roleLabel(role);
-      return '<tr class="'+roleClass(role)+'" style="'+roleRowStyle(role)+'"><td>'+safeHtml(safeDisplayDate(e.date))+'</td><td>'+safeHtml(siteLabel(e))+'</td><td>'+safeHtml(e.system||'')+'</td><td>'+safeHtml(e.specificItem||'')+'</td><td>'+safeHtml(e.mainActivity||'')+'</td><td>'+safeHtml(e.subActivity||'')+'</td><td>'+safeHtml(e.tag||'')+'</td><td>'+safeHtml(linkText(e))+'</td><td>'+safeHtml(e.mirrorSide||'Original')+'</td><td>'+safeHtml((e.plannedQty||0)+' '+(e.uom||''))+'</td><td>'+safeHtml((e.dailyQty||0)+' '+(e.uom||''))+'</td><td>'+safeHtml((e.previousProgress||0)+'%')+'</td><td>'+safeHtml((e.dailyProgress||0)+'%')+'</td><td>'+safeHtml((e.totalAfter||0)+'%')+'</td><td>'+safeHtml(e.status||'')+'</td><td>'+safeHtml(e.docType||'')+' '+safeHtml(e.docRef||e.docNo||'')+'</td><td>'+safeHtml(e.contractor||'')+'</td><td class="role-cell">'+safeHtml(badge)+'</td></tr>';
+      return '<tr class="'+roleClass(role)+'" style="'+roleRowStyle(role)+'"><td>'+safeHtml(safeDisplayDate(e.date))+'</td><td>'+safeHtml(siteLabel(e))+'</td><td>'+safeHtml(e.system||'')+'</td><td>'+safeHtml(e.specificItem||'')+'</td><td>'+safeHtml(e.mainActivity||'')+'</td><td>'+safeHtml(e.subActivity||'')+'</td><td>'+safeHtml(e.tag||'')+'</td><td>'+safeHtml(linkText(e))+'</td><td>'+safeHtml(e.mirrorSide||'Original')+'</td><td>'+safeHtml((e.plannedQty||0)+' '+(e.uom||''))+'</td><td>'+safeHtml((e.dailyQty||0)+' '+(e.uom||''))+'</td><td>'+safeHtml((e.previousProgress||0)+'%')+'</td><td>'+safeHtml((e.dailyProgress||0)+'%')+'</td><td>'+safeHtml((e.totalAfter||0)+'%')+'</td><td>'+safeHtml(e.status||'')+'</td><td>'+safeHtml(e.docType||'')+' '+safeHtml(e.docRef||e.docNo||'')+'</td><td>'+safeHtml(e.contractor||'')+'</td></tr>';
     }).join('');
   }
   function detailRowsHtml(groups){
-    if(!groups.length) return '<tr><td colspan="17">No detailed item/activity progress available.</td></tr>';
-    return groups.map(g=>{ const e = g.latest; const role = entryRole(e); return '<tr class="'+roleClass(role)+'" style="'+roleRowStyle(role)+'"><td>'+safeHtml(siteLabel(e))+'</td><td>'+safeHtml(e.system||'')+'</td><td>'+safeHtml(e.specificItem||'')+'</td><td>'+safeHtml(e.mainActivity||'')+'</td><td>'+safeHtml(e.subActivity||'')+'</td><td>'+safeHtml(e.tag||'')+'</td><td>'+safeHtml(linkText(e))+'</td><td>'+safeHtml(e.mirrorSide||'Original')+'</td><td>'+safeHtml((g.plan||0)+' '+(e.uom||''))+'</td><td>'+safeHtml((g.done||0)+' '+(e.uom||''))+'</td><td>'+safeHtml((g.balanceQty||0)+' '+(e.uom||''))+'</td><td>'+safeHtml(g.progress+'%')+'</td><td>'+safeHtml(g.balancePct+'%')+'</td><td>'+safeHtml(g.status)+'</td><td>'+safeHtml(safeDisplayDate(e.date)||'-')+'</td><td>'+safeHtml(roleLabel(role))+'</td><td>'+safeHtml(e.remarks||'')+'</td></tr>'; }).join('');
+    if(!groups.length) return '<tr><td colspan="16">No detailed item/activity progress available.</td></tr>';
+    return groups.map(g=>{
+      const e = g.latest;
+      const role = entryRole(e);
+      return '<tr class="'+roleClass(role)+'" style="'+roleRowStyle(role)+'"><td>'+safeHtml(siteLabel(e))+'</td><td>'+safeHtml(e.system||'')+'</td><td>'+safeHtml(e.specificItem||'')+'</td><td>'+safeHtml(e.mainActivity||'')+'</td><td>'+safeHtml(e.subActivity||'')+'</td><td>'+safeHtml(e.tag||'')+'</td><td>'+safeHtml(linkText(e))+'</td><td>'+safeHtml(e.mirrorSide||'Original')+'</td><td>'+safeHtml((g.plan||0)+' '+(e.uom||''))+'</td><td>'+safeHtml((g.done||0)+' '+(e.uom||''))+'</td><td>'+safeHtml((g.balanceQty||0)+' '+(e.uom||''))+'</td><td>'+safeHtml(g.progress+'%')+'</td><td>'+safeHtml(g.balancePct+'%')+'</td><td>'+safeHtml(g.status)+'</td><td>'+safeHtml(safeDisplayDate(e.date)||'-')+'</td><td>'+safeHtml(e.remarks||'')+'</td></tr>';
+    }).join('');
   }
   function documentSection(){
     try{
@@ -3146,8 +3157,8 @@ function masterReportHtml(){
       {label:'Systems covered', value:groupBy(entries,e=>e.system).length},
       {label:'Sites covered', value:groupBy(entries,e=>siteLabel(e)).length}
     ]);
-    const sections = '<h2>Daily progress entries</h2><table class="report-table"><thead><tr><th>Date</th><th>Site</th><th>System</th><th>Sub-System / Item</th><th>Activity</th><th>Work Step</th><th>Manual Tag</th><th>Link From → To</th><th>Shown As</th><th>Planned Qty</th><th>Daily Qty</th><th>Previous %</th><th>Daily %</th><th>Total %</th><th>Status</th><th>Document</th><th>Contractor</th><th>Entry Color</th></tr></thead><tbody>'+dailyRowsHtml(entries)+'</tbody></table>'+documentSection();
-    return reportShell('Daily Progress Report','Filtered daily progress entries with site/system/activity/tag color coding.',cards,dailyChartHtml(entries),sections,excel);
+    const sections = '<h2>Daily progress entries</h2><table class="report-table"><thead><tr><th>Date</th><th>Site</th><th>System</th><th>Sub-System / Item</th><th>Activity</th><th>Work Step</th><th>Manual Tag</th><th>Link From → To</th><th>Shown As</th><th>Planned Qty</th><th>Daily Qty</th><th>Previous %</th><th>Daily %</th><th>Total %</th><th>Status</th><th>Document</th><th>Contractor</th></tr></thead><tbody>'+dailyRowsHtml(entries)+'</tbody></table>'+documentSection();
+    return reportShell('Daily Progress Report','Filtered daily progress entries with site, system, activity, tag, quantity, and progress summary.',cards,dailyChartHtml(entries),sections,excel);
   };
   reportHtml = function(){ return dailyReportHtml(false); };
 
@@ -3168,8 +3179,8 @@ function masterReportHtml(){
       {label:'Remaining balance qty', value:Math.round(balanceQty*100)/100}
     ]);
     const charts = chartBars('Master progress by system', groupBy(entries,e=>e.system)) + chartBars('Master progress by site', groupBy(entries,e=>siteLabel(e))) + chartBars('Top site / activity / tag progress', groups.map(g=>({label:[siteLabel(g.latest), g.latest.system, g.latest.tag || g.latest.specificItem].filter(Boolean).join(' / '), progress:g.progress, balance:g.balanceQty, count:g.list.length})).sort((a,b)=>b.progress-a.progress).slice(0,8)) + chartBars('Highest remaining balance', groups.map(g=>({label:[siteLabel(g.latest), g.latest.system, g.latest.tag || g.latest.specificItem].filter(Boolean).join(' / '), progress:g.progress, balance:g.balanceQty, count:g.list.length})).sort((a,b)=>b.balance-a.balance).slice(0,8),'balance','');
-    const detailSection = '<h2>Detailed item / activity progress</h2><table class="report-table"><thead><tr><th>Site</th><th>System</th><th>Sub-System / Item</th><th>Activity</th><th>Work Step</th><th>Manual Tag</th><th>Link From → To</th><th>Shown As</th><th>Planned Qty</th><th>Cumulative Done Qty</th><th>Balance Qty</th><th>Progress %</th><th>Balance %</th><th>Status</th><th>Latest Date</th><th>Entry Color</th><th>Remarks</th></tr></thead><tbody>'+detailRowsHtml(groups)+'</tbody></table>';
-    const latestSection = '<h2>Latest daily entries</h2><table class="report-table"><thead><tr><th>Date</th><th>Site</th><th>System</th><th>Sub-System / Item</th><th>Activity</th><th>Work Step</th><th>Manual Tag</th><th>Link From → To</th><th>Shown As</th><th>Planned Qty</th><th>Daily Qty</th><th>Previous %</th><th>Daily %</th><th>Total %</th><th>Status</th><th>Document</th><th>Contractor</th><th>Entry Color</th></tr></thead><tbody>'+dailyRowsHtml(entries.slice(0,50))+'</tbody></table>';
+    const detailSection = '<h2>Detailed item / activity progress</h2><table class="report-table"><thead><tr><th>Site</th><th>System</th><th>Sub-System / Item</th><th>Activity</th><th>Work Step</th><th>Manual Tag</th><th>Link From → To</th><th>Shown As</th><th>Planned Qty</th><th>Cumulative Done Qty</th><th>Balance Qty</th><th>Progress %</th><th>Balance %</th><th>Status</th><th>Latest Date</th><th>Remarks</th></tr></thead><tbody>'+detailRowsHtml(groups)+'</tbody></table>';
+    const latestSection = '<h2>Latest daily entries</h2><table class="report-table"><thead><tr><th>Date</th><th>Site</th><th>System</th><th>Sub-System / Item</th><th>Activity</th><th>Work Step</th><th>Manual Tag</th><th>Link From → To</th><th>Shown As</th><th>Planned Qty</th><th>Daily Qty</th><th>Previous %</th><th>Daily %</th><th>Total %</th><th>Status</th><th>Document</th><th>Contractor</th></tr></thead><tbody>'+dailyRowsHtml(entries.slice(0,50))+'</tbody></table>';
     return reportShell('Master Progress Report','Overall progress based on saved daily entries, grouped by site/system/activity/tag.',cards,charts,detailSection+latestSection+documentSection(),excel);
   };
 
