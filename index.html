@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<!-- V27_PRESERVE_DAILY_ENTRIES_PROGRESS_SMOOTH -->
+<!-- V29_DOCUMENTS_STRICT_FILTERS_CALENDAR -->
 <!-- saved from url=(0038)http://127.0.0.1:8095/aip5telecom-zaa/ -->
-<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="tracker-version" content="LOGIN-RESTORED-V16C"><title>AiP5 BAB Field Telecom Progress Control - V16C Login Restored</title><!-- LOGIN-STABLE-V8 --><link rel="preconnect" href="https://fonts.googleapis.com/"><link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin=""><link href="./css2" rel="stylesheet"><script src="./lucide.min.js.download"></script><style>
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="tracker-version" content="V29_DOCUMENTS_STRICT_FILTERS_CALENDAR"><title>AiP5 BAB Field Telecom Progress Control - V16C Login Restored</title><!-- LOGIN-STABLE-V8 --><link rel="preconnect" href="https://fonts.googleapis.com/"><link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin=""><link href="./css2" rel="stylesheet"><script src="./lucide.min.js.download"></script><style>
 :root{--ink:#17211f;--muted:#60706b;--line:#d8e2de;--deep:#11231f;--green:#1f7a5c;--mint:#39aa7d;--cyan:#18788d;--gold:#b27616;--red:#b53d49;--soft:#edf3f0;--shadow:0 18px 44px rgba(23,33,31,.1)}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,sans-serif;background:var(--soft);color:var(--ink);letter-spacing:0}button,input,select,textarea{font:inherit}button{cursor:pointer}
 .access-gate{min-height:100vh;display:grid;place-items:center;background:linear-gradient(135deg,#071016,#12231f);color:#f6fbf8;padding:22px}.access-card{width:min(500px,100%);border:1px solid #263640;background:#0b151d;border-radius:8px;padding:22px;box-shadow:0 18px 44px rgba(0,0,0,.28)}.access-card h1{font-size:25px;margin:0 0 6px}.access-card p{color:#b9c9c3;margin:0 0 18px;font-size:13px;line-height:1.5}.access-card label{display:grid;gap:6px;font-size:12px;font-weight:800;color:#d4e1dc;margin-top:10px}.access-card input,.access-card select{min-height:40px;border:1px solid #263640;border-radius:8px;background:#071016;color:#f6fbf8;padding:9px 11px}.access-error{min-height:18px;color:#ffb3b9;font-size:12px;margin-top:10px}.access-meta{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:14px;color:#9cafaa;font-size:11px}.access-table{width:100%;border-collapse:collapse;font-size:12px}.access-table th,.access-table td{border-bottom:1px solid var(--line);padding:8px;text-align:left;white-space:normal}.access-table th{color:var(--muted);font-weight:800;background:#f7faf8}.readonly .requires-edit,.readonly .edit-row,.readonly .edit-entry,.readonly .delete-entry,.readonly #saveDailyBtn,.readonly #clearLogBtn,.readonly #cancelDailyEditBtn,.readonly #resetBtn,.readonly .entry-config{display:none!important}.access-denied{display:none!important}
@@ -5054,6 +5054,280 @@ function masterReportHtml(){
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function(){ setTimeout(bindV27, 250); });
   else setTimeout(bindV27, 250);
   setTimeout(bindV27, 1200);
+})();
+
+
+/* === V29_DOCUMENTS_STRICT_FILTERS_CALENDAR ===
+   Focused patch on top of good V28:
+   - Shows Document Register records in Daily/Master printed and exported reports.
+   - Applies Master/Daily filters strictly to entries and documents.
+   - Converts date fields to browser calendar pickers without changing stored data.
+*/
+(function(){
+  'use strict';
+  var MARKER = 'V29_DOCUMENTS_STRICT_FILTERS_CALENDAR';
+  if (window.__V29_DOCUMENTS_STRICT_FILTERS_CALENDAR__) return;
+  window.__V29_DOCUMENTS_STRICT_FILTERS_CALENDAR__ = true;
+  window.AIP5_V29_MARKER = MARKER;
+
+  function byId(id){ return document.getElementById(id); }
+  function h(v){ return String(v == null ? '' : v).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]; }); }
+  function n(v){ var x = Number(v || 0); return isFinite(x) ? x : 0; }
+  function pct(v){ return Math.max(0, Math.min(100, Math.round(n(v) * 100) / 100)); }
+  function arr(v){ return Array.isArray(v) ? v : (v ? [v] : []); }
+  function uniq(a){ return Array.from(new Set((a || []).map(function(x){ return String(x || '').trim(); }).filter(Boolean))); }
+  function iso(v){
+    try { if (typeof dateValue === 'function') return dateValue(v) || ''; } catch(e) {}
+    try {
+      if(!v) return '';
+      var s = String(v).trim();
+      if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+      var d = new Date(s);
+      if(!isNaN(d)) return d.toISOString().slice(0,10);
+    } catch(e) {}
+    return '';
+  }
+  function showDate(v){ try { return typeof displayDate === 'function' ? (displayDate(v) || '') : String(v || ''); } catch(e){ return String(v || ''); } }
+  function statusFromPct(p){ p = pct(p); return p >= 100 ? 'Complete' : (p > 0 ? 'In Progress' : 'Not Started'); }
+  function statusOfEntry(e){ return e.status || statusFromPct(e.totalAfter || e.dailyProgress || e.progress || 0); }
+  function statusOfRow(r){ return r.status || statusFromPct(r.progress || 0); }
+  function linkTxt(e){
+    try { if (typeof linkDisplay === 'function') return linkDisplay(e) || ''; } catch(err) {}
+    return [e.linkFrom, e.linkTo].filter(Boolean).join(' → ');
+  }
+  function siteLabelFromEntry(e){ return e.assetLabel || e.assetId || e.site || e.location || ''; }
+  function siteLabelFromRow(r){ try { return typeof label === 'function' ? label(r) : (r.displayId || r.id || ''); } catch(e){ return r.displayId || r.id || ''; } }
+  function rowsAll(){ try { return typeof allRows === 'function' ? allRows() : ((window.DATA && DATA.items) || []); } catch(e){ return (window.DATA && DATA.items) || []; } }
+  function rowById(id){ return rowsAll().find(function(r){ return String(r.id || '') === String(id || ''); }) || null; }
+  function selected(id){
+    var el = byId(id);
+    if(!el) return [];
+    if(el.multiple){
+      return Array.from(el.selectedOptions || []).map(function(o){return o.value;}).filter(function(v){return v && v !== 'all';});
+    }
+    return el.value && el.value !== 'all' ? [el.value] : [];
+  }
+  function one(id){ var el = byId(id); return el ? (el.value || '') : ''; }
+  function numOrNull(v){ var x = Number(v); return isFinite(x) && String(v || '').trim() !== '' ? x : null; }
+  function filterStateV29(prefix){
+    return {
+      site: selected(prefix + 'FilterSite'),
+      system: selected(prefix + 'FilterSystem'),
+      scope: selected(prefix + 'FilterScope'),
+      status: selected(prefix + 'FilterStatus'),
+      contractor: selected(prefix + 'FilterContractor'),
+      party: selected(prefix + 'FilterParty'),
+      min: numOrNull(one(prefix + 'FilterMin')),
+      max: numOrNull(one(prefix + 'FilterMax')),
+      from: iso(one(prefix + 'FilterFrom')),
+      to: iso(one(prefix + 'FilterTo')),
+      sort: one(prefix + 'FilterSort') || 'progressLatest'
+    };
+  }
+  function has(list){ return Array.isArray(list) && list.length > 0; }
+  function inList(value, list){ return !has(list) || list.indexOf(String(value || '')) >= 0; }
+  function systemOk(value, list){ if(!has(list)) return true; var s = String(value || ''); return list.some(function(v){ return s === v || s.indexOf(v) >= 0; }); }
+  function dateOk(date, from, to){ var d = iso(date); if(from && (!d || d < from)) return false; if(to && (!d || d > to)) return false; return true; }
+  function entryProgressForFilter(e){ return n(e.totalAfter || e.dailyProgress || e.progress || 0); }
+  function entryMatchesV29(e, f){
+    if(!inList(e.assetId, f.site)) return false;
+    if(!inList(e.system, f.system)) return false;
+    if(has(f.scope) && f.scope.indexOf(String(e.projectScope || e.scope || '')) < 0) return false;
+    if(has(f.status) && f.status.indexOf(statusOfEntry(e)) < 0) return false;
+    if(!inList(e.contractor, f.contractor)) return false;
+    if(!inList(e.partyType, f.party)) return false;
+    var p = entryProgressForFilter(e);
+    if(f.min != null && p < f.min) return false;
+    if(f.max != null && p > f.max) return false;
+    if(!dateOk(e.date, f.from, f.to)) return false;
+    return true;
+  }
+  function rowMatchesV29(r, f){
+    if(!inList(r.id, f.site)) return false;
+    if(!systemOk(r.system, f.system)) return false;
+    if(has(f.scope) && f.scope.indexOf(String(r.scope || 'New')) < 0) return false;
+    if(has(f.status) && f.status.indexOf(statusOfRow(r)) < 0) return false;
+    var p = n(r.progress || 0);
+    if(f.min != null && p < f.min) return false;
+    if(f.max != null && p > f.max) return false;
+    var rd = '';
+    try { rd = typeof rowDate === 'function' ? rowDate(r) : (r.lastUpdate || r.date || ''); } catch(e) { rd = r.lastUpdate || r.date || ''; }
+    if(!dateOk(rd, f.from, f.to)) return false;
+    return true;
+  }
+  function entriesWithMirrors(src){
+    src = Array.isArray(src) ? src : (window.dailyEntries || []);
+    try { return typeof reportEntriesWithMirrors === 'function' ? reportEntriesWithMirrors(src) : src; } catch(e){ return src; }
+  }
+  function sortEntries(list){
+    return (list || []).slice().sort(function(a,b){ return iso(b.date).localeCompare(iso(a.date)) || String(b.id || '').localeCompare(String(a.id || '')); });
+  }
+  window.filteredDailyEntries = function(prefix){
+    prefix = prefix || 'daily';
+    var f = filterStateV29(prefix);
+    var base = prefix === 'master' ? entriesWithMirrors(window.dailyEntries || []) : (window.dailyEntries || []);
+    return sortEntries(base.filter(function(e){ return entryMatchesV29(e, f); }));
+  };
+  window.filteredMasterRows = function(){
+    var f = filterStateV29('master');
+    var rows = rowsAll().filter(function(r){ return rowMatchesV29(r, f); });
+    try { return typeof sortMasterRows === 'function' ? sortMasterRows(rows) : rows; } catch(e){ return rows; }
+  };
+
+  function getDocKey(d){ return [d.ref || d.docRef || d.number || '', d.title || d.subject || '', d.date || d.documentDate || '', d.signatureDate || d.signedDate || ''].map(function(x){ return String(x || '').trim().toLowerCase(); }).join('|'); }
+  function normalizeDoc(d){
+    d = Object.assign({}, d || {});
+    d.id = d.id || ('doc-' + Math.random().toString(36).slice(2));
+    d.date = d.date || d.documentDate || d.receivedDate || d.createdDate || '';
+    d.type = d.type || d.docType || d.documentType || 'Document';
+    d.ref = d.ref || d.docRef || d.reference || d.number || '';
+    d.title = d.title || d.subject || d.description || '';
+    d.signatureDate = d.signatureDate || d.signedDate || d.signed || '';
+    d.assetId = d.assetId || d.site || d.relatedSite || '';
+    d.assetLabel = d.assetLabel || d.siteLabel || d.assetId || '';
+    d.system = d.system || d.relatedSystem || '';
+    d.status = d.status || 'Signed';
+    d.attachments = Array.isArray(d.attachments) ? d.attachments : [];
+    return d;
+  }
+  window.recoverDocumentEntries = function(){
+    var collected = [];
+    try { if(Array.isArray(window.documentEntries)) collected = collected.concat(window.documentEntries); } catch(e) {}
+    ['aip5-document-register-v14','aip5-document-register','aip5-documents','aip5-document-log','documentEntries'].forEach(function(k){
+      try {
+        var raw = localStorage.getItem(k);
+        if(!raw) return;
+        var parsed = JSON.parse(raw);
+        if(Array.isArray(parsed)) collected = collected.concat(parsed);
+        else if(parsed && typeof parsed === 'object') collected = collected.concat(Object.values(parsed));
+      } catch(e) {}
+    });
+    var seen = new Set();
+    var out = [];
+    collected.filter(Boolean).map(normalizeDoc).forEach(function(d){
+      var key = getDocKey(d);
+      if(!seen.has(key)){ seen.add(key); out.push(d); }
+    });
+    try { window.documentEntries = out; localStorage.setItem('aip5-document-register-v14', JSON.stringify(out)); } catch(e) {}
+    return out;
+  };
+  function docDateMatches(d, f){
+    if(!f.from && !f.to) return true;
+    return dateOk(d.date, f.from, f.to) || dateOk(d.signatureDate, f.from, f.to);
+  }
+  function docMatches(d, f){
+    if(has(f.site) && f.site.indexOf(String(d.assetId || '')) < 0 && f.site.indexOf(String(d.assetLabel || '')) < 0) return false;
+    if(has(f.system) && f.system.indexOf(String(d.system || '')) < 0) return false;
+    if(has(f.status) && f.status.indexOf(String(d.status || '')) < 0) return false;
+    if(!docDateMatches(d, f)) return false;
+    return true;
+  }
+  function docsFor(prefix){
+    var f = filterStateV29(prefix || 'master');
+    return window.recoverDocumentEntries().filter(function(d){ return docMatches(d, f); }).sort(function(a,b){ return iso(b.date || b.signatureDate).localeCompare(iso(a.date || a.signatureDate)) || String(b.id || '').localeCompare(String(a.id || '')); });
+  }
+  function documentTable(prefix){
+    var docs = docsFor(prefix || 'master');
+    var title = prefix === 'daily' ? 'Document register related to selected daily filters' : 'Document register related to selected master filters';
+    var body = docs.length ? docs.map(function(d){
+      var files = arr(d.attachments).map(function(a){ return a.name || a.fileName || a; }).join(', ');
+      return '<tr><td>'+h(showDate(d.date))+'</td><td>'+h(d.type)+'</td><td>'+h(d.ref)+'</td><td>'+h(d.title)+'</td><td>'+h(showDate(d.signatureDate))+'</td><td>'+h(d.status)+'</td><td>'+h(d.assetLabel || d.assetId)+'</td><td>'+h(d.system)+'</td><td>'+h(files || '-')+'</td><td>'+h(d.remarks || '')+'</td></tr>';
+    }).join('') : '<tr><td colspan="10">No document records match the current filters.</td></tr>';
+    return '<h2>'+h(title)+'</h2><table class="report-table"><thead><tr><th>Document Date</th><th>Type</th><th>Reference</th><th>Title / Subject</th><th>Signature Date</th><th>Status</th><th>Related Site</th><th>System</th><th>Attachments</th><th>Remarks</th></tr></thead><tbody>'+body+'</tbody></table>';
+  }
+
+  function reportCss(){
+    return '<style>'+[
+      '@page{size:A4 landscape;margin:7mm}',
+      '*{box-sizing:border-box}',
+      'html,body{margin:0;padding:0;background:#fff;color:#17211f;font-family:Arial,Helvetica,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}',
+      'body{font-size:9.8px;line-height:1.28}',
+      '.report-page{padding:10px}',
+      '.header{background:#10231f;color:#fff;border:1px solid #10231f;border-radius:8px;padding:10px 12px;margin-bottom:8px;page-break-inside:avoid}',
+      '.header h1{font-size:20px;margin:0 0 4px}.header p{margin:2px 0;color:#d7e8e2}',
+      'h2{font-size:13px;margin:10px 0 5px;padding-bottom:3px;border-bottom:2px solid #d8e2de;page-break-after:avoid}',
+      '.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:7px 0;page-break-inside:avoid}.card{border:1px solid #bcc9c4;background:#f7faf8;border-radius:7px;padding:6px}.card b{display:block;font-size:15px;color:#1f7a5c}.card span{font-size:9px;color:#60706b;font-weight:bold}',
+      '.charts{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin:8px 0;page-break-inside:avoid}.chart-box{border:1px solid #bfcac5;background:#fbfdfc;border-radius:7px;padding:6px;page-break-inside:avoid}',
+      '.chart-table,.report-table{width:100%;border-collapse:collapse;table-layout:fixed}.chart-table th,.chart-table td,.report-table th,.report-table td{border:1px solid #cfd9d5;padding:3px 4px;vertical-align:top;word-break:break-word;overflow-wrap:anywhere}.chart-table th,.report-table th{background:#e8f1ed;color:#17211f;font-weight:bold}.report-table th{font-size:8.8px}.report-table td{font-size:8.6px}',
+      '.chart-track{height:9px;background:#e5ece9;border-radius:99px;overflow:hidden}.chart-track span{display:block;height:100%;background:#1f7a5c}.chart-label{width:38%;font-weight:bold}.chart-value{text-align:right;font-weight:bold}.note{border:1px solid #d8e2de;background:#f7faf8;border-radius:7px;padding:6px;margin:7px 0;page-break-inside:avoid}.print-btn{display:none!important}',
+      'thead{display:table-header-group}tfoot{display:table-footer-group}tr{page-break-inside:avoid}',
+      '@media screen{body{background:#edf3f0}.report-page{background:#fff;max-width:1280px;margin:0 auto;min-height:100vh}}',
+      '@media print{body{font-size:9px}.report-page{padding:0}.header,.cards,.chart-box,.note{page-break-inside:avoid}.report-table th,.report-table td{padding:2.6px 3px}.charts{gap:5px}}'
+    ].join('')+'</style>';
+  }
+  function cardBlock(items){ return '<div class="cards">'+items.map(function(x){ return '<div class="card"><span>'+h(x.label)+'</span><b>'+h(x.value)+'</b></div>'; }).join('')+'</div>'; }
+  function shell(title, subtitle, cards, charts, sections, excel){
+    return '<!doctype html><html><head><meta charset="utf-8"><title>'+h(title)+'</title>'+reportCss()+'</head><body><div class="report-page"><div class="header"><h1>'+h(title)+'</h1><p>'+h(subtitle)+'</p><p>Generated: '+h(new Date().toLocaleString())+'</p></div>'+cards+charts+sections+'</div></body></html>';
+  }
+  function groupByProgress(items, keyFn){
+    var map = new Map();
+    (items || []).forEach(function(x){ var k = keyFn(x) || 'Unspecified'; if(!map.has(k)) map.set(k, []); map.get(k).push(x); });
+    return Array.from(map.entries()).map(function(pair){ var list = pair[1]; var avg = list.length ? pct(list.reduce(function(a,x){ return a + n(x.progress || x.totalAfter || x.dailyProgress || 0); },0) / list.length) : 0; return {label: pair[0], progress: avg, count: list.length}; });
+  }
+  function bars(title, rows){
+    rows = (rows || []).slice(0,10);
+    if(!rows.length) rows = [{label:'No matching data', progress:0, count:0}];
+    return '<div class="chart-box"><h3>'+h(title)+'</h3><table class="chart-table"><thead><tr><th>Item</th><th>Progress</th><th>Value</th></tr></thead><tbody>'+rows.map(function(r){ var v=pct(r.progress); return '<tr><td class="chart-label">'+h(r.label)+'</td><td><div class="chart-track"><span style="width:'+v+'%"></span></div></td><td class="chart-value">'+h(v+'%')+'</td></tr>'; }).join('')+'</tbody></table></div>';
+  }
+  function dailyRows(entries){
+    return (entries || []).map(function(e){ var doc = [e.docType, e.docRef].filter(Boolean).join(' '); return '<tr><td>'+h(showDate(e.date))+'</td><td>'+h(siteLabelFromEntry(e))+'</td><td>'+h(e.system)+'</td><td>'+h(e.specificItem || '')+'</td><td>'+h(e.mainActivity || '')+'</td><td>'+h(e.subActivity || '')+'</td><td>'+h(e.tag || '')+'</td><td>'+h(linkTxt(e))+'</td><td>'+h(e.mirrorSide || 'Original')+'</td><td>'+h(e.plannedQty || 0)+' '+h(e.uom || '')+'</td><td>'+h(e.dailyQty || 0)+' '+h(e.uom || '')+'</td><td>'+h(e.dailyProgress || 0)+'%</td><td>'+h(e.totalAfter || e.progress || 0)+'%</td><td>'+h(statusOfEntry(e))+'</td><td>'+h(doc)+'</td><td>'+h(e.contractor || '')+'</td><td>'+h(e.remarks || '')+'</td></tr>'; }).join('') || '<tr><td colspan="17">No matching daily entries.</td></tr>';
+  }
+  function grouped(entries){
+    var map = new Map();
+    (entries || []).forEach(function(e){ var k = [e.assetId,e.system,e.specificItem,e.mainActivity,e.subActivity,e.tag,linkTxt(e),e.mirrorSide].join('|').toLowerCase(); if(!map.has(k)) map.set(k, []); map.get(k).push(e); });
+    return Array.from(map.values()).map(function(list){
+      var sorted = sortEntries(list); var latest = sorted[0] || {}; var plan = Math.max.apply(null, [0].concat(list.map(function(x){return n(x.plannedQty);}))); var done = list.reduce(function(a,x){return a+n(x.dailyQty);},0); var prog = plan>0 ? pct(done/plan*100) : pct(latest.totalAfter || latest.dailyProgress || 0); return {latest:latest, plan:plan, done:done, balanceQty:plan>0?Math.max(plan-done,0):0, progress:prog, balancePct:pct(100-prog), status:statusFromPct(prog), count:list.length};
+    }).sort(function(a,b){ return siteLabelFromEntry(a.latest).localeCompare(siteLabelFromEntry(b.latest)) || String(a.latest.system||'').localeCompare(String(b.latest.system||'')); });
+  }
+  function detailRows(groups){ return (groups || []).map(function(g){ var e=g.latest||{}; return '<tr><td>'+h(siteLabelFromEntry(e))+'</td><td>'+h(e.system||'')+'</td><td>'+h(e.specificItem||'')+'</td><td>'+h(e.mainActivity||'')+'</td><td>'+h(e.subActivity||'')+'</td><td>'+h(e.tag||'')+'</td><td>'+h(linkTxt(e))+'</td><td>'+h(e.mirrorSide||'Original')+'</td><td>'+h(g.plan)+' '+h(e.uom||'')+'</td><td>'+h(g.done)+' '+h(e.uom||'')+'</td><td>'+h(g.balanceQty)+' '+h(e.uom||'')+'</td><td>'+h(g.progress)+'%</td><td>'+h(g.balancePct)+'%</td><td>'+h(g.status)+'</td><td>'+h(showDate(e.date))+'</td><td>'+h(e.remarks||'')+'</td></tr>'; }).join('') || '<tr><td colspan="16">No detailed activity progress found.</td></tr>'; }
+
+  window.dailyReportHtml = function(excel){
+    var entries = window.filteredDailyEntries('daily');
+    var groups = grouped(entries);
+    var avg = groups.length ? pct(groups.reduce(function(a,g){return a+g.progress;},0)/groups.length) : 0;
+    var cards = cardBlock([{label:'Selected entries',value:entries.length},{label:'Activity groups',value:groups.length},{label:'Average activity progress',value:avg+'%'},{label:'Systems covered',value:uniq(entries.map(function(e){return e.system;})).length},{label:'Sites covered',value:uniq(entries.map(function(e){return e.assetId;})).length}]);
+    var charts = '<div class="charts">'+bars('Daily progress by system', groupByProgress(entries, function(e){return e.system;}))+bars('Daily progress by site', groupByProgress(entries, siteLabelFromEntry))+'</div>';
+    var sections = '<h2>Latest daily entries</h2><table class="report-table"><thead><tr><th>Date</th><th>Site</th><th>System</th><th>Sub-System / Item</th><th>Activity</th><th>Work Step</th><th>Manual Tag</th><th>Link From → To</th><th>Shown As</th><th>Planned Qty</th><th>Daily Qty</th><th>Daily %</th><th>Total %</th><th>Status</th><th>Document</th><th>Contractor</th><th>Remarks</th></tr></thead><tbody>'+dailyRows(entries)+'</tbody></table>'+documentTable('daily')+'<h2>Detailed item / activity progress</h2><table class="report-table"><thead><tr><th>Site</th><th>System</th><th>Sub-System / Item</th><th>Activity</th><th>Work Step</th><th>Manual Tag</th><th>Link From → To</th><th>Shown As</th><th>Planned Qty</th><th>Cumulative Done Qty</th><th>Balance Qty</th><th>Progress %</th><th>Balance %</th><th>Status</th><th>Latest Date</th><th>Remarks</th></tr></thead><tbody>'+detailRows(groups)+'</tbody></table>';
+    return shell('Daily Progress Report','Filtered daily progress entries with documents and detailed activity progress.',cards,charts,sections,!!excel);
+  };
+  window.masterReportHtml = function(excel){
+    var entries = window.filteredDailyEntries('master');
+    var groups = grouped(entries);
+    var avg = groups.length ? pct(groups.reduce(function(a,g){return a+g.progress;},0)/groups.length) : 0;
+    var rows = [];
+    try { rows = window.filteredMasterRows(); } catch(e) { rows = []; }
+    var cards = cardBlock([{label:'Selected assets',value:rows.length},{label:'Selected daily entries',value:entries.length},{label:'Detailed activity groups',value:groups.length},{label:'Average actual progress',value:avg+'%'},{label:'Documents',value:docsFor('master').length}]);
+    var charts = '<div class="charts">'+bars('Master progress by system', groupByProgress(entries, function(e){return e.system;}))+bars('Master progress by site', groupByProgress(entries, siteLabelFromEntry))+bars('Top site / activity / tag progress', groups.map(function(g){return {label:[siteLabelFromEntry(g.latest),g.latest.system,g.latest.tag || g.latest.specificItem].filter(Boolean).join(' / '), progress:g.progress};}).sort(function(a,b){return b.progress-a.progress;}))+bars('Asset tracker selected rows', rows.map(function(r){return {label:siteLabelFromRow(r), progress:n(r.progress||0)};}))+'</div>';
+    var note = '<div class="note"><b>Filter logic:</b> The report now shows only records matching the selected site/system/scope/status/progress/date filters. Document dates and signature dates are also checked against the selected date range.</div>';
+    var sections = note+'<h2>Latest daily entries</h2><table class="report-table"><thead><tr><th>Date</th><th>Site</th><th>System</th><th>Sub-System / Item</th><th>Activity</th><th>Work Step</th><th>Manual Tag</th><th>Link From → To</th><th>Shown As</th><th>Planned Qty</th><th>Daily Qty</th><th>Daily %</th><th>Total %</th><th>Status</th><th>Document</th><th>Contractor</th><th>Remarks</th></tr></thead><tbody>'+dailyRows(entries)+'</tbody></table>'+documentTable('master')+'<h2>Detailed item / activity progress</h2><table class="report-table"><thead><tr><th>Site</th><th>System</th><th>Sub-System / Item</th><th>Activity</th><th>Work Step</th><th>Manual Tag</th><th>Link From → To</th><th>Shown As</th><th>Planned Qty</th><th>Cumulative Done Qty</th><th>Balance Qty</th><th>Progress %</th><th>Balance %</th><th>Status</th><th>Latest Date</th><th>Remarks</th></tr></thead><tbody>'+detailRows(groups)+'</tbody></table>';
+    return shell('Master Progress Report','Filtered master progress with latest entries first, document register, and detailed activity progress.',cards,charts,sections,!!excel);
+  };
+  window.reportHtml = function(){ return window.dailyReportHtml(false); };
+
+  function installCalendar(id){
+    var el = byId(id);
+    if(!el) return;
+    var current = iso(el.value);
+    try { el.type = 'date'; } catch(e) { return; }
+    if(current) el.value = current;
+    el.placeholder = 'yyyy-mm-dd';
+  }
+  function installCalendars(){
+    ['entryDate','masterFilterFrom','masterFilterTo','dailyFilterFrom','dailyFilterTo','docEntryDate','docEntrySignedDate'].forEach(installCalendar);
+  }
+  function refreshAfterFilter(){ try { if(typeof renderLog === 'function') renderLog(); } catch(e){} try { if(typeof drawMasterDonut === 'function') drawMasterDonut(); } catch(e){} }
+  function bindFilterEvents(){
+    ['masterFilterSite','masterFilterSystem','masterFilterScope','masterFilterStatus','masterFilterMin','masterFilterMax','masterFilterFrom','masterFilterTo','dailyFilterSite','dailyFilterSystem','dailyFilterScope','dailyFilterContractor','dailyFilterParty','dailyFilterMin','dailyFilterMax','dailyFilterFrom','dailyFilterTo'].forEach(function(id){
+      var el = byId(id); if(el && !el.__v29FilterBound){ el.__v29FilterBound = true; el.addEventListener('change', refreshAfterFilter); el.addEventListener('input', refreshAfterFilter); }
+    });
+  }
+  function bootV29(){ installCalendars(); bindFilterEvents(); try { recoverDocumentEntries(); } catch(e){} try { if(typeof renderDocumentList === 'function') renderDocumentList(); } catch(e){} }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function(){ setTimeout(bootV29, 300); setTimeout(bootV29, 1500); }); else { setTimeout(bootV29, 300); setTimeout(bootV29, 1500); }
+  var oldRenderAll = window.renderAll;
+  if(oldRenderAll && !oldRenderAll.__v29Wrapped){
+    window.renderAll = function(){ var r = oldRenderAll.apply(this, arguments); setTimeout(bootV29, 100); return r; };
+    window.renderAll.__v29Wrapped = true;
+  }
 })();
 
 </script>
