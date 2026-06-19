@@ -119,7 +119,7 @@ body.auth-unlocked #appShell{display:grid!important}
 #masterFilterStatus[multiple]{min-height:78px}
 #master .filter-note{grid-column:1/-1}
 </style><!-- V18_SITE_TRACKER_MATRIX_YESNO -->
-</head><body class="auth-locked" data-version="V25-EMERGENCY-LOGIN-OVERRIDE">
+</head><body class="auth-locked" data-version="V23-DAILY-ENTRY-STABILITY">
 <div class="access-gate" id="emailGate">
   <div class="access-card">
     <h1>AiP5 BAB Field Telecom</h1>
@@ -2945,13 +2945,14 @@ function reportAssetRemarks(row,entries,system){const related=reportEntriesForAs
 function sortReportAssetsByActivity(rows,entries){const original=new Map(rows.map((r,i)=>[r.id,i]));return rows.slice().sort((a,b)=>{const ae=latestReportEntry(entries,a.id),be=latestReportEntry(entries,b.id);const ad=ae?dateValue(ae.date):'',bd=be?dateValue(be.date):'';return (ad?0:1)-(bd?0:1)||bd.localeCompare(ad)||masterProgressRank(a)-masterProgressRank(b)||Number(b.progress||0)-Number(a.progress||0)||(original.get(a.id)||0)-(original.get(b.id)||0)})}
 function groupedMasterDetailRows(entries){const groups=groupedByEntryKey(entries);return Object.values(groups).map(list=>{const latest=list.slice().sort((a,b)=>dateValue(b.date).localeCompare(dateValue(a.date))||String(b.id).localeCompare(String(a.id)))[0]||{};const st=groupStats(list);return{latest,plan:st.plan,qty:st.qty,progress:st.progress}}).sort((a,b)=>String(a.latest.assetLabel||'').localeCompare(String(b.latest.assetLabel||''))||String(a.latest.system||'').localeCompare(String(b.latest.system||''))||String(a.latest.specificItem||'').localeCompare(String(b.latest.specificItem||'')))}
 function masterReportHtml(){
-  return '<!doctype html><html><head><meta charset="utf-8"><title>Master Progress Report</title></head><body><h1>Master Progress Report</h1><p>Report engine is loading...</p>
-<script>
-/* === V25_EMERGENCY_LOGIN_OVERRIDE ===
+  return '<!doctype html><html><head><meta charset="utf-8"><title>Master Progress Report</title></head><body><h1>Master Progress Report</h1><p>Report engine is loading...</p></body></html>';
+}
+
+/* === V24_LOGIN_NO_BLOCK_STABLE ===
    Focused patch: prevents Daily Entry form reload/logout, restores cascading dropdown bindings,
    and updates Daily/Overall progress live from Planned Qty + Daily Qty. */
 (function(){
-  window.AIP5_V23_MARKER = 'V25_EMERGENCY_LOGIN_OVERRIDE';
+  window.AIP5_V23_MARKER = 'V24_LOGIN_NO_BLOCK_STABLE';
 
   function qs(id){ return document.getElementById(id); }
   function safe(fn, fallback){ try { return fn(); } catch(e){ console.warn('V23 patch warning:', e); return fallback; } }
@@ -3181,10 +3182,7 @@ function masterReportHtml(){
     setTimeout(bindDailyEntryStable, 250);
   }
 })();
-</script>
 
-</body></html>';
-}
 /* === V15 REPORT/EXCEL/ROLE COLOR/FILTER/SITE VISIT PATCH === */
 (function(){
   const V15_MARKER = 'REPORT_EXCEL_COLOR_FILTER_SITEVISIT_V16';
@@ -4269,7 +4267,7 @@ function masterReportHtml(){
 
 
 
-/* === V25_EMERGENCY_LOGIN_OVERRIDE === */
+/* === V24_LOGIN_NO_BLOCK_STABLE === */
 (function(){
   window.AIP5_V21_MARKER='V21_SITE_FILTERS_ACCURATE_SYSTEM_PROGRESS';
   function qs(id){return document.getElementById(id)}
@@ -4360,7 +4358,7 @@ function masterReportHtml(){
 })();
 
 
-/* === V25_EMERGENCY_LOGIN_OVERRIDE ===
+/* === V24_LOGIN_NO_BLOCK_STABLE ===
    Progress model:
    Site progress = average of planned system progress.
    System progress = average of planned sub-system/item progress.
@@ -4370,7 +4368,7 @@ function masterReportHtml(){
    This prevents one completed activity/tag from making the whole system/site 100%.
 */
 (function(){
-  window.AIP5_V22_MARKER = 'V25_EMERGENCY_LOGIN_OVERRIDE';
+  window.AIP5_V22_MARKER = 'V24_LOGIN_NO_BLOCK_STABLE';
   function qs(id){return document.getElementById(id);}
   function n(v){var x=Number(v||0); return isFinite(x)?x:0;}
   function pct(v){return Math.max(0,Math.min(100,Math.round(n(v))));}
@@ -4490,127 +4488,102 @@ function masterReportHtml(){
   window.renderAll=function(){try{if(previousRenderAll)previousRenderAll.apply(this,arguments);}catch(e){console.warn('previous renderAll failed',e);} try{window.renderKpis();}catch(e){} try{window.renderRows();}catch(e){} try{bindSiteFilters();bindReportButtons();}catch(e){}};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){bindSiteFilters();bindReportButtons();try{window.renderKpis();window.renderRows();}catch(e){}},500);}); else setTimeout(function(){bindSiteFilters();bindReportButtons();try{window.renderKpis();window.renderRows();}catch(e){}},500);
 })();
-</script>
 
-<script>
-/* === V25_EMERGENCY_LOGIN_OVERRIDE ===
-   This is a final independent login override. It does not wait for Firebase,
-   crypto.subtle, or older login handlers. It opens the tracker first, then the
-   rest of the app can render/sync in the background. */
+
+/* === V26_V24_LOGIN_ONLY_REPAIR ===
+   Built from V24. Fixes the broken login/page script without changing the data model or report logic.
+   Keeps existing daily entries/storage keys and avoids the V25 emergency override data loss. */
 (function(){
-  var USERS = [
-    { email:'ziadseller@gmail.com', role:'admin', pin:'220321' },
-    { email:'jetawi333@yahoo.com', role:'viewer' },
-    { email:'jitawee333@yahoo.com', role:'viewer' },
-    { email:'kyahiya@adnoc.ae', role:'viewer' },
-    { email:'ebbygeorge17@gmail.com', role:'daily_entry', pin:'326587' }
-  ];
-  function q(id){ return document.getElementById(id); }
-  function findUser(email){
-    email = String(email || '').trim().toLowerCase();
-    return USERS.find(function(u){ return u.email.toLowerCase() === email; }) || null;
-  }
-  function openAppHard(user){
-    try { currentUserEmail = user.email.toLowerCase(); } catch(e) { window.currentUserEmail = user.email.toLowerCase(); }
-    try { currentUserRole = user.role || 'viewer'; } catch(e) { window.currentUserRole = user.role || 'viewer'; }
-    try { sessionStorage.setItem('aip5_gate_email', user.email.toLowerCase()); } catch(e) {}
-    try { sessionStorage.setItem('aip5_gate_role', user.role || 'viewer'); } catch(e) {}
+  window.AIP5_VERSION_MARKER = 'V26_V24_LOGIN_ONLY_REPAIR';
 
+  function byId(id){ return document.getElementById(id); }
+  function normEmail(v){ return String(v || '').trim().toLowerCase(); }
+  function findUser(email){
+    try{
+      if (typeof getAccessUser === 'function') return getAccessUser(email);
+      if (Array.isArray(window.ACCESS_USERS)) return window.ACCESS_USERS.find(function(u){ return normEmail(u.email) === normEmail(email); }) || null;
+      if (typeof ACCESS_USERS !== 'undefined' && Array.isArray(ACCESS_USERS)) return ACCESS_USERS.find(function(u){ return normEmail(u.email) === normEmail(email); }) || null;
+    }catch(e){}
+    return null;
+  }
+  function sha256(pin){
+    if (typeof hashPin === 'function') return hashPin(pin);
+    if (window.crypto && crypto.subtle) {
+      return crypto.subtle.digest('SHA-256', new TextEncoder().encode(pin)).then(function(buf){
+        return Array.from(new Uint8Array(buf)).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+      });
+    }
+    return Promise.reject(new Error('Browser crypto not available'));
+  }
+  function unlock(){
     document.body.classList.remove('auth-locked');
     document.body.classList.add('auth-unlocked');
-    var gate = q('emailGate');
-    if (gate) gate.style.display = 'none';
-    var app = q('appShell');
-    if (app) {
-      app.hidden = false;
-      app.style.display = 'grid';
-      app.classList.remove('readonly','viewer-user','field-user','daily-entry-user','admin-user');
-      if ((user.role || '') === 'admin') app.classList.add('admin-user');
-      else if ((user.role || '') === 'daily_entry') app.classList.add('daily-entry-user');
-      else app.classList.add('field-user','viewer-user','readonly');
-    }
-
-    // Apply role UI and render after opening. Errors must never relock the user.
-    setTimeout(function(){
-      try { if (typeof applyRoleUI === 'function') applyRoleUI(); } catch(e) { console.warn('V25 applyRoleUI skipped', e); }
-      try { if (typeof populateForms === 'function') populateForms(); } catch(e) { console.warn('V25 populateForms skipped', e); }
-      try { if (typeof renderConfigPanel === 'function') renderConfigPanel(); } catch(e) { console.warn('V25 renderConfigPanel skipped', e); }
-      try { if (typeof renderAll === 'function') renderAll(false); } catch(e) { console.warn('V25 renderAll skipped', e); }
-      try { if (window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons(); } catch(e) {}
-      try {
-        document.body.classList.remove('auth-locked');
-        document.body.classList.add('auth-unlocked');
-        var app2 = q('appShell'); if (app2) { app2.hidden=false; app2.style.display='grid'; }
-        var gate2 = q('emailGate'); if (gate2) gate2.style.display='none';
-      } catch(e) {}
-    }, 50);
+    var gate=byId('emailGate'); if(gate) gate.style.display='none';
+    var app=byId('appShell'); if(app){ app.hidden=false; app.style.display='grid'; }
   }
-  function installLoginOverride(){
-    var oldBtn = q('gateSubmit');
-    var emailInput = q('gateEmail');
-    var pinInput = q('gatePin');
-    var pinSection = q('pinSection');
-    var gateError = q('gateError');
-    if (!oldBtn || !emailInput) return;
-
-    // Replace button to remove any old/broken listeners.
-    var btn = oldBtn.cloneNode(true);
-    oldBtn.parentNode.replaceChild(btn, oldBtn);
-    btn.disabled = false;
-    btn.textContent = 'Enter';
-    if (gateError) gateError.textContent = '';
-    if (pinSection) { pinSection.style.display = 'none'; delete pinSection.dataset.shown; }
-    document.body.classList.add('auth-locked');
-    document.body.classList.remove('auth-unlocked');
-    var app = q('appShell'); if (app) { app.hidden = true; app.style.display = 'none'; }
-    var gate = q('emailGate'); if (gate) gate.style.display = 'grid';
-
-    function verify(){
-      var email = String(emailInput.value || '').trim().toLowerCase();
-      var user = findUser(email);
-      if (!email) { if (gateError) gateError.textContent = 'Please enter your email address.'; return; }
-      if (!user) { if (gateError) gateError.textContent = 'Access denied. Contact admin to request access.'; return; }
-
-      if (user.pin) {
-        if (pinSection && pinSection.style.display === 'none') {
-          pinSection.style.display = 'block';
-          if (gateError) gateError.textContent = '';
-          btn.textContent = 'Verify PIN';
-          if (pinInput) pinInput.focus();
+  function openTracker(email, role){
+    try{ currentUserEmail = normEmail(email); currentUserRole = role || 'viewer'; }catch(e){}
+    try{ sessionStorage.setItem('aip5_gate_email', normEmail(email)); sessionStorage.setItem('aip5_gate_role', role || 'viewer'); }catch(e){}
+    try{ if (typeof applyRoleUI === 'function') applyRoleUI(); }catch(e){}
+    try{ if (typeof bootApp === 'function') { bootApp(); return; } }catch(e){ console.warn('bootApp warning:', e); }
+    try{ if (typeof populateForms === 'function') populateForms(); }catch(e){}
+    try{ if (typeof renderConfigPanel === 'function') renderConfigPanel(); }catch(e){}
+    try{ if (typeof renderAll === 'function') renderAll(); }catch(e){}
+    try{ if (typeof showApp === 'function') showApp(); else unlock(); }catch(e){ unlock(); }
+  }
+  async function handleLogin(){
+    var emailEl=byId('gateEmail'), pinEl=byId('gatePin'), pinBox=byId('pinSection'), err=byId('gateError'), btn=byId('gateSubmit');
+    if(!emailEl) return;
+    var email=normEmail(emailEl.value);
+    var user=findUser(email);
+    if(err) err.textContent='';
+    if(!email){ if(err) err.textContent='Please enter your email address.'; return; }
+    if(!user){ if(err) err.textContent='Access denied. Contact admin to request access.'; return; }
+    var requiresPin=!!user.pinHash;
+    if(requiresPin && pinBox && pinBox.style.display==='none'){
+      pinBox.style.display='block';
+      if(pinEl) { pinEl.value=''; pinEl.focus(); }
+      if(btn) btn.textContent='Verify PIN';
+      return;
+    }
+    if(requiresPin){
+      var pin=String((pinEl && pinEl.value) || '').trim();
+      if(!pin){ if(err) err.textContent='Please enter your PIN.'; return; }
+      if(btn){ btn.disabled=true; btn.textContent='Verifying...'; }
+      try{
+        var h=await sha256(pin);
+        if(h !== user.pinHash){
+          if(err) err.textContent='Incorrect PIN. Please try again.';
+          if(pinEl){ pinEl.value=''; pinEl.focus(); }
+          if(btn){ btn.disabled=false; btn.textContent='Verify PIN'; }
           return;
         }
-        var enteredPin = String((pinInput && pinInput.value) || '').trim();
-        if (!enteredPin) { if (gateError) gateError.textContent = 'Please enter your PIN.'; return; }
-        if (enteredPin !== user.pin) {
-          if (gateError) gateError.textContent = 'Incorrect PIN. Please try again.';
-          if (pinInput) { pinInput.value = ''; pinInput.focus(); }
-          return;
-        }
+      }catch(e){
+        // Fallback only for the existing published PINs, if crypto is blocked.
+        var ok=(email==='ziadseller@gmail.com' && pin==='220321') || (email==='ebbygeorge17@gmail.com' && pin==='326587');
+        if(!ok){ if(err) err.textContent='PIN verification failed. Please try again using HTTPS.'; if(btn){btn.disabled=false;btn.textContent='Verify PIN';} return; }
       }
-      if (gateError) gateError.textContent = 'Opening tracker...';
-      btn.disabled = true;
-      btn.textContent = 'Opening...';
-      openAppHard(user);
-      setTimeout(function(){ btn.disabled = false; btn.textContent = user.pin ? 'Verify PIN' : 'Enter'; }, 500);
+      if(btn){ btn.disabled=false; btn.textContent='Enter'; }
     }
-
-    btn.addEventListener('click', function(e){ e.preventDefault(); verify(); }, true);
-    emailInput.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); verify(); } }, true);
-    if (pinInput) pinInput.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); verify(); } }, true);
-    emailInput.addEventListener('input', function(){
-      if (gateError) gateError.textContent = '';
-      if (pinInput) pinInput.value = '';
-      if (pinSection) pinSection.style.display = 'none';
-      btn.disabled = false;
-      btn.textContent = 'Enter';
-    }, true);
+    openTracker(email, user.role || 'viewer');
   }
-
-  window.AIP5_LOGIN_PATCH = 'V25_EMERGENCY_LOGIN_OVERRIDE';
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', installLoginOverride);
-  else installLoginOverride();
-  // Reinstall once more after old render scripts finish.
-  setTimeout(installLoginOverride, 350);
+  function install(){
+    var btn=byId('gateSubmit'), emailEl=byId('gateEmail'), pinEl=byId('gatePin'), pinBox=byId('pinSection');
+    if(!btn || btn.__v26LoginInstalled) return;
+    btn.__v26LoginInstalled=true;
+    btn.onclick=function(e){ if(e) e.preventDefault(); handleLogin(); return false; };
+    if(emailEl && !emailEl.__v26LoginInstalled){
+      emailEl.__v26LoginInstalled=true;
+      emailEl.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); handleLogin(); }});
+      emailEl.addEventListener('input', function(){ if(pinBox){ pinBox.style.display='none'; delete pinBox.dataset.shown; } if(pinEl) pinEl.value=''; if(btn) btn.textContent='Enter'; var err=byId('gateError'); if(err) err.textContent=''; });
+    }
+    if(pinEl && !pinEl.__v26LoginInstalled){
+      pinEl.__v26LoginInstalled=true;
+      pinEl.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); handleLogin(); }});
+    }
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', install); else install();
 })();
+
 </script>
 </body></html>
