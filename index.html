@@ -119,7 +119,7 @@ body.auth-unlocked #appShell{display:grid!important}
 #masterFilterStatus[multiple]{min-height:78px}
 #master .filter-note{grid-column:1/-1}
 </style><!-- V18_SITE_TRACKER_MATRIX_YESNO -->
-</head><body class="auth-locked" data-version="V12-MASTER-REPORT-RESTORE">
+</head><body class="auth-locked" data-version="V23-DAILY-ENTRY-STABILITY">
 <div class="access-gate" id="emailGate">
   <div class="access-card">
     <h1>AiP5 BAB Field Telecom</h1>
@@ -2909,7 +2909,245 @@ function reportAssetRemarks(row,entries,system){const related=reportEntriesForAs
 function sortReportAssetsByActivity(rows,entries){const original=new Map(rows.map((r,i)=>[r.id,i]));return rows.slice().sort((a,b)=>{const ae=latestReportEntry(entries,a.id),be=latestReportEntry(entries,b.id);const ad=ae?dateValue(ae.date):'',bd=be?dateValue(be.date):'';return (ad?0:1)-(bd?0:1)||bd.localeCompare(ad)||masterProgressRank(a)-masterProgressRank(b)||Number(b.progress||0)-Number(a.progress||0)||(original.get(a.id)||0)-(original.get(b.id)||0)})}
 function groupedMasterDetailRows(entries){const groups=groupedByEntryKey(entries);return Object.values(groups).map(list=>{const latest=list.slice().sort((a,b)=>dateValue(b.date).localeCompare(dateValue(a.date))||String(b.id).localeCompare(String(a.id)))[0]||{};const st=groupStats(list);return{latest,plan:st.plan,qty:st.qty,progress:st.progress}}).sort((a,b)=>String(a.latest.assetLabel||'').localeCompare(String(b.latest.assetLabel||''))||String(a.latest.system||'').localeCompare(String(b.latest.system||''))||String(a.latest.specificItem||'').localeCompare(String(b.latest.specificItem||'')))}
 function masterReportHtml(){
-  return '<!doctype html><html><head><meta charset="utf-8"><title>Master Progress Report</title></head><body><h1>Master Progress Report</h1><p>Report engine is loading...</p></body></html>';
+  return '<!doctype html><html><head><meta charset="utf-8"><title>Master Progress Report</title></head><body><h1>Master Progress Report</h1><p>Report engine is loading...</p>
+<script>
+/* === V23_DAILY_ENTRY_STABILITY_FAST_BINDINGS ===
+   Focused patch: prevents Daily Entry form reload/logout, restores cascading dropdown bindings,
+   and updates Daily/Overall progress live from Planned Qty + Daily Qty. */
+(function(){
+  window.AIP5_V23_MARKER = 'V23_DAILY_ENTRY_STABILITY_FAST_BINDINGS';
+
+  function qs(id){ return document.getElementById(id); }
+  function safe(fn, fallback){ try { return fn(); } catch(e){ console.warn('V23 patch warning:', e); return fallback; } }
+  function n(v){ var x = Number(v || 0); return isFinite(x) ? x : 0; }
+  function pct(v){ return Math.max(0, Math.min(100, Math.round(n(v)))); }
+  function todaySafe(){ try { return today(); } catch(e){ return new Date().toISOString().slice(0,10); } }
+  function dateSafe(v){ try { return dateValue(v) || todaySafe(); } catch(e){ return todaySafe(); } }
+  function displayNow(){ try { return displayDateTime(new Date()); } catch(e){ return new Date().toLocaleString(); } }
+
+  function entryBase(){
+    var assetEl = qs('entryAsset');
+    var id = assetEl ? assetEl.value : '';
+    return safe(function(){
+      var row = (window.DATA && DATA.items ? DATA.items.find(function(r){ return r.id === id; }) : null) || (window.DATA && DATA.items ? DATA.items[0] : null);
+      return row ? (typeof current === 'function' ? current(row) : row) : {};
+    }, {});
+  }
+
+  function entryKeySafe(e){
+    if (typeof entryKey === 'function') return entryKey(e);
+    return [e.assetId,e.system,e.specificItem,e.mainActivity,e.subActivity,e.tag,e.linkFrom,e.linkTo].map(function(x){return String(x||'').trim().toLowerCase();}).join('|');
+  }
+
+  function progressFromQtySafe(plan, daily){
+    if (typeof progressFromQty === 'function') return progressFromQty(plan, daily);
+    plan = n(plan); daily = n(daily);
+    return plan > 0 ? pct((daily / plan) * 100) : 0;
+  }
+
+  function groupProgressSafe(list){
+    if (typeof groupProgress === 'function') return groupProgress(list);
+    var plan = Math.max.apply(null, [0].concat((list || []).map(function(x){ return n(x.plannedQty); })));
+    var done = (list || []).reduce(function(a,x){ return a + n(x.dailyQty); }, 0);
+    return plan > 0 ? pct((done / plan) * 100) : 0;
+  }
+
+  function makeDraft(existing){
+    var base = entryBase();
+    var assetEl = qs('entryAsset');
+    var entry = {
+      id: existing && existing.id ? existing.id : Date.now(),
+      date: dateSafe(qs('entryDate') && qs('entryDate').value),
+      assetId: assetEl ? assetEl.value : '',
+      assetLabel: safe(function(){ return typeof label === 'function' ? label(base) : (base.displayId || base.id || ''); }, base.displayId || base.id || ''),
+      category: base.category || '',
+      type: base.type || '',
+      projectScope: (qs('entryProjectScope') && qs('entryProjectScope').value) || 'New',
+      system: (qs('entrySystem') && qs('entrySystem').value) || '',
+      specificItem: (qs('entrySpecificItem') && qs('entrySpecificItem').value) || '',
+      stage: (qs('entryStage') && qs('entryStage').value) || '',
+      mainActivity: (qs('entryMainActivity') && qs('entryMainActivity').value) || '',
+      subActivity: (qs('entrySubActivity') && qs('entrySubActivity').value) || '',
+      plannedQty: n(qs('entryPlannedQty') && qs('entryPlannedQty').value),
+      dailyQty: n(qs('entryDailyQty') && qs('entryDailyQty').value),
+      uom: (qs('entryUom') && qs('entryUom').value) || '',
+      cableType: (qs('entryCableType') && qs('entryCableType').value) || '',
+      tag: ((qs('entryTag') && qs('entryTag').value) || '').trim(),
+      linkFrom: ((qs('entryLinkFrom') && qs('entryLinkFrom').value) || '').trim(),
+      linkTo: ((qs('entryLinkTo') && qs('entryLinkTo').value) || '').trim(),
+      mirrorLink: (qs('entryMirrorLink') && qs('entryMirrorLink').value) || 'Yes',
+      workLocation: ((qs('entryWorkLocation') && qs('entryWorkLocation').value) || '').trim(),
+      permitNo: ((qs('entryPermit') && qs('entryPermit').value) || '').trim(),
+      docType: (qs('entryDocType') && qs('entryDocType').value) || '',
+      docRef: ((qs('entryDocRef') && qs('entryDocRef').value) || '').trim(),
+      contractor: (qs('entryContractor') && qs('entryContractor').value) || '',
+      partyType: (qs('entryParty') && qs('entryParty').value) || '',
+      dailyProgress: 0,
+      previousProgress: 0,
+      totalAfter: 0,
+      status: 'Not Started',
+      owner: base.owner || '',
+      remarks: ((qs('entryRemarks') && qs('entryRemarks').value) || '').trim(),
+      attachments: (existing && existing.attachments) || []
+    };
+    var related = (window.dailyEntries || []).filter(function(x){
+      return String(x.id) !== String(entry.id) && entryKeySafe(x) === entryKeySafe(entry);
+    });
+    entry.previousProgress = related.length ? groupProgressSafe(related) : 0;
+    entry.dailyProgress = progressFromQtySafe(entry.plannedQty, entry.dailyQty);
+    entry.totalAfter = groupProgressSafe(related.concat([entry]));
+    entry.status = (typeof statusFromProgress === 'function') ? statusFromProgress(entry.totalAfter) : (entry.totalAfter >= 100 ? 'Complete' : entry.totalAfter > 0 ? 'In Progress' : 'Not Started');
+    return entry;
+  }
+
+  function updateLiveProgress(){
+    var p = qs('entryProgress'), o = qs('entryOverallProgress');
+    if (!p || !o) return;
+    var draft = makeDraft({ id: window.editingDailyId || '__preview__' });
+    p.value = draft.dailyProgress;
+    o.value = draft.totalAfter;
+    var note = qs('entryCalcNote');
+    if (note) {
+      note.textContent = 'Daily ' + draft.dailyProgress + '% from ' + draft.dailyQty + ' / ' + draft.plannedQty + ' ' + (draft.uom || '') + '. Activity total for this Site/System/Item/Activity/Tag/Link will be ' + draft.totalAfter + '%.';
+    }
+  }
+
+  function fastRenderSystemChoices(){
+    safe(function(){ if (typeof renderSystemChoices === 'function') renderSystemChoices(); }, null);
+    updateLiveProgress();
+  }
+  function fastRenderItems(){
+    safe(function(){ if (typeof renderSpecificItems === 'function') renderSpecificItems(); }, null);
+    updateLiveProgress();
+  }
+  function fastRenderActivities(){
+    safe(function(){ if (typeof renderMainActivities === 'function') renderMainActivities(); }, null);
+    updateLiveProgress();
+  }
+  function fastRenderSteps(){
+    safe(function(){ if (typeof renderSubActivities === 'function') renderSubActivities(); }, null);
+    updateLiveProgress();
+  }
+
+  function validateBeforeSave(entry){
+    if (!entry.assetId) { alert('Please select a site/asset.'); return false; }
+    if (!entry.system) { alert('Please select a system.'); return false; }
+    if (!entry.mainActivity) { alert('Please select an activity.'); return false; }
+    if (entry.plannedQty <= 0) { alert('Please enter Planned Qty greater than zero.'); var x=qs('entryPlannedQty'); if(x)x.focus(); return false; }
+    if (entry.dailyQty <= 0) { alert('Please enter Daily Qty greater than zero.'); var y=qs('entryDailyQty'); if(y)y.focus(); return false; }
+    if ((entry.linkFrom || entry.linkTo) && !entry.tag) { alert('Please enter the manual Cable/Asset/Link Tag before saving linked progress.'); var z=qs('entryTag'); if(z)z.focus(); return false; }
+    return true;
+  }
+
+  function saveDailyStable(evt){
+    if (evt) { evt.preventDefault(); evt.stopPropagation(); }
+    if (typeof requireDailyEntry === 'function' && !requireDailyEntry()) return false;
+
+    try { if (typeof normalizeDateField === 'function') normalizeDateField('entryDate'); } catch(e){}
+
+    var old = null;
+    try { old = window.editingDailyId ? (window.dailyEntries || []).find(function(x){ return String(x.id) === String(window.editingDailyId); }) : null; } catch(e){}
+    var oldAsset = old && old.assetId;
+    var entry = makeDraft(old || null);
+    if (!validateBeforeSave(entry)) return false;
+
+    try {
+      var files = (window.selectedAttachmentFiles || []).map(function(f){ return f.name; });
+      if (files.length) entry.attachments = files;
+      else if (old && old.attachments) entry.attachments = old.attachments;
+    } catch(e){}
+
+    window.dailyEntries = window.dailyEntries || [];
+    try { dailyEntries = window.dailyEntries; } catch(e){}
+    if (old) {
+      dailyEntries = dailyEntries.map(function(x){ return String(x.id) === String(old.id) ? entry : x; });
+      window.dailyEntries = dailyEntries;
+    } else {
+      dailyEntries.push(entry);
+      window.dailyEntries = dailyEntries;
+    }
+
+    try { if (oldAsset && oldAsset !== entry.assetId && typeof recomputeAssetProgress === 'function') recomputeAssetProgress(oldAsset); } catch(e){}
+    try { if (typeof recomputeAssetProgress === 'function') recomputeAssetProgress(entry.assetId); } catch(e){}
+
+    safe(function(){ if (typeof save === 'function') save(); }, null);
+    safe(function(){ if (typeof resetDailyForm === 'function') resetDailyForm(); }, null);
+    safe(function(){ var lbl = qs('lastUpdatedLabel'); if (lbl) lbl.textContent = 'Saved ' + displayNow(); }, null);
+    safe(function(){ if (typeof renderAll === 'function') renderAll(false); }, null);
+    safe(function(){ if (typeof showApp === 'function') showApp(); }, null);
+    updateLiveProgress();
+    return false;
+  }
+
+  function bindOnce(id, eventName, handler, key){
+    var el = qs(id);
+    if (!el) return;
+    var flag = 'v23_' + (key || eventName);
+    if (el.dataset[flag]) return;
+    el.dataset[flag] = '1';
+    el.addEventListener(eventName, handler);
+  }
+
+  function bindDailyEntryStable(){
+    var form = qs('dailyForm');
+    if (form && !form.dataset.v23SubmitBound) {
+      form.dataset.v23SubmitBound = '1';
+      form.addEventListener('submit', saveDailyStable, true);
+    }
+    var saveBtn = qs('saveDailyBtn');
+    if (saveBtn && !saveBtn.dataset.v23ClickBound) {
+      saveBtn.dataset.v23ClickBound = '1';
+      saveBtn.addEventListener('click', function(e){
+        // Keep the button behavior stable even if the form submit listener was removed by a re-render.
+        if (form) return; // submit listener will handle it
+        saveDailyStable(e);
+      }, true);
+    }
+
+    bindOnce('entryAsset','change', fastRenderSystemChoices, 'assetChange');
+    bindOnce('entrySystem','change', fastRenderItems, 'systemChange');
+    bindOnce('entrySpecificItem','change', fastRenderActivities, 'itemChange');
+    bindOnce('entryMainActivity','change', fastRenderSteps, 'activityChange');
+    bindOnce('entrySubActivity','change', updateLiveProgress, 'subActivityChange');
+    ['entryPlannedQty','entryDailyQty','entryUom','entryTag','entryLinkFrom','entryLinkTo','entryMirrorLink','entryProjectScope'].forEach(function(id){
+      bindOnce(id,'input', updateLiveProgress, id+'Input');
+      bindOnce(id,'change', updateLiveProgress, id+'Change');
+    });
+
+    try { updateLiveProgress(); } catch(e){}
+  }
+
+  // Override preview with the stable fast version, without changing the rest of the app.
+  try { window.updateProgressPreview = updateLiveProgress; updateProgressPreview = updateLiveProgress; } catch(e){}
+  try { window.addDailyStableV23 = saveDailyStable; } catch(e){}
+
+  // Keep user session/app unlocked after Daily Entry saves and after small re-renders.
+  var prevRenderAll = window.renderAll;
+  if (!window.__v23RenderWrapped) {
+    window.__v23RenderWrapped = true;
+    window.renderAll = function(){
+      var out;
+      try { if (prevRenderAll) out = prevRenderAll.apply(this, arguments); } catch(e){ console.warn('V23 renderAll base warning:', e); }
+      try { bindDailyEntryStable(); } catch(e){}
+      try { if (typeof applyRoleUI === 'function') applyRoleUI(); } catch(e){}
+      if (document.body.classList.contains('auth-unlocked')) {
+        document.body.classList.remove('auth-locked');
+        var app = qs('appShell'); if (app) app.hidden = false;
+        var gate = qs('emailGate'); if (gate) gate.style.display = 'none';
+      }
+      return out;
+    };
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(bindDailyEntryStable, 250); });
+  } else {
+    setTimeout(bindDailyEntryStable, 250);
+  }
+})();
+</script>
+
+</body></html>';
 }
 /* === V15 REPORT/EXCEL/ROLE COLOR/FILTER/SITE VISIT PATCH === */
 (function(){
@@ -3995,7 +4233,7 @@ function masterReportHtml(){
 
 
 
-/* === V22_HIERARCHICAL_WEIGHTED_PROGRESS === */
+/* === V23_DAILY_ENTRY_STABILITY_FAST_BINDINGS === */
 (function(){
   window.AIP5_V21_MARKER='V21_SITE_FILTERS_ACCURATE_SYSTEM_PROGRESS';
   function qs(id){return document.getElementById(id)}
@@ -4086,7 +4324,7 @@ function masterReportHtml(){
 })();
 
 
-/* === V22_HIERARCHICAL_WEIGHTED_PROGRESS ===
+/* === V23_DAILY_ENTRY_STABILITY_FAST_BINDINGS ===
    Progress model:
    Site progress = average of planned system progress.
    System progress = average of planned sub-system/item progress.
@@ -4096,7 +4334,7 @@ function masterReportHtml(){
    This prevents one completed activity/tag from making the whole system/site 100%.
 */
 (function(){
-  window.AIP5_V22_MARKER = 'V22_HIERARCHICAL_WEIGHTED_PROGRESS';
+  window.AIP5_V22_MARKER = 'V23_DAILY_ENTRY_STABILITY_FAST_BINDINGS';
   function qs(id){return document.getElementById(id);}
   function n(v){var x=Number(v||0); return isFinite(x)?x:0;}
   function pct(v){return Math.max(0,Math.min(100,Math.round(n(v))));}
