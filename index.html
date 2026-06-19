@@ -2342,6 +2342,7 @@ const ACCESS_USERS = [
 
   // VIEWER: review, print, and export only. No PIN.
   { email:'jetawi333@yahoo.com', role:'viewer' },
+  { email:'jitawee333@yahoo.com', role:'viewer' },
   { email:'kyahiya@adnoc.ae', role:'viewer' },
 
   // DAILY ENTRY VIEWER: review, print/export, plus Daily Progress entry only. PIN: 326587
@@ -2388,34 +2389,69 @@ function bootApp(){
   const gateError=$('#gateError');
   const gateBtn=$('#gateSubmit');
   if(gateError) gateError.textContent='Opening tracker...';
+  if(gateBtn){ gateBtn.disabled=true; gateBtn.textContent='Opening...'; }
 
-  function finishOpen(){
+  // V24 login stability: never block the login screen on Firebase/network/CDN.
+  // Load local browser data first and open the tracker immediately.
+  try{
+    const localEdits = JSON.parse(localStorage.getItem(itemKey)||'{}');
+    const localDaily = JSON.parse(localStorage.getItem(logKey)||'[]');
+    const localDocs = JSON.parse(localStorage.getItem(documentLogKey)||'[]');
+    if(localEdits && typeof localEdits === 'object') edits = localEdits;
+    if(Array.isArray(localDaily)) dailyEntries = localDaily;
+    if(Array.isArray(localDocs)) documentEntries = localDocs;
+  }catch(e){ console.warn('Local data load skipped:', e); }
+
+  function openNow(){
     try{
       populateForms();
       renderConfigPanel();
       renderAll();
-      showApp();
     }catch(err){
-      console.error('Tracker opening error:', err);
-      showApp();
+      console.error('Tracker render error:', err);
     }
-    try{ setupRealtimeSync(); }catch(err){ console.warn('Realtime sync skipped:', err); }
+    showApp();
     if(gateBtn){ gateBtn.disabled=false; gateBtn.textContent='Enter'; }
     if(gateError) gateError.textContent='';
   }
 
-  // Do not wait for Firebase/CDN to load before opening the app.
-  // This prevents the login screen from getting stuck if Firebase is slow or blocked.
-  try{ fbDb = window._fbDb || null; }catch(e){ fbDb = null; }
-  loadFromFirebase(finishOpen);
+  openNow();
 
-  // If Firebase becomes ready after the page opens, attach sync later.
-  document.addEventListener('firebase-ready',()=>{
+  // Sync Firebase in the background only. If it fails, keep the opened tracker working.
+  function tryFirebaseSync(){
+    try{ fbDb = window._fbDb || fbDb || null; }catch(e){ fbDb = null; }
+    if(!fbDb || !window._fbRef || !window._fbGet) return;
+    let done=false;
+    const timeout=setTimeout(()=>{ done=true; }, 2500);
     try{
-      fbDb = window._fbDb || null;
-      if(fbDb) setupRealtimeSync();
-    }catch(e){}
-  }, { once:true });
+      const rootRef=window._fbRef(fbDb,'/data');
+      window._fbGet(rootRef).then(snap=>{
+        if(done) return;
+        clearTimeout(timeout);
+        const val=snap && snap.val ? (snap.val()||{}) : {};
+        if(val){
+          if(val.edits) edits=val.edits;
+          if(val.dailyEntries) dailyEntries=Array.isArray(val.dailyEntries)?val.dailyEntries:Object.values(val.dailyEntries||{});
+          if(val.documentEntries) documentEntries=Array.isArray(val.documentEntries)?val.documentEntries:Object.values(val.documentEntries||{});
+          if(val.dropdowns) dropdowns=val.dropdowns;
+          if(val.fieldConfig) fieldConfig=val.fieldConfig;
+          if(val.specificItems) specificItems=val.specificItems;
+          if(val.mainActivities) mainActivities=val.mainActivities;
+          if(val.subActivities) subActivities=val.subActivities;
+          try{ renderConfigPanel(); renderAll(); }catch(e){}
+        }
+        try{ setupRealtimeSync(); }catch(e){}
+      }).catch(err=>{
+        clearTimeout(timeout);
+        console.warn('Firebase background load skipped:', err);
+      });
+    }catch(err){
+      clearTimeout(timeout);
+      console.warn('Firebase background sync error:', err);
+    }
+  }
+  tryFirebaseSync();
+  document.addEventListener('firebase-ready', tryFirebaseSync, { once:true });
 }
 function loadFromFirebase(cb){
   if(!fbDb){ try{edits=JSON.parse(localStorage.getItem(itemKey)||'{}');dailyEntries=JSON.parse(localStorage.getItem(logKey)||'[]');documentEntries=JSON.parse(localStorage.getItem(documentLogKey)||'[]');}catch(e){} cb();return; }
@@ -2911,11 +2947,11 @@ function groupedMasterDetailRows(entries){const groups=groupedByEntryKey(entries
 function masterReportHtml(){
   return '<!doctype html><html><head><meta charset="utf-8"><title>Master Progress Report</title></head><body><h1>Master Progress Report</h1><p>Report engine is loading...</p>
 <script>
-/* === V23_DAILY_ENTRY_STABILITY_FAST_BINDINGS ===
+/* === V24_LOGIN_NO_BLOCK_STABLE ===
    Focused patch: prevents Daily Entry form reload/logout, restores cascading dropdown bindings,
    and updates Daily/Overall progress live from Planned Qty + Daily Qty. */
 (function(){
-  window.AIP5_V23_MARKER = 'V23_DAILY_ENTRY_STABILITY_FAST_BINDINGS';
+  window.AIP5_V23_MARKER = 'V24_LOGIN_NO_BLOCK_STABLE';
 
   function qs(id){ return document.getElementById(id); }
   function safe(fn, fallback){ try { return fn(); } catch(e){ console.warn('V23 patch warning:', e); return fallback; } }
@@ -4233,7 +4269,7 @@ function masterReportHtml(){
 
 
 
-/* === V23_DAILY_ENTRY_STABILITY_FAST_BINDINGS === */
+/* === V24_LOGIN_NO_BLOCK_STABLE === */
 (function(){
   window.AIP5_V21_MARKER='V21_SITE_FILTERS_ACCURATE_SYSTEM_PROGRESS';
   function qs(id){return document.getElementById(id)}
@@ -4324,7 +4360,7 @@ function masterReportHtml(){
 })();
 
 
-/* === V23_DAILY_ENTRY_STABILITY_FAST_BINDINGS ===
+/* === V24_LOGIN_NO_BLOCK_STABLE ===
    Progress model:
    Site progress = average of planned system progress.
    System progress = average of planned sub-system/item progress.
@@ -4334,7 +4370,7 @@ function masterReportHtml(){
    This prevents one completed activity/tag from making the whole system/site 100%.
 */
 (function(){
-  window.AIP5_V22_MARKER = 'V23_DAILY_ENTRY_STABILITY_FAST_BINDINGS';
+  window.AIP5_V22_MARKER = 'V24_LOGIN_NO_BLOCK_STABLE';
   function qs(id){return document.getElementById(id);}
   function n(v){var x=Number(v||0); return isFinite(x)?x:0;}
   function pct(v){return Math.max(0,Math.min(100,Math.round(n(v))));}
