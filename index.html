@@ -3757,5 +3757,241 @@ function masterReportHtml(){
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function(){ setTimeout(startV17, 700); });
   else setTimeout(startV17, 700);
 })();
+
+/* === V20_ACCURATE_MASTER_PROGRESS_LATEST_FIRST ===
+   Fixes:
+   - Latest daily entries shown before detailed item/activity progress in reports.
+   - Master progress calculated from planned Site + System combinations, not only from completed entries.
+   - Systems/sites with no saved progress count as 0%, preventing false 100% totals.
+*/
+(function(){
+  const V20_MARKER = 'V20_ACCURATE_MASTER_PROGRESS_LATEST_FIRST';
+  if(window[V20_MARKER]) return;
+  window[V20_MARKER] = true;
+
+  function sh(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c];});}
+  function n(v){const x=Number(v||0);return isFinite(x)?x:0;}
+  function pct(v){return Math.max(0,Math.min(100,Math.round(n(v)*100)/100));}
+  function uniq(arr){return Array.from(new Set((arr||[]).map(x=>String(x||'').trim()).filter(Boolean)));}
+  function dval(v){try{return typeof dateValue==='function'?(dateValue(v)||''):(String(v||''));}catch(e){return String(v||'');}}
+  function dshow(v){try{return typeof displayDate==='function'?(displayDate(v)||''):(String(v||''));}catch(e){return String(v||'');}}
+  function assetName(row){try{return typeof label==='function'?label(row):(row.displayId||row.id||'');}catch(e){return row.displayId||row.id||'';}}
+  function allCurrentRows(){try{return typeof allRows==='function'?allRows():(DATA&&DATA.items?DATA.items:[]);}catch(e){return (window.DATA&&DATA.items)||[];}}
+  function statusFor(p){return p>=100?'Complete':p>0?'In Progress':'Not Started';}
+  function linkTxt(e){try{return typeof linkDisplay==='function'?(linkDisplay(e)||''):[e.linkFrom,e.linkTo].filter(Boolean).join(' → ');}catch(err){return [e.linkFrom,e.linkTo].filter(Boolean).join(' → ');}}
+  function entrySite(e){return e.assetLabel||e.assetId||e.site||e.location||'';}
+  function activityName(e){return [e.specificItem,e.mainActivity,e.subActivity].filter(Boolean).join(' / ')||'-';}
+  function selectedList(id){
+    const el=document.getElementById(id); if(!el) return [];
+    if(el.multiple) return Array.from(el.selectedOptions||[]).map(o=>o.value).filter(v=>v&&v!=='all');
+    return el.value&&el.value!=='all'?[el.value]:[];
+  }
+  function firstVal(id){const el=document.getElementById(id);return el?(el.value||''):'';}
+  function has(list){return Array.isArray(list)&&list.length>0;}
+  function inList(v,list){return !has(list)||list.includes(String(v||''));}
+  function filterObject(prefix){
+    try{
+      if(typeof filterState==='function') return filterState(prefix);
+    }catch(e){}
+    return {site:selectedList(prefix+'FilterSite'),system:selectedList(prefix+'FilterSystem'),scope:selectedList(prefix+'FilterScope'),status:selectedList(prefix+'FilterStatus'),from:firstVal(prefix+'FilterFrom'),to:firstVal(prefix+'FilterTo'),min:null,max:null,sort:firstVal(prefix+'FilterSort')||'progressLatest'};
+  }
+  function dateInRange(date,from,to){
+    date=dval(date); from=dval(from); to=dval(to);
+    if(from && (!date || date<from)) return false;
+    if(to && (!date || date>to)) return false;
+    return true;
+  }
+  function plannedSystemsForRow(row, entriesForRow){
+    const systems=[];
+    try{
+      if(typeof MATRIX_SYSTEMS!=='undefined' && Array.isArray(MATRIX_SYSTEMS) && typeof matrixEnabled==='function'){
+        MATRIX_SYSTEMS.forEach(sys=>{try{if(matrixEnabled(row,sys)) systems.push(sys);}catch(e){}});
+      }
+    }catch(e){}
+    try{
+      const currentRow=typeof current==='function'?current(row):row;
+      String(currentRow.system||row.system||'').split(',').map(x=>x.trim()).filter(Boolean).forEach(x=>systems.push(x));
+    }catch(e){}
+    (entriesForRow||[]).forEach(e=>{ if(e.system) systems.push(e.system); });
+    if(!systems.length && row.category==='Off Pad Well') systems.push('5G Wireless - Off Pad Wells');
+    return uniq(systems);
+  }
+  function reportEntryMatches(e,f){
+    if(!inList(e.assetId,f.site)) return false;
+    if(!inList(e.system,f.system)) return false;
+    if(!inList(e.projectScope,f.scope)) return false;
+    if(!dateInRange(e.date,f.from,f.to)) return false;
+    return true;
+  }
+  function masterEntriesAccurate(){
+    let source=[];
+    try{source=(typeof reportEntriesWithMirrors==='function'?reportEntriesWithMirrors(dailyEntries||[]):(dailyEntries||[]));}catch(e){source=(dailyEntries||[]);}    
+    const f=filterObject('master');
+    return source.filter(e=>reportEntryMatches(e,f)).sort((a,b)=>dval(b.date).localeCompare(dval(a.date))||String(b.id||'').localeCompare(String(a.id||'')));
+  }
+  function localGroupKey(e){return [e.assetId,e.system,e.specificItem,e.mainActivity,e.subActivity,e.projectScope,e.cableType,e.tag,linkTxt(e)].map(v=>String(v||'').trim().toLowerCase()).join('|');}
+  function groupActualEntries(entries){
+    const map=new Map();
+    (entries||[]).forEach(e=>{const k=localGroupKey(e); if(!map.has(k)) map.set(k,[]); map.get(k).push(e);});
+    return Array.from(map.values()).map(list=>{
+      const sorted=list.slice().sort((a,b)=>dval(b.date).localeCompare(dval(a.date))||String(b.id||'').localeCompare(String(a.id||'')));
+      const latest=sorted[0]||{};
+      const plan=Math.max.apply(null,[0].concat(list.map(x=>n(x.plannedQty))));
+      const done=list.reduce((a,x)=>a+n(x.dailyQty),0);
+      const progress=plan>0?pct(done/plan*100):pct(latest.totalAfter||latest.dailyProgress||0);
+      const balanceQty=plan>0?Math.max(plan-done,0):0;
+      return {latest:latest,list:list,plan:plan,done:done,progress:progress,balanceQty:balanceQty,balancePct:pct(100-progress),status:statusFor(progress)};
+    }).sort((a,b)=>entrySite(a.latest).localeCompare(entrySite(b.latest))||String(a.latest.system||'').localeCompare(String(b.latest.system||''))||String(a.latest.tag||'').localeCompare(String(b.latest.tag||'')));
+  }
+  function systemProgressFromEntries(entries){
+    const groups=groupActualEntries(entries||[]);
+    if(!groups.length) return {progress:0,groups:[],done:0,plan:0,balanceQty:0,latest:null,status:'Not Started'};
+    const plan=groups.reduce((a,g)=>a+n(g.plan),0);
+    const done=groups.reduce((a,g)=>a+Math.min(n(g.done),n(g.plan)||n(g.done)),0);
+    const progress=plan>0?pct(done/plan*100):pct(groups.reduce((a,g)=>a+n(g.progress),0)/groups.length);
+    const latest=groups.map(g=>g.latest).sort((a,b)=>dval(b.date).localeCompare(dval(a.date))||String(b.id||'').localeCompare(String(a.id||'')))[0]||null;
+    return {progress:progress,groups:groups,done:done,plan:plan,balanceQty:Math.max(plan-done,0),latest:latest,status:statusFor(progress)};
+  }
+  function plannedCombos(){
+    const f=filterObject('master');
+    const entries=masterEntriesAccurate();
+    const entriesByAsset=new Map();
+    entries.forEach(e=>{const id=String(e.assetId||''); if(!entriesByAsset.has(id)) entriesByAsset.set(id,[]); entriesByAsset.get(id).push(e);});
+    const rows=allCurrentRows().filter(row=>inList(row.id,f.site) && inList((row.scope||'New'),f.scope));
+    const combos=[];
+    rows.forEach(row=>{
+      const related=entriesByAsset.get(String(row.id||''))||[];
+      plannedSystemsForRow(row,related).forEach(sys=>{
+        if(!inList(sys,f.system)) return;
+        const sysEntries=related.filter(e=>String(e.system||'')===String(sys||''));
+        const stat=systemProgressFromEntries(sysEntries);
+        const combo={assetId:row.id,assetLabel:assetName(row),row:row,system:sys,scope:row.scope||'New',progress:stat.progress,status:stat.status,latest:stat.latest,groups:stat.groups,done:stat.done,plan:stat.plan,balanceQty:stat.balanceQty,entryCount:sysEntries.length};
+        if(has(f.status)&&!f.status.includes(combo.status)) return;
+        if(f.min!=null&&combo.progress<n(f.min)) return;
+        if(f.max!=null&&combo.progress>n(f.max)) return;
+        combos.push(combo);
+      });
+    });
+    return combos;
+  }
+  function groupedCombos(combos,keyFn){
+    const map=new Map();
+    (combos||[]).forEach(c=>{const k=keyFn(c)||'Unspecified'; if(!map.has(k)) map.set(k,[]); map.get(k).push(c);});
+    return Array.from(map.entries()).map(([label,list])=>{
+      const progress=list.length?pct(list.reduce((a,c)=>a+n(c.progress),0)/list.length):0;
+      return {label:label,count:list.length,progress:progress,done:list.reduce((a,c)=>a+n(c.done),0),plan:list.reduce((a,c)=>a+n(c.plan),0),balance:list.reduce((a,c)=>a+n(c.balanceQty),0)};
+    }).sort((a,b)=>b.progress-a.progress||String(a.label).localeCompare(String(b.label)));
+  }
+  function barHtml(title, rows, valueKey, suffix){
+    valueKey=valueKey||'progress'; suffix=suffix==null?'%':suffix;
+    rows=(rows||[]).slice(0,12);
+    if(!rows.length) return '<div class="chart-box"><h3>'+sh(title)+'</h3><p class="muted">No data available for this chart.</p></div>';
+    const max=Math.max.apply(null,[1].concat(rows.map(r=>n(valueKey==='balance'?r.balance:(valueKey==='count'?r.count:r[valueKey])))));
+    return '<div class="chart-box"><h3>'+sh(title)+'</h3><table class="chart-table"><thead><tr><th>Item</th><th>Visual</th><th>Value</th></tr></thead><tbody>'+rows.map(r=>{const raw=valueKey==='balance'?n(r.balance):(valueKey==='count'?n(r.count):pct(r[valueKey])); const w=valueKey==='progress'?pct(raw):pct(raw/max*100); const shown=valueKey==='progress'?raw+suffix:raw; return '<tr><td class="chart-label">'+sh(r.label)+'</td><td class="chart-bar-cell"><div class="chart-track"><span style="width:'+w+'%"></span></div></td><td class="chart-value">'+sh(shown)+'</td></tr>';}).join('')+'</tbody></table></div>';
+  }
+  function styles(excel){
+    return '<style>'+[
+      '@page{size:A4 landscape;margin:8mm}',
+      '*{box-sizing:border-box}',
+      'body{font-family:Arial,Helvetica,sans-serif;color:#17211f;margin:14px;font-size:11.5px;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact}',
+      'h1{margin:0;font-size:22px} h2{font-size:15px;margin:16px 0 8px;border-bottom:2px solid #d8e2de;padding-bottom:4px} h3{font-size:13px;margin:0 0 8px}',
+      '.print-btn{float:right;background:#1f7a5c;color:white;border:0;border-radius:6px;padding:8px 12px;font-weight:bold}',
+      '.header{background:#0f1f1c;color:white;border-radius:10px;padding:16px;margin-bottom:12px}.header p{margin:5px 0 0;color:#d7e8e2}',
+      '.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:10px 0 12px}.card{border:1px solid #bfcac5;border-radius:8px;padding:10px;background:#f7faf8}.card b{display:block;font-size:18px;color:#1f7a5c}.card span{font-size:10px;color:#60706b;font-weight:bold}',
+      '.charts{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:10px 0}.chart-box{border:1px solid #bfcac5;border-radius:8px;background:#fbfdfc;padding:10px;page-break-inside:avoid}.chart-table{width:100%;border-collapse:collapse}.chart-table th,.chart-table td{border:1px solid #d6dfdb;padding:4px}.chart-table th{background:#e8f1ed}.chart-label{width:38%;font-weight:bold}.chart-track{height:10px;background:#e5ece9;border-radius:99px;overflow:hidden}.chart-track span{display:block;height:100%;background:#1f7a5c}.chart-value{text-align:right;font-weight:bold}',
+      '.note{border:1px solid #d8e2de;background:#f7faf8;border-radius:8px;padding:8px;margin:8px 0;color:#40514c}',
+      'table.report-table{width:100%;border-collapse:collapse;table-layout:fixed;margin-top:8px;font-size:'+(excel?'10.7px':'10.4px')+'}',
+      '.report-table th,.report-table td{border:1px solid #bfcac5;padding:4px 5px;text-align:left;vertical-align:top;word-break:break-word;overflow-wrap:anywhere}',
+      '.report-table th{background:#1f7a5c;color:white;font-weight:bold}',
+      '.muted{color:#60706b}',
+      '@media print{button.print-btn{display:none}body{margin:0;font-size:10.5px}.header,.cards,.chart-box{page-break-inside:avoid}thead{display:table-header-group}tr{page-break-inside:avoid}.charts{grid-template-columns:repeat(2,1fr)}.report-table{font-size:9.7px}.report-table th,.report-table td{padding:3.5px}}'
+    ].join('')+'</style>';
+  }
+  function cardsHtml(items){return '<div class="cards">'+items.map(it=>'<div class="card"><span>'+sh(it.label)+'</span><b>'+sh(it.value)+'</b></div>').join('')+'</div>';}
+  function shell(title,subtitle,cards,charts,sections,excel){return '<!doctype html><html><head><meta charset="utf-8"><title>'+sh(title)+'</title>'+styles(excel)+'</head><body><button class="print-btn" onclick="window.print()">Print / Save PDF</button><div class="header"><h1>'+sh(title)+'</h1><p>'+sh(subtitle)+'</p><p>Generated: '+sh(new Date().toLocaleString())+'</p></div>'+cards+charts+sections+'</body></html>';}
+  function dailyRows(entries){return (entries||[]).map(e=>{const doc=[e.docType,e.docRef].filter(Boolean).join(' ');return '<tr><td>'+sh(dshow(e.date))+'</td><td>'+sh(entrySite(e))+'</td><td>'+sh(e.system)+'</td><td>'+sh(e.specificItem||'')+'</td><td>'+sh(e.mainActivity||'')+'</td><td>'+sh(e.subActivity||'')+'</td><td>'+sh(e.tag||'')+'</td><td>'+sh(linkTxt(e))+'</td><td>'+sh(e.mirrorSide||'Original')+'</td><td>'+sh(e.plannedQty||0)+' '+sh(e.uom||'')+'</td><td>'+sh(e.dailyQty||0)+' '+sh(e.uom||'')+'</td><td>'+sh(e.previousProgress||0)+'%</td><td>'+sh(e.dailyProgress||0)+'%</td><td>'+sh(e.totalAfter||0)+'%</td><td>'+sh(e.status||'')+'</td><td>'+sh(doc)+'</td><td>'+sh(e.contractor||'')+'</td></tr>';}).join('') || '<tr><td colspan="17">No matching daily entries.</td></tr>';}
+  function detailRows(groups){return (groups||[]).map(g=>{const e=g.latest||{};return '<tr><td>'+sh(entrySite(e))+'</td><td>'+sh(e.system||'')+'</td><td>'+sh(e.specificItem||'')+'</td><td>'+sh(e.mainActivity||'')+'</td><td>'+sh(e.subActivity||'')+'</td><td>'+sh(e.tag||'')+'</td><td>'+sh(linkTxt(e))+'</td><td>'+sh(e.mirrorSide||'Original')+'</td><td>'+sh(g.plan)+' '+sh(e.uom||'')+'</td><td>'+sh(g.done)+' '+sh(e.uom||'')+'</td><td>'+sh(g.balanceQty)+' '+sh(e.uom||'')+'</td><td>'+sh(g.progress)+'%</td><td>'+sh(g.balancePct)+'%</td><td>'+sh(g.status)+'</td><td>'+sh(dshow(e.date))+'</td><td>'+sh(e.remarks||'')+'</td></tr>';}).join('') || '<tr><td colspan="16">No detailed activity progress found.</td></tr>';}
+  function comboRows(combos){return (combos||[]).map(c=>'<tr><td>'+sh(c.assetLabel)+'</td><td>'+sh(c.system)+'</td><td>'+sh(c.scope)+'</td><td>'+sh(c.progress)+'%</td><td>'+sh(c.status)+'</td><td>'+sh(c.entryCount)+'</td><td>'+sh(c.groups.length)+'</td><td>'+sh(dshow(c.latest&&c.latest.date))+'</td><td>'+sh(c.latest&&c.latest.remarks||'')+'</td></tr>').join('') || '<tr><td colspan="9">No planned site/system rows match the filters.</td></tr>';}
+  function docsHtml(){
+    const docs=window.documentEntries||[];
+    if(!docs.length) return '';
+    return '<h2>Document register</h2><table class="report-table"><thead><tr><th>Date</th><th>Type</th><th>Reference</th><th>Title</th><th>Signature Date</th><th>Status</th><th>Related Site</th><th>System</th><th>Remarks</th></tr></thead><tbody>'+docs.map(d=>'<tr><td>'+sh(dshow(d.date||d.receivedDate||''))+'</td><td>'+sh(d.type||d.docType||'')+'</td><td>'+sh(d.ref||d.docRef||d.number||'')+'</td><td>'+sh(d.title||'')+'</td><td>'+sh(dshow(d.signatureDate||d.signedDate||''))+'</td><td>'+sh(d.status||'')+'</td><td>'+sh(d.assetLabel||d.assetId||d.site||'')+'</td><td>'+sh(d.system||'')+'</td><td>'+sh(d.remarks||'')+'</td></tr>').join('')+'</tbody></table>';
+  }
+  function dailyReportV20(excel){
+    let entries=[]; try{entries=typeof filteredDailyEntries==='function'?filteredDailyEntries('daily'):(dailyEntries||[]);}catch(e){entries=dailyEntries||[];}
+    const groups=groupActualEntries(entries);
+    const avg=groups.length?pct(groups.reduce((a,g)=>a+g.progress,0)/groups.length):0;
+    const cards=cardsHtml([{label:'Selected entries',value:entries.length},{label:'Activity groups',value:groups.length},{label:'Average activity progress',value:avg+'%'},{label:'Systems covered',value:uniq(entries.map(e=>e.system)).length},{label:'Sites covered',value:uniq(entries.map(e=>e.assetId)).length}]);
+    const charts='<div class="charts">'+barHtml('Daily progress by system', groupedCombos(entries.map(e=>({system:e.system,progress:n(e.dailyProgress||e.totalAfter||0),done:n(e.dailyQty),plan:n(e.plannedQty),balanceQty:Math.max(n(e.plannedQty)-n(e.dailyQty),0)})), c=>c.system)) + barHtml('Top site / activity / tag progress', groups.map(g=>({label:[entrySite(g.latest),g.latest.system,g.latest.tag||g.latest.specificItem].filter(Boolean).join(' / '),progress:g.progress,balance:g.balanceQty,count:g.list.length})).sort((a,b)=>b.progress-a.progress).slice(0,10))+'</div>';
+    const sections='<h2>Latest daily entries</h2><table class="report-table"><thead><tr><th>Date</th><th>Site</th><th>System</th><th>Sub-System / Item</th><th>Activity</th><th>Work Step</th><th>Manual Tag</th><th>Link From → To</th><th>Shown As</th><th>Planned Qty</th><th>Daily Qty</th><th>Previous %</th><th>Daily %</th><th>Total %</th><th>Status</th><th>Document</th><th>Contractor</th></tr></thead><tbody>'+dailyRows(entries)+'</tbody></table>'+docsHtml();
+    return shell('Daily Progress Report','Filtered daily progress entries. Latest daily entries are shown first.',cards,charts,sections,excel);
+  }
+  function masterReportV20(excel){
+    const entries=masterEntriesAccurate();
+    const combos=plannedCombos();
+    const groups=groupActualEntries(entries);
+    const overall=combos.length?pct(combos.reduce((a,c)=>a+n(c.progress),0)/combos.length):0;
+    const complete=combos.filter(c=>c.progress>=100).length;
+    const inprog=combos.filter(c=>c.progress>0&&c.progress<100).length;
+    const cards=cardsHtml([{label:'Overall master progress',value:overall+'%'},{label:'Planned site/system items',value:combos.length},{label:'Complete site/system items',value:complete},{label:'In progress site/system items',value:inprog},{label:'Actual activity groups',value:groups.length}]);
+    const bySystem=groupedCombos(combos,c=>c.system);
+    const bySite=groupedCombos(combos,c=>c.assetLabel);
+    const charts='<div class="charts">'+barHtml('Master progress by system',bySystem)+barHtml('Master progress by site',bySite)+barHtml('Top site / activity / tag progress',groups.map(g=>({label:[entrySite(g.latest),g.latest.system,g.latest.tag||g.latest.specificItem].filter(Boolean).join(' / '),progress:g.progress,balance:g.balanceQty,count:g.list.length})).sort((a,b)=>b.progress-a.progress).slice(0,10))+barHtml('Highest remaining activity balance',groups.map(g=>({label:[entrySite(g.latest),g.latest.system,g.latest.tag||g.latest.specificItem].filter(Boolean).join(' / '),progress:g.progress,balance:g.balanceQty,count:g.list.length})).sort((a,b)=>b.balance-a.balance).slice(0,10),'balance','')+'</div>';
+    const note='<div class="note"><b>Progress calculation method:</b> Master progress is calculated from every planned Site + System combination in the Station System Matrix / site system list. A planned system with no saved daily entry is counted as 0%. This prevents one completed activity from showing the whole site or system as 100% complete. Detailed item/activity progress below is still calculated from actual saved daily progress entries, including mirrored link entries.</div>';
+    const latestSection='<h2>Latest daily entries</h2><table class="report-table"><thead><tr><th>Date</th><th>Site</th><th>System</th><th>Sub-System / Item</th><th>Activity</th><th>Work Step</th><th>Manual Tag</th><th>Link From → To</th><th>Shown As</th><th>Planned Qty</th><th>Daily Qty</th><th>Previous %</th><th>Daily %</th><th>Total %</th><th>Status</th><th>Document</th><th>Contractor</th></tr></thead><tbody>'+dailyRows(entries.slice(0,100))+'</tbody></table>';
+    const totalSection='<h2>Total progress by planned site/system</h2><table class="report-table"><thead><tr><th>Site</th><th>System</th><th>Scope</th><th>Progress %</th><th>Status</th><th>Daily Entries</th><th>Activity Groups</th><th>Latest Date</th><th>Latest Remarks</th></tr></thead><tbody>'+comboRows(combos)+'</tbody></table>';
+    const detailSection='<h2>Detailed item / activity progress</h2><table class="report-table"><thead><tr><th>Site</th><th>System</th><th>Sub-System / Item</th><th>Activity</th><th>Work Step</th><th>Manual Tag</th><th>Link From → To</th><th>Shown As</th><th>Planned Qty</th><th>Cumulative Done Qty</th><th>Balance Qty</th><th>Progress %</th><th>Balance %</th><th>Status</th><th>Latest Date</th><th>Remarks</th></tr></thead><tbody>'+detailRows(groups)+'</tbody></table>';
+    return shell('Master Progress Report','Overall progress based on planned site/system coverage plus saved daily progress entries.',cards,charts,note+latestSection+totalSection+detailSection+docsHtml(),excel);
+  }
+
+  window.masterReportHtml = masterReportV20;
+  window.dailyReportHtml = dailyReportV20;
+  window.reportHtml = function(){return dailyReportV20(false);};
+  window.openDailyReport = function(print){ if(typeof requireExport==='function'&&!requireExport())return; const w=window.open('','_blank'); if(!w){alert('Popup blocked. Please allow popups for this site.');return;} w.document.write(dailyReportV20(false)); w.document.close(); if(print!==false){w.focus();setTimeout(()=>w.print(),350);} };
+  window.exportDailyExcel = function(){ if(typeof requireExport==='function'&&!requireExport())return; const blob=new Blob(['\ufeff'+dailyReportV20(true)],{type:'application/vnd.ms-excel;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='telecom-daily-progress-accurate-report.xls'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000); };
+  window.openMasterReport = function(print){ if(typeof requireExport==='function'&&!requireExport())return; const w=window.open('','_blank'); if(!w){alert('Popup blocked. Please allow popups for this site.');return;} w.document.write(masterReportV20(false)); w.document.close(); if(print!==false){w.focus();setTimeout(()=>w.print(),350);} };
+  window.exportMasterExcel = function(){ if(typeof requireExport==='function'&&!requireExport())return; const blob=new Blob(['\ufeff'+masterReportV20(true)],{type:'application/vnd.ms-excel;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='telecom-master-progress-accurate-report.xls'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000); };
+  window.openReport = function(print){return window.openDailyReport(print);};
+  window.exportExcel = function(){return window.exportDailyExcel();};
+
+  // Dashboard/master chart accuracy overrides.
+  try{
+    window.systemAverageData=function(){return groupedCombos(plannedCombos(),c=>c.system).map(r=>({label:r.label,avg:r.progress,count:r.count}));};
+    window.scopeAverageData=function(){return groupedCombos(plannedCombos(),c=>c.scope).map(r=>({label:r.label,avg:r.progress,count:r.count}));};
+    const oldRenderKpis=window.renderKpis;
+    window.renderKpis=function(){
+      try{
+        const combos=plannedCombos();
+        const avg=combos.length?Math.round(combos.reduce((a,c)=>a+n(c.progress),0)/combos.length):0;
+        const complete=combos.filter(c=>c.progress>=100).length;
+        const rows=allCurrentRows();
+        const hs=document.getElementById('healthScore'); if(hs)hs.textContent=avg;
+        const sb=document.getElementById('sideBar'); if(sb)sb.style.setProperty('--p',avg+'%');
+        const st=document.getElementById('sideText'); if(st)st.textContent=avg+'% complete across '+combos.length+' planned site/system items';
+        const kt=document.getElementById('kTotal'); if(kt)kt.textContent=rows.length;
+        const ke=document.getElementById('kEntries'); if(ke)ke.textContent=(window.dailyEntries||[]).length;
+        const kc=document.getElementById('kComplete'); if(kc)kc.textContent=complete;
+        const hl=document.getElementById('healthLabel'); if(hl)hl.textContent=complete+' complete site/system items';
+      }catch(e){ if(typeof oldRenderKpis==='function') oldRenderKpis(); }
+    };
+  }catch(e){console.warn('V20 dashboard override skipped',e);}
+
+  // Rebind buttons after any previous version patches.
+  function rebind(id,fn){const el=document.getElementById(id); if(!el)return; const clone=el.cloneNode(true); el.parentNode.replaceChild(clone,el); clone.addEventListener('click',fn);}
+  function bindReports(){
+    rebind('printBtn',()=>window.openDailyReport(true));
+    rebind('pdfBtn',()=>window.openDailyReport(true));
+    rebind('excelBtn',()=>window.exportDailyExcel());
+    rebind('dailyPrintReportBtn',()=>window.openDailyReport(true));
+    rebind('dailyExportReportBtn',()=>window.exportDailyExcel());
+    rebind('masterPrintBtn',()=>window.openMasterReport(true));
+    rebind('masterPdfBtn',()=>window.openMasterReport(true));
+    rebind('masterExcelBtn',()=>window.exportMasterExcel());
+    rebind('dailyLogPrintBtn',()=>window.openDailyReport(true));
+    rebind('dailyLogExportBtn',()=>window.exportDailyExcel());
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>setTimeout(bindReports,400)); else setTimeout(bindReports,400);
+})();
+
 </script>
 </body></html>
