@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- V19_REPORTS_NO_ENTRY_COLOR_EXCEL_CHARTS -->
+<!-- V27_PRESERVE_DAILY_ENTRIES_PROGRESS_SMOOTH -->
 <!-- saved from url=(0038)http://127.0.0.1:8095/aip5telecom-zaa/ -->
 <html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="tracker-version" content="LOGIN-RESTORED-V16C"><title>AiP5 BAB Field Telecom Progress Control - V16C Login Restored</title><!-- LOGIN-STABLE-V8 --><link rel="preconnect" href="https://fonts.googleapis.com/"><link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin=""><link href="./css2" rel="stylesheet"><script src="./lucide.min.js.download"></script><style>
 :root{--ink:#17211f;--muted:#60706b;--line:#d8e2de;--deep:#11231f;--green:#1f7a5c;--mint:#39aa7d;--cyan:#18788d;--gold:#b27616;--red:#b53d49;--soft:#edf3f0;--shadow:0 18px 44px rgba(23,33,31,.1)}
@@ -2342,7 +2342,6 @@ const ACCESS_USERS = [
 
   // VIEWER: review, print, and export only. No PIN.
   { email:'jetawi333@yahoo.com', role:'viewer' },
-  { email:'jitawee333@yahoo.com', role:'viewer' },
   { email:'kyahiya@adnoc.ae', role:'viewer' },
 
   // DAILY ENTRY VIEWER: review, print/export, plus Daily Progress entry only. PIN: 326587
@@ -4583,6 +4582,241 @@ function masterReportHtml(){
     }
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', install); else install();
+})();
+
+
+/* === V27_PRESERVE_DAILY_ENTRIES_PROGRESS_SMOOTH ===
+   Focused patch from V26:
+   1) Removes the old alternate viewer email from authorized users.
+   2) Prevents new Daily Progress saves from overwriting existing entries.
+   3) Keeps local/browser entries and window entries synchronized.
+   4) Keeps progress preview responsive and recalculates after save.
+   5) Keeps the existing V24/V26 data model and report logic. */
+(function(){
+  window.AIP5_VERSION_MARKER = 'V27_PRESERVE_DAILY_ENTRIES_PROGRESS_SMOOTH';
+
+  function byId(id){ return document.getElementById(id); }
+  function safe(fn, fallback){ try { return fn(); } catch(e){ console.warn('[V27]', e); return fallback; } }
+  function toNum(v){ v = Number(v || 0); return isFinite(v) ? v : 0; }
+  function pct(v){ v = Number(v || 0); if(!isFinite(v)) v = 0; return Math.max(0, Math.min(100, Math.round(v * 100) / 100)); }
+  function normId(v){ return String(v == null ? '' : v).trim(); }
+  function nowId(){ return Date.now() + Math.floor(Math.random() * 1000); }
+
+  // Remove the old alternate viewer account everywhere the runtime can see it.
+  safe(function(){
+    if (typeof ACCESS_USERS !== 'undefined' && Array.isArray(ACCESS_USERS)) {
+      for (var i = ACCESS_USERS.length - 1; i >= 0; i--) {
+        if (String(ACCESS_USERS[i].email || '').toLowerCase() === ('jitawee333'+'@yahoo.com')) ACCESS_USERS.splice(i, 1);
+      }
+    }
+    if (Array.isArray(window.ACCESS_USERS)) {
+      window.ACCESS_USERS = window.ACCESS_USERS.filter(function(u){ return String(u.email || '').toLowerCase() !== ('jitawee333'+'@yahoo.com'); });
+    }
+  }, null);
+
+  function entryKey(e){
+    return [e.assetId, e.system, e.specificItem, e.mainActivity, e.subActivity, e.tag, e.linkFrom, e.linkTo]
+      .map(function(x){ return String(x || '').trim().toLowerCase(); }).join('|');
+  }
+
+  function mergeEntriesPreserve(a, b){
+    var out = [];
+    var seen = Object.create(null);
+    function add(e){
+      if (!e || typeof e !== 'object') return;
+      if (!e.id) e.id = nowId();
+      var k = String(e.id);
+      if (seen[k]) {
+        // Prefer the version with more fields/longer serialized content.
+        var idx = seen[k] - 1;
+        try { if (JSON.stringify(e).length > JSON.stringify(out[idx]).length) out[idx] = e; } catch(err){ out[idx] = e; }
+      } else {
+        seen[k] = out.length + 1;
+        out.push(e);
+      }
+    }
+    (Array.isArray(a) ? a : []).forEach(add);
+    (Array.isArray(b) ? b : []).forEach(add);
+    out.sort(function(x,y){
+      var dx = safe(function(){ return (typeof dateValue === 'function' ? dateValue(x.date) : String(x.date || '')); }, String(x.date || ''));
+      var dy = safe(function(){ return (typeof dateValue === 'function' ? dateValue(y.date) : String(y.date || '')); }, String(y.date || ''));
+      return dx.localeCompare(dy) || String(x.id).localeCompare(String(y.id));
+    });
+    return out;
+  }
+
+  function syncDailyState(){
+    var local = safe(function(){ return JSON.parse(localStorage.getItem(logKey) || '[]'); }, []);
+    var current = (typeof dailyEntries !== 'undefined' && Array.isArray(dailyEntries)) ? dailyEntries : [];
+    var win = Array.isArray(window.dailyEntries) ? window.dailyEntries : [];
+    var merged = mergeEntriesPreserve(local, mergeEntriesPreserve(current, win));
+    try { dailyEntries = merged; } catch(e) {}
+    window.dailyEntries = merged;
+    return merged;
+  }
+
+  function saveDailyStateOnly(){
+    var entries = syncDailyState();
+    safe(function(){ localStorage.setItem(logKey, JSON.stringify(entries)); }, null);
+    safe(function(){ localStorage.setItem(itemKey, JSON.stringify(edits || {})); }, null);
+    safe(function(){ localStorage.setItem(documentLogKey, JSON.stringify(documentEntries || [])); }, null);
+    // Keep Firebase update as background only. Do not let it block or replace local entries.
+    safe(function(){
+      if (typeof fbDb === 'undefined' || !fbDb || !window._fbRef || !window._fbUpdate) return;
+      if (typeof isAdmin === 'function' || typeof isDailyEntry === 'function') {
+        var allowed = (typeof isAdmin === 'function' && isAdmin()) || (typeof isDailyEntry === 'function' && isDailyEntry());
+        if (!allowed) return;
+      }
+      var entriesObj = {};
+      entries.forEach(function(e,i){ entriesObj['e' + i] = e; });
+      var docsObj = {};
+      (documentEntries || []).forEach(function(d,i){ docsObj['d' + i] = d; });
+      window._fbUpdate(window._fbRef(fbDb), {
+        '/data/edits': edits || {},
+        '/data/dailyEntries': entriesObj,
+        '/data/documentEntries': docsObj
+      }).catch(function(err){ console.warn('[V27] Firebase save skipped:', err); });
+    }, null);
+  }
+
+  // Replace save with a preserving version so no save operation can wipe existing daily entries.
+  var oldSave = (typeof save === 'function') ? save : null;
+  window.saveV27 = function(){ saveDailyStateOnly(); };
+  try { save = window.saveV27; } catch(e) {}
+
+  function updateLiveProgressV27(){
+    var p = byId('entryProgress'), o = byId('entryOverallProgress');
+    if (!p && !o) return;
+    syncDailyState();
+    var planned = toNum(byId('entryPlannedQty') && byId('entryPlannedQty').value);
+    var daily = toNum(byId('entryDailyQty') && byId('entryDailyQty').value);
+    var dailyPct = planned > 0 ? pct((daily / planned) * 100) : 0;
+    var draft = null;
+    safe(function(){
+      if (typeof collectDailyEntry === 'function') draft = collectDailyEntry({ id: window.editingDailyId || '__preview__' }, true);
+    }, null);
+    if (!draft) {
+      draft = {
+        id: window.editingDailyId || '__preview__',
+        assetId: byId('entryAsset') ? byId('entryAsset').value : '',
+        system: byId('entrySystem') ? byId('entrySystem').value : '',
+        specificItem: byId('entrySpecificItem') ? byId('entrySpecificItem').value : '',
+        mainActivity: byId('entryMainActivity') ? byId('entryMainActivity').value : '',
+        subActivity: byId('entrySubActivity') ? byId('entrySubActivity').value : '',
+        tag: byId('entryTag') ? byId('entryTag').value : '',
+        linkFrom: byId('entryLinkFrom') ? byId('entryLinkFrom').value : '',
+        linkTo: byId('entryLinkTo') ? byId('entryLinkTo').value : '',
+        plannedQty: planned,
+        dailyQty: daily
+      };
+    }
+    var related = syncDailyState().filter(function(x){
+      return String(x.id) !== String(draft.id) && entryKey(x) === entryKey(draft);
+    });
+    var plan = Math.max.apply(null, [planned].concat(related.map(function(x){ return toNum(x.plannedQty); })));
+    var doneBefore = related.reduce(function(a,x){ return a + toNum(x.dailyQty); }, 0);
+    var totalPct = plan > 0 ? pct(((doneBefore + daily) / plan) * 100) : dailyPct;
+    if (p) p.value = dailyPct;
+    if (o) o.value = totalPct;
+    var note = byId('entryCalcNote');
+    if (note) note.textContent = 'Daily ' + dailyPct + '% from ' + daily + ' / ' + planned + '. Activity total after save will be ' + totalPct + '%. Existing entries will be preserved.';
+  }
+  window.updateLiveProgress = updateLiveProgressV27;
+
+  function collectEntryV27(old){
+    syncDailyState();
+    var entry = null;
+    safe(function(){ if (typeof collectDailyEntry === 'function') entry = collectDailyEntry(old || null, false); }, null);
+    if (!entry && typeof makeDraft === 'function') entry = makeDraft(old || null);
+    if (!entry) throw new Error('Daily entry form could not be collected.');
+    if (!entry.id) entry.id = old && old.id ? old.id : nowId();
+    var files = safe(function(){ return (selectedAttachmentFiles || []).map(function(f){ return f.name; }); }, []);
+    if (files.length) entry.attachments = files;
+    else if (old && old.attachments) entry.attachments = old.attachments;
+    // Recalculate from preserved entries.
+    var related = syncDailyState().filter(function(x){ return String(x.id) !== String(entry.id) && entryKey(x) === entryKey(entry); });
+    var plan = Math.max.apply(null, [toNum(entry.plannedQty)].concat(related.map(function(x){ return toNum(x.plannedQty); })));
+    var doneBefore = related.reduce(function(a,x){ return a + toNum(x.dailyQty); }, 0);
+    entry.dailyProgress = plan > 0 ? pct((toNum(entry.dailyQty) / plan) * 100) : 0;
+    entry.previousProgress = plan > 0 ? pct((doneBefore / plan) * 100) : 0;
+    entry.totalAfter = plan > 0 ? pct(((doneBefore + toNum(entry.dailyQty)) / plan) * 100) : entry.dailyProgress;
+    entry.status = (typeof statusFromProgress === 'function') ? statusFromProgress(entry.totalAfter) : (entry.totalAfter >= 100 ? 'Complete' : entry.totalAfter > 0 ? 'In Progress' : 'Not Started');
+    entry.enteredBy = currentUserEmail || entry.enteredBy || '';
+    entry.enteredRole = currentUserRole || entry.enteredRole || '';
+    return entry;
+  }
+
+  function saveDailyV27(evt){
+    if (evt) { evt.preventDefault(); evt.stopPropagation(); if (evt.stopImmediatePropagation) evt.stopImmediatePropagation(); }
+    if (typeof requireDailyEntry === 'function' && !requireDailyEntry()) return false;
+    safe(function(){ if (typeof normalizeDateField === 'function') normalizeDateField('entryDate'); }, null);
+    var entries = syncDailyState();
+    var editId = (typeof editingDailyId !== 'undefined' && editingDailyId) ? editingDailyId : window.editingDailyId;
+    var old = editId ? entries.find(function(x){ return String(x.id) === String(editId); }) : null;
+    var oldAsset = old && old.assetId;
+    var entry;
+    try { entry = collectEntryV27(old || null); } catch(err){ alert(err.message || 'Unable to save daily entry.'); return false; }
+    if (!entry.assetId) { alert('Please select a site/asset.'); return false; }
+    if (!entry.system) { alert('Please select a system.'); return false; }
+    if (toNum(entry.plannedQty) <= 0) { alert('Please enter Planned Qty greater than zero.'); return false; }
+    if (toNum(entry.dailyQty) <= 0) { alert('Please enter Daily Qty greater than zero.'); return false; }
+
+    entries = syncDailyState();
+    if (old) entries = entries.map(function(x){ return String(x.id) === String(old.id) ? entry : x; });
+    else entries.push(entry);
+    entries = mergeEntriesPreserve(entries, []);
+    try { dailyEntries = entries; } catch(e) {}
+    window.dailyEntries = entries;
+
+    safe(function(){ if (oldAsset && oldAsset !== entry.assetId && typeof recomputeAssetProgress === 'function') recomputeAssetProgress(oldAsset); }, null);
+    safe(function(){ if (typeof recomputeAssetProgress === 'function') recomputeAssetProgress(entry.assetId); }, null);
+    saveDailyStateOnly();
+    safe(function(){ if (typeof resetDailyForm === 'function') resetDailyForm(); }, null);
+    var lbl = byId('lastUpdatedLabel'); if (lbl) lbl.textContent = 'Saved ' + (typeof displayDateTime === 'function' ? displayDateTime(new Date()) : new Date().toLocaleString());
+    safe(function(){ if (typeof renderAll === 'function') renderAll(false); }, null);
+    safe(function(){ if (typeof showApp === 'function') showApp(); }, null);
+    updateLiveProgressV27();
+    return false;
+  }
+  window.saveDailyV27 = saveDailyV27;
+
+  function bindV27(){
+    syncDailyState();
+    var form = byId('dailyForm');
+    if (form && !form.__v27PreserveBound) {
+      form.__v27PreserveBound = true;
+      document.addEventListener('submit', function(ev){
+        if (ev && ev.target && ev.target.id === 'dailyForm') return saveDailyV27(ev);
+      }, true);
+    }
+    var saveBtn = byId('saveDailyBtn');
+    if (saveBtn && !saveBtn.__v27PreserveBound) {
+      saveBtn.__v27PreserveBound = true;
+      saveBtn.addEventListener('click', function(ev){ return saveDailyV27(ev); }, true);
+    }
+    ['entryAsset','entrySystem','entrySpecificItem','entryMainActivity','entrySubActivity','entryPlannedQty','entryDailyQty','entryUom','entryTag','entryLinkFrom','entryLinkTo','entryMirrorLink'].forEach(function(id){
+      var el = byId(id);
+      if (el && !el.__v27ProgressBound) {
+        el.__v27ProgressBound = true;
+        el.addEventListener('input', updateLiveProgressV27);
+        el.addEventListener('change', function(){ setTimeout(updateLiveProgressV27, 0); });
+      }
+    });
+    updateLiveProgressV27();
+  }
+
+  var oldRenderAll = window.renderAll;
+  window.renderAll = function(){
+    syncDailyState();
+    var r = safe(function(){ return oldRenderAll ? oldRenderAll.apply(this, arguments) : undefined; }.bind(this), undefined);
+    safe(bindV27, null);
+    safe(function(){ if (typeof renderKpis === 'function') renderKpis(); }, null);
+    return r;
+  };
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function(){ setTimeout(bindV27, 250); });
+  else setTimeout(bindV27, 250);
+  setTimeout(bindV27, 1200);
 })();
 
 </script>
