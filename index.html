@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<!-- V40_CLEAN_ZERO_DELETE_CUMULATIVE_STABLE -->
-<!-- V32_ZERO_ENTRY_DELETE_MIRROR_SAFE -->
+<!-- V35_LOGIN_SCRIPT_MARKER_FIXED_DB_SCAN -->
 <!-- Based on V31_RECOVERY_REPORT_PRINT_PERMIT_WEIGHT_FIX -->
 <!-- saved from url=(0038)http://127.0.0.1:8095/aip5telecom-zaa/ -->
 <html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="tracker-version" content="V30_CUMULATIVE_WEIGHTED_PROGRESS_STATION_SYSTEMS"><title>AiP5 BAB Field Telecom Progress Control - V16C Login Restored</title><!-- LOGIN-STABLE-V8 --><link rel="preconnect" href="https://fonts.googleapis.com/"><link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin=""><link href="./css2" rel="stylesheet"><script src="./lucide.min.js.download"></script><style>
@@ -249,6 +248,7 @@ body.auth-unlocked #appShell{display:grid!important}
           <label data-field="uom">UoM<select id="entryUom"><option value="m">m</option><option value="Nos">Nos</option><option value="Cores">Cores</option><option value="Pairs">Pairs</option><option value="Ports">Ports</option><option value="Links">Links</option><option value="Loops">Loops</option><option value="Area">Area</option><option value="Lot">Lot</option><option value="Sites">Sites</option><option value="Zone">Zone</option><option value="Door">Door</option><option value="Cabinet">Cabinet</option><option value="Set">Set</option></select></label>
           <label data-field="cableType">Cable Type<select id="entryCableType"><option value="FOC SM">FOC SM</option><option value="FOC MM">FOC MM</option><option value="Cat6">Cat6</option><option value="Cat6A">Cat6A</option><option value="Coaxial">Coaxial</option><option value="Power">Power</option><option value="Control">Control</option><option value="Instrumentation">Instrumentation</option><option value="PAGA Fire Rated">PAGA Fire Rated</option><option value="Telephone Copper">Telephone Copper</option><option value="Not Applicable">Not Applicable</option></select></label>
           <label data-field="tag">Manual Asset/Cable/Link Tag<input id="entryTag" placeholder="Enter your manual tag e.g., FOC-MP109-BCDS-01"></label>
+          <label data-field="activityRef">Activity Ref / Continuation ID<input id="entryActivityRef" placeholder="Optional unique ID for same continuing activity"></label>
           <label data-field="linkFrom">Link From Site / End A<input id="entryLinkFrom" placeholder="e.g., MP-109, RDS-1, BB-2175..."></label>
           <label data-field="linkTo">Link To Site / End B<input id="entryLinkTo" placeholder="e.g., BCDS, MP-156, RDS-6..."></label>
           <label data-field="mirrorLink">Mirror Link in Reports<select id="entryMirrorLink"><option value="Yes" selected="">Yes - show on both ends</option><option value="No">No - show only selected site</option></select></label>
@@ -435,7 +435,8 @@ body.auth-unlocked #appShell{display:grid!important}
 
   function fallbackReportHtml(kind){
     var title = kind === 'master' ? 'Master Progress Report' : 'Daily Progress Report';
-    return '<!doctype html><html><head><meta charset="utf-8"><title>'+esc(title)+'</title>'+reportCss()+'</head><body><div class="report-page"><div class="header"><h1>'+esc(title)+'</h1><p>Generated: '+esc(new Date().toLocaleString())+'</p></div><h2>Latest Daily Entries</h2><table class="report-table"><thead><tr><th>Date</th><th>Site</th><th>System</th><th>Sub-System / Item</th><th>Activity</th><th>Work Step</th><th>Tag</th><th>Planned Qty</th><th>Daily Qty</th><th>Progress %</th><th>Remarks</th></tr></thead><tbody>'+fallbackRows()+'</tbody></table></div></body></html>';
+    return '<!doctype html><html><head><meta charset="utf-8"><title>'+esc(title)+'</title>'+reportCss()+'</head><body><div class="report-page"><div class="header"><h1>'+esc(title)+'</h1><p>Generated: '+esc(new Date().toLocaleString())+'</p></div><h2>Latest Daily Entries</h2><table class="report-table"><thead><tr><th>Date</th><th>Site</th><th>System</th><th>Sub-System / Item</th><th>Activity</th><th>Work Step</th><th>Tag</th><th>Planned Qty</th><th>Daily Qty</th><th>Progress %</th><th>Remarks</th></tr></thead><tbody>'+fallbackRows()+'</tbody></table></div><span data-aip5-ready="V38_ACTIVITY_CONTINUE_DATE_PERMISSION_STABLE"></span><span data-aip5-ready="V41_DAILY_REPORT_PREVIEW_CUMULATIVE_DELETE_DATE_STABLE" style="display:none"></span>
+</body></html>';
   }
 
   function reportCss(){
@@ -483,7 +484,7 @@ body.auth-unlocked #appShell{display:grid!important}
     html = html.replace(/<button[^>]*class=["'][^"']*print-btn[^"']*["'][\s\S]*?<\/button>/gi, '');
     var css = reportCss();
     if(/<head[\s\S]*?>/i.test(html)) html = html.replace(/<head([\s\S]*?)>/i, function(m, attrs){ return '<head'+attrs+'>'+css; });
-    else html = '<!doctype html><html><head><meta charset="utf-8">'+css+'</head><body>'+html+'</body></html>';
+    else html = '<!doctype html><html><head><meta charset="utf-8">'+css+'</head><body>'+html+'<span data-aip5-ready="V38_ACTIVITY_CONTINUE_DATE_PERMISSION_STABLE"></span></body></html>';
     return html;
   }
 
@@ -3093,7 +3094,7 @@ function roundPercent(v){return Math.max(0,Math.min(100,Math.round(Number(v||0)*
 function progressFromQty(planned,daily){planned=Number(planned||0);daily=Number(daily||0);return planned>0?roundPercent(daily/planned*100):0}
 function normalisedLinkEnds(e){const ends=[e.linkFrom,e.linkTo].map(v=>String(v||'').trim()).filter(Boolean).sort((a,b)=>a.localeCompare(b));return ends.join(' <-> ')}
 function linkDisplay(e){const ends=[e.linkFrom,e.linkTo].map(v=>String(v||'').trim()).filter(Boolean);return ends.length?ends.join(' → '):''}
-function entryKey(e){return [e.assetId,e.system,e.specificItem,e.mainActivity,e.subActivity,e.projectScope,e.cableType,e.tag,normalisedLinkEnds(e)].map(v=>String(v||'').trim().toLowerCase()).join('|')}
+function entryKey(e){e=e||{};const ref=String(e.activityRef||e.relatedActivityId||e.activityNo||e.activityCode||'').trim();if(ref)return ['activity-ref',ref].map(v=>String(v||'').trim().toLowerCase()).join('|');const linkEnds=normalisedLinkEnds(e);const hasLink=String(e.tag||'').trim()&&linkEnds;if(hasLink){return ['physical-link',e.system,e.specificItem,e.mainActivity,e.subActivity,e.projectScope,e.cableType,e.tag,linkEnds].map(v=>String(v||'').trim().toLowerCase()).join('|')}return [e.assetId,e.system,e.specificItem,e.mainActivity,e.subActivity,e.projectScope,e.cableType,e.tag,linkEnds].map(v=>String(v||'').trim().toLowerCase()).join('|')}
 function groupedByEntryKey(entries){const groups={};entries.forEach(e=>{const key=entryKey(e);(groups[key]||(groups[key]=[])).push(e)});return groups}
 function groupStats(entries){const plan=Math.max(...entries.map(e=>Number(e.plannedQty||0)),0);const qty=entries.reduce((a,e)=>a+Number(e.dailyQty||0),0);const progress=plan>0?roundPercent(qty/plan*100):roundPercent(entries.reduce((a,e)=>a+Number(e.dailyProgress||0),0));return{plan,qty,progress}}
 function groupProgress(entries){return groupStats(entries).progress}
@@ -3137,11 +3138,11 @@ function clearEntryAttachments(){
   if(input) input.value='';
   renderAttachmentList();
 }
-function resetDailyForm(){editingDailyId=null;$('#saveDailyBtn span').textContent='Save daily entry';$('#cancelDailyEditBtn').style.display='none';['entryProgress','entryOverallProgress','entryPlannedQty','entryDailyQty'].forEach(x=>$('#'+x).value=0);['entryRemarks','entryTag','entryLinkFrom','entryLinkTo','entryWorkLocation','entryPermit','entryDocRef'].forEach(x=>{const el=$('#'+x);if(el)el.value=''});if($('#entryMirrorLink'))$('#entryMirrorLink').value='Yes';clearEntryAttachments();updateProgressPreview()}
-function collectDailyEntry(existing=null,preview=false){const id=$('#entryAsset').value;const base=current(DATA.items.find(r=>r.id===id));const files=preview?[]:selectedAttachmentFiles.map(f=>f.name);const entry={id:existing?.id||Date.now(),date:dateValue($('#entryDate').value)||today(),assetId:id,assetLabel:label(base),category:base.category,type:base.type,projectScope:$('#entryProjectScope').value,system:$('#entrySystem').value,specificItem:$('#entrySpecificItem').value,stage:$('#entryStage').value,mainActivity:$('#entryMainActivity').value,subActivity:$('#entrySubActivity').value,plannedQty:Number($('#entryPlannedQty').value||0),dailyQty:Number($('#entryDailyQty').value||0),uom:$('#entryUom').value,cableType:$('#entryCableType').value,tag:$('#entryTag').value.trim(),linkFrom:($('#entryLinkFrom')?$('#entryLinkFrom').value.trim():''),linkTo:($('#entryLinkTo')?$('#entryLinkTo').value.trim():''),mirrorLink:($('#entryMirrorLink')?$('#entryMirrorLink').value:'Yes'),workLocation:$('#entryWorkLocation').value.trim(),permitNo:$('#entryPermit').value.trim(),docType:$('#entryDocType').value,docRef:$('#entryDocRef').value.trim(),contractor:$('#entryContractor').value,partyType:$('#entryParty').value,dailyProgress:0,previousProgress:0,totalAfter:0,status:'Not Started',owner:base.owner,remarks:$('#entryRemarks').value.trim(),attachments:files.length?files:(existing?.attachments||[])};const stats=activityProgressForDraft(entry,editingDailyId);entry.dailyProgress=stats.dailyProgress;entry.previousProgress=stats.previousProgress;entry.totalAfter=stats.totalAfter;entry.status=statusFromProgress(entry.totalAfter);return entry}
+function resetDailyForm(){editingDailyId=null;$('#saveDailyBtn span').textContent='Save daily entry';$('#cancelDailyEditBtn').style.display='none';['entryProgress','entryOverallProgress','entryPlannedQty','entryDailyQty'].forEach(x=>$('#'+x).value=0);['entryRemarks','entryTag','entryActivityRef','entryLinkFrom','entryLinkTo','entryWorkLocation','entryPermit','entryDocRef'].forEach(x=>{const el=$('#'+x);if(el)el.value=''});if($('#entryMirrorLink'))$('#entryMirrorLink').value='Yes';clearEntryAttachments();updateProgressPreview()}
+function collectDailyEntry(existing=null,preview=false){const id=$('#entryAsset').value;const base=current(DATA.items.find(r=>r.id===id));const files=preview?[]:selectedAttachmentFiles.map(f=>f.name);const entry={id:existing?.id||Date.now(),date:dateValue($('#entryDate').value)||today(),assetId:id,assetLabel:label(base),category:base.category,type:base.type,projectScope:$('#entryProjectScope').value,system:$('#entrySystem').value,specificItem:$('#entrySpecificItem').value,stage:$('#entryStage').value,mainActivity:$('#entryMainActivity').value,subActivity:$('#entrySubActivity').value,plannedQty:Number($('#entryPlannedQty').value||0),dailyQty:Number($('#entryDailyQty').value||0),uom:$('#entryUom').value,cableType:$('#entryCableType').value,tag:$('#entryTag').value.trim(),activityRef:(($('#entryActivityRef')&&$('#entryActivityRef').value)||'').trim(),linkFrom:($('#entryLinkFrom')?$('#entryLinkFrom').value.trim():''),linkTo:($('#entryLinkTo')?$('#entryLinkTo').value.trim():''),mirrorLink:($('#entryMirrorLink')?$('#entryMirrorLink').value:'Yes'),workLocation:$('#entryWorkLocation').value.trim(),permitNo:$('#entryPermit').value.trim(),docType:$('#entryDocType').value,docRef:$('#entryDocRef').value.trim(),contractor:$('#entryContractor').value,partyType:$('#entryParty').value,dailyProgress:0,previousProgress:0,totalAfter:0,status:'Not Started',owner:base.owner,remarks:$('#entryRemarks').value.trim(),attachments:files.length?files:(existing?.attachments||[])};const stats=activityProgressForDraft(entry,editingDailyId);entry.dailyProgress=stats.dailyProgress;entry.previousProgress=stats.previousProgress;entry.totalAfter=stats.totalAfter;entry.status=statusFromProgress(entry.totalAfter);return entry}
 function validateManualTag(entry){const hasLink=String(entry.linkFrom||'').trim()||String(entry.linkTo||'').trim();if(hasLink&&!String(entry.tag||'').trim()){alert('Please enter the manual Cable/Asset/Link Tag before saving linked progress.');const tagField=$('#entryTag');if(tagField)tagField.focus();return false;}return true}
 function addDaily(e){e.preventDefault();if(!requireDailyEntry())return;normalizeDateField('entryDate');const old=editingDailyId?dailyEntries.find(x=>x.id===editingDailyId):null;const oldAsset=old?.assetId;const entry=collectDailyEntry(old);if(!validateManualTag(entry))return;if(old){dailyEntries=dailyEntries.map(x=>x.id===old.id?entry:x)}else{dailyEntries.push(entry)}if(oldAsset&&oldAsset!==entry.assetId)recomputeAssetProgress(oldAsset);recomputeAssetProgress(entry.assetId);save();resetDailyForm();$('#lastUpdatedLabel').textContent='Last updated '+displayDateTime(new Date());renderAll(false)}
-function loadDailyEntryForEdit(entryId){if(!requireEdit())return;const entry=dailyEntries.find(x=>x.id===entryId);if(!entry)return;editingDailyId=entryId;$('#saveDailyBtn span').textContent='Update daily entry';$('#cancelDailyEditBtn').style.display='inline-flex';$('#entryDate').value=displayDate(entry.date||today());$('#entryAsset').value=entry.assetId;renderSystemChoices();ensureOption($('#entrySystem'),entry.system);$('#entrySystem').value=entry.system;renderSpecificItems();ensureOption($('#entrySpecificItem'),entry.specificItem);$('#entrySpecificItem').value=entry.specificItem||'';renderMainActivities();ensureOption($('#entryMainActivity'),entry.mainActivity);$('#entryMainActivity').value=entry.mainActivity||'';renderSubActivities();ensureOption($('#entrySubActivity'),entry.subActivity);$('#entrySubActivity').value=entry.subActivity||'';ensureOption($('#entryProjectScope'),entry.projectScope);$('#entryProjectScope').value=entry.projectScope||'New';ensureOption($('#entryStage'),entry.stage);$('#entryStage').value=entry.stage||'';ensureOption($('#entryUom'),entry.uom);$('#entryUom').value=entry.uom||'';ensureOption($('#entryCableType'),entry.cableType);$('#entryCableType').value=entry.cableType||'';ensureOption($('#entryDocType'),entry.docType);$('#entryDocType').value=entry.docType||'';ensureOption($('#entryContractor'),entry.contractor);$('#entryContractor').value=entry.contractor||'';ensureOption($('#entryParty'),entry.partyType);$('#entryParty').value=entry.partyType||'';$('#entryPlannedQty').value=entry.plannedQty||0;$('#entryDailyQty').value=entry.dailyQty||0;$('#entryTag').value=entry.tag||'';if($('#entryLinkFrom'))$('#entryLinkFrom').value=entry.linkFrom||'';if($('#entryLinkTo'))$('#entryLinkTo').value=entry.linkTo||'';if($('#entryMirrorLink'))$('#entryMirrorLink').value=entry.mirrorLink||'Yes';$('#entryWorkLocation').value=entry.workLocation||'';$('#entryPermit').value=entry.permitNo||'';$('#entryDocRef').value=entry.docRef||'';$('#entryProgress').value=entry.dailyProgress||0;$('#entryOverallProgress').value=entry.totalAfter||0;$('#entryRemarks').value=entry.remarks||'';selectedAttachmentFiles=[];const attach=$('#entryAttachment');if(attach)attach.value='';renderAttachmentList(entry.attachments||[]);updateProgressPreview();document.getElementById('daily').scrollIntoView({behavior:'smooth',block:'start'})}
+function loadDailyEntryForEdit(entryId){if(!requireEdit())return;const entry=dailyEntries.find(x=>x.id===entryId);if(!entry)return;editingDailyId=entryId;$('#saveDailyBtn span').textContent='Update daily entry';$('#cancelDailyEditBtn').style.display='inline-flex';$('#entryDate').value=dateValue(entry.date)||entry.date||today();$('#entryAsset').value=entry.assetId;renderSystemChoices();ensureOption($('#entrySystem'),entry.system);$('#entrySystem').value=entry.system;renderSpecificItems();ensureOption($('#entrySpecificItem'),entry.specificItem);$('#entrySpecificItem').value=entry.specificItem||'';renderMainActivities();ensureOption($('#entryMainActivity'),entry.mainActivity);$('#entryMainActivity').value=entry.mainActivity||'';renderSubActivities();ensureOption($('#entrySubActivity'),entry.subActivity);$('#entrySubActivity').value=entry.subActivity||'';ensureOption($('#entryProjectScope'),entry.projectScope);$('#entryProjectScope').value=entry.projectScope||'New';ensureOption($('#entryStage'),entry.stage);$('#entryStage').value=entry.stage||'';ensureOption($('#entryUom'),entry.uom);$('#entryUom').value=entry.uom||'';ensureOption($('#entryCableType'),entry.cableType);$('#entryCableType').value=entry.cableType||'';ensureOption($('#entryDocType'),entry.docType);$('#entryDocType').value=entry.docType||'';ensureOption($('#entryContractor'),entry.contractor);$('#entryContractor').value=entry.contractor||'';ensureOption($('#entryParty'),entry.partyType);$('#entryParty').value=entry.partyType||'';$('#entryPlannedQty').value=entry.plannedQty||0;$('#entryDailyQty').value=entry.dailyQty||0;$('#entryTag').value=entry.tag||'';if($('#entryActivityRef'))$('#entryActivityRef').value=entry.activityRef||entry.relatedActivityId||entry.activityNo||entry.activityCode||'';if($('#entryLinkFrom'))$('#entryLinkFrom').value=entry.linkFrom||'';if($('#entryLinkTo'))$('#entryLinkTo').value=entry.linkTo||'';if($('#entryMirrorLink'))$('#entryMirrorLink').value=entry.mirrorLink||'Yes';$('#entryWorkLocation').value=entry.workLocation||'';$('#entryPermit').value=entry.permitNo||'';$('#entryDocRef').value=entry.docRef||'';$('#entryProgress').value=entry.dailyProgress||0;$('#entryOverallProgress').value=entry.totalAfter||0;$('#entryRemarks').value=entry.remarks||'';selectedAttachmentFiles=[];const attach=$('#entryAttachment');if(attach)attach.value='';renderAttachmentList(entry.attachments||[]);updateProgressPreview();document.getElementById('daily').scrollIntoView({behavior:'smooth',block:'start'})}
 function deleteDailyEntry(entryId){if(!requireEdit())return;const entry=dailyEntries.find(x=>x.id===entryId);if(!entry)return;if(!confirm('Delete this daily entry and recalculate progress?'))return;dailyEntries=dailyEntries.filter(x=>x.id!==entryId);recomputeAssetProgress(entry.assetId);if(editingDailyId===entryId)resetDailyForm();save();renderAll(false)}
 function dailySystems(){return ['Civil / Infrastructure',...STATION_SYSTEMS,'5G Wireless - Off Pad Wells']}
 function splitOptions(text){return [...new Set(String(text||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean))]}
@@ -3183,7 +3184,7 @@ function reportAssetRemarks(row,entries,system){const related=reportEntriesForAs
 function sortReportAssetsByActivity(rows,entries){const original=new Map(rows.map((r,i)=>[r.id,i]));return rows.slice().sort((a,b)=>{const ae=latestReportEntry(entries,a.id),be=latestReportEntry(entries,b.id);const ad=ae?dateValue(ae.date):'',bd=be?dateValue(be.date):'';return (ad?0:1)-(bd?0:1)||bd.localeCompare(ad)||masterProgressRank(a)-masterProgressRank(b)||Number(b.progress||0)-Number(a.progress||0)||(original.get(a.id)||0)-(original.get(b.id)||0)})}
 function groupedMasterDetailRows(entries){const groups=groupedByEntryKey(entries);return Object.values(groups).map(list=>{const latest=list.slice().sort((a,b)=>dateValue(b.date).localeCompare(dateValue(a.date))||String(b.id).localeCompare(String(a.id)))[0]||{};const st=groupStats(list);return{latest,plan:st.plan,qty:st.qty,progress:st.progress}}).sort((a,b)=>String(a.latest.assetLabel||'').localeCompare(String(b.latest.assetLabel||''))||String(a.latest.system||'').localeCompare(String(b.latest.system||''))||String(a.latest.specificItem||'').localeCompare(String(b.latest.specificItem||'')))}
 function masterReportHtml(){
-  return '<!doctype html><html><head><meta charset="utf-8"><title>Master Progress Report</title></head><body><h1>Master Progress Report</h1><p>Report engine is loading...</p></body></html>';
+  return '<!doctype html><html><head><meta charset="utf-8"><title>Master Progress Report</title></head><body><h1>Master Progress Report</h1><p>Report engine is loading...</p><span data-aip5-ready="V38_ACTIVITY_CONTINUE_DATE_PERMISSION_STABLE"></span></body></html>';
 }
 
 /* === V24_LOGIN_NO_BLOCK_STABLE ===
@@ -3248,6 +3249,7 @@ function masterReportHtml(){
       uom: (qs('entryUom') && qs('entryUom').value) || '',
       cableType: (qs('entryCableType') && qs('entryCableType').value) || '',
       tag: ((qs('entryTag') && qs('entryTag').value) || '').trim(),
+      activityRef: ((qs('entryActivityRef') && qs('entryActivityRef').value) || '').trim(),
       linkFrom: ((qs('entryLinkFrom') && qs('entryLinkFrom').value) || '').trim(),
       linkTo: ((qs('entryLinkTo') && qs('entryLinkTo').value) || '').trim(),
       mirrorLink: (qs('entryMirrorLink') && qs('entryMirrorLink').value) || 'Yes',
@@ -3384,7 +3386,7 @@ function masterReportHtml(){
     bindOnce('entrySpecificItem','change', fastRenderActivities, 'itemChange');
     bindOnce('entryMainActivity','change', fastRenderSteps, 'activityChange');
     bindOnce('entrySubActivity','change', updateLiveProgress, 'subActivityChange');
-    ['entryPlannedQty','entryDailyQty','entryUom','entryTag','entryLinkFrom','entryLinkTo','entryMirrorLink','entryProjectScope'].forEach(function(id){
+    ['entryPlannedQty','entryDailyQty','entryUom','entryTag','entryActivityRef','entryLinkFrom','entryLinkTo','entryMirrorLink','entryProjectScope'].forEach(function(id){
       bindOnce(id,'input', updateLiveProgress, id+'Input');
       bindOnce(id,'change', updateLiveProgress, id+'Change');
     });
@@ -3566,7 +3568,7 @@ function masterReportHtml(){
   function reportShell(title, subtitle, cards, charts, sections, excel=false){
     return '<!doctype html><html><head><meta charset="utf-8"><title>'+safeHtml(title)+'</title>'+(excel?excelStyles():reportStyles())+'</head><body>'+(
       excel ? '' : '<button class="print-btn" onclick="window.print()">Print / Save PDF</button>'
-    )+'<div class="header"><div><h1>'+safeHtml(title)+'</h1><div class="muted">'+safeHtml(subtitle||'')+'</div></div><div class="meta">Generated: '+safeHtml(new Date().toLocaleString())+'<br>Project Telecom Progress Tracker</div></div>'+cards+'<div class="charts">'+charts+'</div>'+sections+'</body></html>';
+    )+'<div class="header"><div><h1>'+safeHtml(title)+'</h1><div class="muted">'+safeHtml(subtitle||'')+'</div></div><div class="meta">Generated: '+safeHtml(new Date().toLocaleString())+'<br>Project Telecom Progress Tracker</div></div>'+cards+'<div class="charts">'+charts+'</div>'+sections+'<span data-aip5-ready="V38_ACTIVITY_CONTINUE_DATE_PERMISSION_STABLE"></span></body></html>';
   }
   function makeCards(items){ return '<div class="cards">'+items.map(c=>'<div class="card"><span>'+safeHtml(c.label)+'</span><strong>'+safeHtml(c.value)+'</strong></div>').join('')+'</div>'; }
   function dailyRowsHtml(entries){
@@ -4214,7 +4216,7 @@ function masterReportHtml(){
       if(kind === 'master' && typeof exportMasterExcel === 'function') return exportMasterExcel();
     }catch(err){ console.warn('Primary report export failed; using fallback', err); }
     try{
-      var htmlDoc = kind === 'daily' && typeof dailyReportHtml === 'function' ? dailyReportHtml(true) : (typeof masterReportHtml === 'function' ? masterReportHtml(true) : '<html><body><h1>Telecom Report</h1></body></html>');
+      var htmlDoc = kind === 'daily' && typeof dailyReportHtml === 'function' ? dailyReportHtml(true) : (typeof masterReportHtml === 'function' ? masterReportHtml(true) : '<html><body><h1>Telecom Report</h1><span data-aip5-ready="V38_ACTIVITY_CONTINUE_DATE_PERMISSION_STABLE"></span></body></html>');
       var blob = new Blob(['\ufeff'+htmlDoc], {type:'application/vnd.ms-excel;charset=utf-8'});
       var a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
@@ -4418,7 +4420,7 @@ function masterReportHtml(){
     ].join('')+'</style>';
   }
   function cardsHtml(items){return '<div class="cards">'+items.map(it=>'<div class="card"><span>'+sh(it.label)+'</span><b>'+sh(it.value)+'</b></div>').join('')+'</div>';}
-  function shell(title,subtitle,cards,charts,sections,excel){return '<!doctype html><html><head><meta charset="utf-8"><title>'+sh(title)+'</title>'+styles(excel)+'</head><body><button class="print-btn" onclick="window.print()">Print / Save PDF</button><div class="header"><h1>'+sh(title)+'</h1><p>'+sh(subtitle)+'</p><p>Generated: '+sh(new Date().toLocaleString())+'</p></div>'+cards+charts+sections+'</body></html>';}
+  function shell(title,subtitle,cards,charts,sections,excel){return '<!doctype html><html><head><meta charset="utf-8"><title>'+sh(title)+'</title>'+styles(excel)+'</head><body><button class="print-btn" onclick="window.print()">Print / Save PDF</button><div class="header"><h1>'+sh(title)+'</h1><p>'+sh(subtitle)+'</p><p>Generated: '+sh(new Date().toLocaleString())+'</p></div>'+cards+charts+sections+'<span data-aip5-ready="V38_ACTIVITY_CONTINUE_DATE_PERMISSION_STABLE"></span></body></html>';}
   function dailyRows(entries){return (entries||[]).map(e=>{const doc=[e.docType,e.docRef].filter(Boolean).join(' ');return '<tr><td>'+sh(dshow(e.date))+'</td><td>'+sh(entrySite(e))+'</td><td>'+sh(e.system)+'</td><td>'+sh(e.specificItem||'')+'</td><td>'+sh(e.mainActivity||'')+'</td><td>'+sh(e.subActivity||'')+'</td><td>'+sh(e.tag||'')+'</td><td>'+sh(linkTxt(e))+'</td><td>'+sh(e.mirrorSide||'Original')+'</td><td>'+sh(e.plannedQty||0)+' '+sh(e.uom||'')+'</td><td>'+sh(e.dailyQty||0)+' '+sh(e.uom||'')+'</td><td>'+sh(e.previousProgress||0)+'%</td><td>'+sh(e.dailyProgress||0)+'%</td><td>'+sh(e.totalAfter||0)+'%</td><td>'+sh(e.status||'')+'</td><td>'+sh(doc)+'</td><td>'+sh(e.contractor||'')+'</td></tr>';}).join('') || '<tr><td colspan="17">No matching daily entries.</td></tr>';}
   function detailRows(groups){return (groups||[]).map(g=>{const e=g.latest||{};return '<tr><td>'+sh(entrySite(e))+'</td><td>'+sh(e.system||'')+'</td><td>'+sh(e.specificItem||'')+'</td><td>'+sh(e.mainActivity||'')+'</td><td>'+sh(e.subActivity||'')+'</td><td>'+sh(e.tag||'')+'</td><td>'+sh(linkTxt(e))+'</td><td>'+sh(e.mirrorSide||'Original')+'</td><td>'+sh(g.plan)+' '+sh(e.uom||'')+'</td><td>'+sh(g.done)+' '+sh(e.uom||'')+'</td><td>'+sh(g.balanceQty)+' '+sh(e.uom||'')+'</td><td>'+sh(g.progress)+'%</td><td>'+sh(g.balancePct)+'%</td><td>'+sh(g.status)+'</td><td>'+sh(dshow(e.date))+'</td><td>'+sh(e.remarks||'')+'</td></tr>';}).join('') || '<tr><td colspan="16">No detailed activity progress found.</td></tr>';}
   function comboRows(combos){return (combos||[]).map(c=>'<tr><td>'+sh(c.assetLabel)+'</td><td>'+sh(c.system)+'</td><td>'+sh(c.scope)+'</td><td>'+sh(c.progress)+'%</td><td>'+sh(c.status)+'</td><td>'+sh(c.entryCount)+'</td><td>'+sh(c.groups.length)+'</td><td>'+sh(dshow(c.latest&&c.latest.date))+'</td><td>'+sh(c.latest&&c.latest.remarks||'')+'</td></tr>').join('') || '<tr><td colspan="9">No planned site/system rows match the filters.</td></tr>';}
@@ -4565,7 +4567,7 @@ function masterReportHtml(){
   function detailRowsV21(){const combos=plannedCombosV21(); const rows=[]; combos.forEach(c=>{(c.units||[]).forEach(u=>rows.push({site:c.assetLabel,system:c.system,specificItem:u.specificItem,mainActivity:u.mainActivity,subActivity:u.subActivity,tag:u.tag||'',progress:n(u.progress),status:statusForProgress(u.progress),plan:n(u.plan),done:n(u.done),balanceQty:n(u.balanceQty),latest:u.latest||{},expected:!u.actual}));}); return rows;}
   function barHtmlV21(title,rows,valueKey='progress',suffix='%'){rows=(rows||[]).slice(0,12); if(!rows.length)return '<div class="chart-box"><h3>'+h(title)+'</h3><p class="muted">No data available.</p></div>'; const max=Math.max(1,...rows.map(r=>n(valueKey==='balance'?r.balance:(valueKey==='count'?r.count:r[valueKey])))); return '<div class="chart-box"><h3>'+h(title)+'</h3><table class="chart-table"><thead><tr><th>Item</th><th>Visual</th><th>Value</th></tr></thead><tbody>'+rows.map(r=>{const raw=valueKey==='balance'?n(r.balance):(valueKey==='count'?n(r.count):pct(r[valueKey])); const w=valueKey==='progress'?pct(raw):pct(raw/max*100); const shown=valueKey==='progress'?raw+suffix:raw; return '<tr><td class="chart-label">'+h(r.label)+'</td><td><div class="chart-track"><span style="width:'+w+'%"></span></div></td><td class="chart-value">'+h(shown)+'</td></tr>';}).join('')+'</tbody></table></div>';}
   function reportStylesV21(){return '<style>@page{size:A4 landscape;margin:8mm}*{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;color:#17211f;margin:14px;font-size:10.5px;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact}h1{font-size:22px;margin:0}h2{font-size:15px;margin:14px 0 7px;border-bottom:2px solid #d8e2de;padding-bottom:4px}h3{font-size:13px;margin:0 0 8px}.print-btn{float:right;background:#1f7a5c;color:white;border:0;border-radius:6px;padding:8px 12px;font-weight:bold}.header{background:#0f1f1c;color:white;border-radius:10px;padding:14px;margin-bottom:12px}.header p{color:#d7e8e2;margin:5px 0 0}.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:10px 0}.card{border:1px solid #bfcac5;border-radius:8px;padding:8px;background:#f7faf8}.card b{display:block;font-size:17px;color:#1f7a5c}.card span{font-size:10px;color:#60706b;font-weight:bold}.charts{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:10px 0}.chart-box{border:1px solid #bfcac5;border-radius:8px;background:#fbfdfc;padding:8px;page-break-inside:avoid}.chart-table,.report-table{width:100%;border-collapse:collapse}.chart-table th,.chart-table td,.report-table th,.report-table td{border:1px solid #cfd9d5;padding:4px;vertical-align:top}.chart-table th,.report-table th{background:#e8f1ed;font-weight:bold}.chart-track{height:10px;background:#e5ece9;border-radius:99px;overflow:hidden}.chart-track span{display:block;height:100%;background:#1f7a5c}.chart-label{width:38%;font-weight:bold}.chart-value{text-align:right;font-weight:bold}.note{border:1px solid #d8e2de;background:#f7faf8;border-radius:8px;padding:8px;margin:10px 0}.muted{color:#60706b}@media print{.print-btn{display:none}body{margin:0;font-size:9.5px}.header,.cards,.chart-box{page-break-inside:avoid}thead{display:table-header-group}tr{page-break-inside:avoid}.report-table th,.report-table td{padding:3px}}</style>';}
-  function shellV21(title,subtitle,cards,charts,sections,excel){return '<!doctype html><html><head><meta charset="utf-8"><title>'+h(title)+'</title>'+reportStylesV21()+'</head><body><button class="print-btn" onclick="window.print()">Print / Save PDF</button><div class="header"><h1>'+h(title)+'</h1><p>'+h(subtitle)+'</p><p>Generated: '+h(new Date().toLocaleString())+'</p></div>'+cards+charts+sections+'</body></html>';}
+  function shellV21(title,subtitle,cards,charts,sections,excel){return '<!doctype html><html><head><meta charset="utf-8"><title>'+h(title)+'</title>'+reportStylesV21()+'</head><body><button class="print-btn" onclick="window.print()">Print / Save PDF</button><div class="header"><h1>'+h(title)+'</h1><p>'+h(subtitle)+'</p><p>Generated: '+h(new Date().toLocaleString())+'</p></div>'+cards+charts+sections+'<span data-aip5-ready="V38_ACTIVITY_CONTINUE_DATE_PERMISSION_STABLE"></span></body></html>';}
   function cardsV21(items){return '<div class="cards">'+items.map(it=>'<div class="card"><span>'+h(it.label)+'</span><b>'+h(it.value)+'</b></div>').join('')+'</div>';}
   function dailyRowsV21(entries){return (entries||[]).map(e=>'<tr><td>'+h(dshow(e.date))+'</td><td>'+h(entrySiteLabel(e))+'</td><td>'+h(e.system)+'</td><td>'+h(e.specificItem)+'</td><td>'+h(e.mainActivity)+'</td><td>'+h(e.subActivity)+'</td><td>'+h(e.tag)+'</td><td>'+h(linkText(e))+'</td><td>'+h(e.mirrorSide||'Original')+'</td><td>'+h(e.plannedQty)+'</td><td>'+h(e.dailyQty)+'</td><td>'+h(e.dailyProgress||'0')+'%</td><td>'+h(e.totalAfter||'0')+'%</td><td>'+h(e.docRef||'')+'</td><td>'+h(e.contractor||'')+'</td><td>'+h(e.remarks||'')+'</td></tr>').join('')||'<tr><td colspan="16">No daily entries found.</td></tr>';}
   function docsHtmlV21(){const docs=window.documentEntries||[]; if(!docs.length)return ''; return '<h2>Document register</h2><table class="report-table"><thead><tr><th>Date</th><th>Type</th><th>Reference</th><th>Title</th><th>Signature Date</th><th>Status</th><th>Related Site</th><th>System</th><th>Remarks</th></tr></thead><tbody>'+docs.map(d=>'<tr><td>'+h(dshow(d.date||d.receivedDate||''))+'</td><td>'+h(d.type||d.docType||'')+'</td><td>'+h(d.ref||d.docRef||d.number||'')+'</td><td>'+h(d.title||'')+'</td><td>'+h(dshow(d.signatureDate||d.signedDate||''))+'</td><td>'+h(d.status||'')+'</td><td>'+h(d.assetLabel||d.assetId||d.site||'')+'</td><td>'+h(d.system||'')+'</td><td>'+h(d.remarks||'')+'</td></tr>').join('')+'</tbody></table>';}
@@ -4701,7 +4703,7 @@ function masterReportHtml(){
   function cards(items){return '<div class="cards">'+items.map(function(c){return '<div class="card"><b>'+h(c.value)+'</b><span>'+h(c.label)+'</span></div>';}).join('')+'</div>';}
   function chart(title,rows,key,suffix){key=key||'progress'; suffix=suffix==null?'%':suffix; rows=(rows||[]).slice(0,12); if(!rows.length)return '<div class="chart-box"><h3>'+h(title)+'</h3><p class="muted">No data available.</p></div>'; var max=Math.max(1,...rows.map(function(r){return n(key==='balance'?r.balance:(key==='count'?r.count:r[key]));})); return '<div class="chart-box"><h3>'+h(title)+'</h3><table class="chart-table"><thead><tr><th>Item</th><th>Visual</th><th>Value</th></tr></thead><tbody>'+rows.map(function(r){var raw=key==='balance'?n(r.balance):(key==='count'?n(r.count):pct(r[key])); var w=key==='progress'?pct(raw):pct(raw/max*100); var shown=key==='progress'?raw+suffix:raw; return '<tr><td class="chart-label">'+h(r.label)+'</td><td><div class="chart-track"><span style="width:'+w+'%"></span></div></td><td class="chart-value">'+h(shown)+'</td></tr>';}).join('')+'</tbody></table></div>';}
   function styles(){return '<style>@page{size:A4 landscape;margin:8mm}*{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;color:#17211f;margin:14px;font-size:10.5px;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact}h1{font-size:22px;margin:0}h2{font-size:15px;margin:14px 0 7px;border-bottom:2px solid #d8e2de;padding-bottom:4px}h3{font-size:13px;margin:0 0 8px}.print-btn{float:right;background:#1f7a5c;color:white;border:0;border-radius:6px;padding:8px 12px;font-weight:bold}.header{background:#0f1f1c;color:white;border-radius:10px;padding:14px;margin-bottom:12px}.header p{color:#d7e8e2;margin:5px 0 0}.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:10px 0}.card{border:1px solid #bfcac5;border-radius:8px;padding:8px;background:#f7faf8}.card b{display:block;font-size:17px;color:#1f7a5c}.card span{font-size:10px;color:#60706b;font-weight:bold}.charts{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:10px 0}.chart-box{border:1px solid #bfcac5;border-radius:8px;background:#fbfdfc;padding:8px;page-break-inside:avoid}.chart-table,.report-table{width:100%;border-collapse:collapse}.chart-table th,.chart-table td,.report-table th,.report-table td{border:1px solid #cfd9d5;padding:4px;vertical-align:top}.chart-table th,.report-table th{background:#e8f1ed;font-weight:bold}.chart-track{height:10px;background:#e5ece9;border-radius:99px;overflow:hidden}.chart-track span{display:block;height:100%;background:#1f7a5c}.chart-label{width:38%;font-weight:bold}.chart-value{text-align:right;font-weight:bold}.note{border:1px solid #d8e2de;background:#f7faf8;border-radius:8px;padding:8px;margin:10px 0}.muted{color:#60706b}@media print{.print-btn{display:none}body{margin:0;font-size:9.6px}.header,.cards,.chart-box{page-break-inside:avoid}thead{display:table-header-group}tr{page-break-inside:avoid}.report-table th,.report-table td{padding:3px}}</style>';}
-  function shell(title,subtitle,cardsHtml,chartsHtml,sections){return '<!doctype html><html><head><meta charset="utf-8"><title>'+h(title)+'</title>'+styles()+'</head><body><button class="print-btn" onclick="window.print()">Print / Save PDF</button><div class="header"><h1>'+h(title)+'</h1><p>'+h(subtitle)+'</p><p>Generated: '+h(new Date().toLocaleString())+'</p></div>'+cardsHtml+chartsHtml+sections+'</body></html>';}
+  function shell(title,subtitle,cardsHtml,chartsHtml,sections){return '<!doctype html><html><head><meta charset="utf-8"><title>'+h(title)+'</title>'+styles()+'</head><body><button class="print-btn" onclick="window.print()">Print / Save PDF</button><div class="header"><h1>'+h(title)+'</h1><p>'+h(subtitle)+'</p><p>Generated: '+h(new Date().toLocaleString())+'</p></div>'+cardsHtml+chartsHtml+sections+'<span data-aip5-ready="V38_ACTIVITY_CONTINUE_DATE_PERMISSION_STABLE"></span></body></html>';}
   function dailyRows(entries){return (entries||[]).map(function(e){return '<tr><td>'+h(dshow(e.date))+'</td><td>'+h(entrySiteLabel(e))+'</td><td>'+h(e.system)+'</td><td>'+h(e.specificItem)+'</td><td>'+h(e.mainActivity)+'</td><td>'+h(e.subActivity)+'</td><td>'+h(e.tag)+'</td><td>'+h(linkText(e))+'</td><td>'+h(e.mirrorSide||'Original')+'</td><td>'+h(e.plannedQty)+'</td><td>'+h(e.dailyQty)+'</td><td>'+h(e.dailyProgress||'0')+'%</td><td>'+h(e.totalAfter||'0')+'%</td><td>'+h(e.docRef||'')+'</td><td>'+h(e.contractor||'')+'</td><td>'+h(e.remarks||'')+'</td></tr>';}).join('')||'<tr><td colspan="16">No daily entries found.</td></tr>';}
   function comboRows(combos){return (combos||[]).map(function(c){return '<tr><td>'+h(c.assetLabel)+'</td><td>'+h(c.system)+'</td><td>'+h(c.scope)+'</td><td>'+h(c.progress)+'%</td><td>'+h(c.status)+'</td><td>'+h(c.subsystemCount)+'</td><td>'+h(c.activityCount)+'</td><td>'+h(c.expectedCount)+'</td><td>'+h(c.actualCount)+'</td><td>'+h(c.entryCount)+'</td><td>'+h(dshow(c.latest&&c.latest.date))+'</td><td>'+h(c.latest&&c.latest.remarks||'')+'</td></tr>';}).join('')||'<tr><td colspan="12">No planned site/system rows match the filters.</td></tr>';}
   function detailRowsHtml(rows){return (rows||[]).map(function(r){return '<tr><td>'+h(r.site)+'</td><td>'+h(r.system)+'</td><td>'+h(r.specificItem)+'</td><td>'+h(r.mainActivity)+'</td><td>'+h(r.subActivity)+'</td><td>'+h(r.tag)+'</td><td>'+h(r.progress)+'%</td><td>'+h(r.status)+'</td><td>'+h(r.plan||'')+'</td><td>'+h(r.done||'')+'</td><td>'+h(r.balanceQty||'')+'</td><td>'+h(r.expected?'Planned / not started':'Actual / calculated')+'</td><td>'+h(dshow(r.latest&&r.latest.date))+'</td><td>'+h(r.latest&&r.latest.remarks||'')+'</td></tr>';}).join('')||'<tr><td colspan="14">No detailed rows found.</td></tr>';}
@@ -4854,7 +4856,16 @@ function masterReportHtml(){
   }, null);
 
   function entryKey(e){
-    return [e.assetId, e.system, e.specificItem, e.mainActivity, e.subActivity, e.tag, e.linkFrom, e.linkTo]
+    e = e || {};
+    var ref = String(e.activityRef || e.relatedActivityId || e.activityNo || e.activityCode || '').trim();
+    if (ref) return ['activity-ref', ref].map(function(x){ return String(x || '').trim().toLowerCase(); }).join('|');
+    var ends = [e.linkFrom, e.linkTo].map(function(v){ return String(v || '').trim(); }).filter(Boolean).sort().join(' <-> ');
+    var hasLink = String(e.tag || '').trim() && ends;
+    if (hasLink) {
+      return ['physical-link', e.system, e.specificItem, e.mainActivity, e.subActivity, e.projectScope, e.cableType, e.tag, ends]
+        .map(function(x){ return String(x || '').trim().toLowerCase(); }).join('|');
+    }
+    return [e.assetId, e.system, e.specificItem, e.mainActivity, e.subActivity, e.projectScope, e.cableType, e.tag, ends]
       .map(function(x){ return String(x || '').trim().toLowerCase(); }).join('|');
   }
 
@@ -5033,7 +5044,7 @@ function masterReportHtml(){
       saveBtn.__v27PreserveBound = true;
       saveBtn.addEventListener('click', function(ev){ return saveDailyV27(ev); }, true);
     }
-    ['entryAsset','entrySystem','entrySpecificItem','entryMainActivity','entrySubActivity','entryPlannedQty','entryDailyQty','entryUom','entryTag','entryLinkFrom','entryLinkTo','entryMirrorLink'].forEach(function(id){
+    ['entryAsset','entrySystem','entrySpecificItem','entryMainActivity','entrySubActivity','entryPlannedQty','entryDailyQty','entryUom','entryTag','entryActivityRef','entryLinkFrom','entryLinkTo','entryMirrorLink'].forEach(function(id){
       var el = byId(id);
       if (el && !el.__v27ProgressBound) {
         el.__v27ProgressBound = true;
@@ -5259,7 +5270,7 @@ function masterReportHtml(){
   }
   function cardBlock(items){ return '<div class="cards">'+items.map(function(x){ return '<div class="card"><span>'+h(x.label)+'</span><b>'+h(x.value)+'</b></div>'; }).join('')+'</div>'; }
   function shell(title, subtitle, cards, charts, sections, excel){
-    return '<!doctype html><html><head><meta charset="utf-8"><title>'+h(title)+'</title>'+reportCss()+'</head><body><div class="report-page"><div class="header"><h1>'+h(title)+'</h1><p>'+h(subtitle)+'</p><p>Generated: '+h(new Date().toLocaleString())+'</p></div>'+cards+charts+sections+'</div></body></html>';
+    return '<!doctype html><html><head><meta charset="utf-8"><title>'+h(title)+'</title>'+reportCss()+'</head><body><div class="report-page"><div class="header"><h1>'+h(title)+'</h1><p>'+h(subtitle)+'</p><p>Generated: '+h(new Date().toLocaleString())+'</p></div>'+cards+charts+sections+'</div><span data-aip5-ready="V38_ACTIVITY_CONTINUE_DATE_PERMISSION_STABLE"></span></body></html>';
   }
   function groupByProgress(items, keyFn){
     var map = new Map();
@@ -5534,7 +5545,7 @@ function masterReportHtml(){
   function bars(title, rows){ rows=(rows||[]).slice(0,12); if(!rows.length) rows=[{label:'No matching data',progress:0}]; return '<div class="chart-box"><h3>'+h(title)+'</h3><table class="chart-table"><thead><tr><th>Item</th><th>Progress</th><th>Value</th></tr></thead><tbody>'+rows.map(function(r){ var v=pct(r.progress); return '<tr><td class="chart-label">'+h(r.label)+'</td><td><div class="chart-track"><span style="width:'+v+'%"></span></div></td><td class="chart-value">'+v+'%</td></tr>'; }).join('')+'</tbody></table></div>'; }
   function reportShell(title, subtitle, cards, charts, body){
     var css = '<style>@page{size:A4 landscape;margin:8mm}body{font-family:Arial,sans-serif;color:#17211f;margin:0;font-size:10.5px}.report{padding:12px}.hero{background:#11231f;color:white;border-radius:10px;padding:14px;margin-bottom:12px}.hero h1{margin:0;font-size:22px}.hero p{margin:5px 0 0;color:#d7e8e2}.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:10px 0}.card{border:1px solid #d8e2de;border-radius:8px;padding:9px;background:#f8fbf9}.card b{display:block;font-size:17px;color:#1f7a5c}.charts{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.chart-box{border:1px solid #d8e2de;border-radius:8px;padding:10px;margin:8px 0;break-inside:avoid}.chart-box h3{margin:0 0 8px;font-size:13px}.chart-table{width:100%;border-collapse:collapse}.chart-table th,.chart-table td{border:1px solid #d8e2de;padding:5px}.chart-track{height:9px;background:#e5ece9;border-radius:99px;overflow:hidden}.chart-track span{display:block;height:100%;background:#1f7a5c}.report-table{width:100%;border-collapse:collapse;table-layout:fixed;margin-top:8px}.report-table th{background:#11231f;color:white}.report-table th,.report-table td{border:1px solid #cfdad5;padding:5px;vertical-align:top;word-wrap:break-word;white-space:normal}h2{font-size:15px;margin:14px 0 6px}.note{background:#fff8e7;border:1px solid #f0d08a;border-radius:8px;padding:8px;margin:10px 0}@media print{.chart-box,.card{break-inside:avoid}}</style>';
-    return '<!doctype html><html><head><meta charset="utf-8">'+css+'</head><body><div class="report"><div class="hero"><h1>'+h(title)+'</h1><p>'+h(subtitle)+'</p><p>Generated: '+h(new Date().toLocaleString())+'</p></div>'+cards+charts+body+'</div></body></html>';
+    return '<!doctype html><html><head><meta charset="utf-8">'+css+'</head><body><div class="report"><div class="hero"><h1>'+h(title)+'</h1><p>'+h(subtitle)+'</p><p>Generated: '+h(new Date().toLocaleString())+'</p></div>'+cards+charts+body+'</div><span data-aip5-ready="V38_ACTIVITY_CONTINUE_DATE_PERMISSION_STABLE"></span></body></html>';
   }
   function cards(items){ return '<div class="cards">'+items.map(function(x){ return '<div class="card"><span>'+h(x.label)+'</span><b>'+h(x.value)+'</b></div>'; }).join('')+'</div>'; }
   function dailyRows(entries){ return (entries||[]).map(function(e){ return '<tr><td>'+h(showDate(e.date))+'</td><td>'+h(entrySiteLabel(e))+'</td><td>'+h(e.system)+'</td><td>'+h(e.specificItem||'')+'</td><td>'+h(e.mainActivity||'')+'</td><td>'+h(e.subActivity||'')+'</td><td>'+h(e.tag||'')+'</td><td>'+h(linkText(e))+'</td><td>'+h(e.plannedQty||0)+' '+h(e.uom||'')+'</td><td>'+h(e.dailyQty||0)+' '+h(e.uom||'')+'</td><td>'+h(pct(e.dailyProgress||0))+'%</td><td>'+h(pct(e.totalAfter||e.progress||0))+'%</td><td>'+h(e.docRef||'')+'</td><td>'+h(e.contractor||'')+'</td><td>'+h(e.remarks||'')+'</td></tr>'; }).join('') || '<tr><td colspan="15">No matching entries.</td></tr>'; }
@@ -5663,7 +5674,7 @@ function masterReportHtml(){
   function fMasterEntries(){var rows=fMasterRows(),allowed=new Set(rows.map(function(r){return r.id;})),systems=selectedValues('masterFilterSystem'),scopes=selectedValues('masterFilterScope'),dt=filterDates('master');return allDaily().filter(function(e){if(!allowed.has(entrySiteId(e)))return false;if(systems.length&&systems.indexOf(e.system)<0)return false;if(scopes.length&&scopes.indexOf(e.projectScope||e.scope)<0)return false;if(!inDateRange(e.date,dt.from,dt.to))return false;return true;});}
   function groupBy(list,keyFn){var m=new Map();(list||[]).forEach(function(x){var k=keyFn(x)||'Unspecified';if(!m.has(k))m.set(k,[]);m.get(k).push(x);});return Array.from(m.entries()).map(function(p){return {label:p[0],progress:avg(p[1].map(function(x){return x.progress;})),count:p[1].length};}).sort(function(a,b){return b.progress-a.progress||String(a.label).localeCompare(String(b.label));});}
   function bars(title,rows){rows=(rows||[]).slice(0,12);if(!rows.length)rows=[{label:'No matching data',progress:0}];return '<div class="chart-box"><h3>'+h(title)+'</h3><table class="chart-table"><thead><tr><th>Item</th><th>Progress</th><th>Value</th></tr></thead><tbody>'+rows.map(function(r){var v=pct(r.progress);return '<tr><td class="chart-label">'+h(r.label)+'</td><td><div class="chart-track"><span style="width:'+v+'%"></span></div></td><td class="chart-value">'+v+'%</td></tr>';}).join('')+'</tbody></table></div>';}
-  function reportShell(title,subtitle,cards,charts,body){var css='<style>@page{size:A4 landscape;margin:8mm}body{font-family:Arial,sans-serif;color:#17211f;margin:0;font-size:10.5px}.report{padding:12px}.hero{background:#11231f;color:white;border-radius:10px;padding:14px;margin-bottom:12px}.hero h1{margin:0;font-size:22px}.hero p{margin:5px 0 0;color:#d7e8e2}.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:10px 0}.card{border:1px solid #d8e2de;border-radius:8px;padding:9px;background:#f8fbf9}.card b{display:block;font-size:17px;color:#1f7a5c}.charts{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.chart-box{border:1px solid #d8e2de;border-radius:8px;padding:10px;margin:8px 0;break-inside:avoid}.chart-box h3{margin:0 0 8px;font-size:13px}.chart-table{width:100%;border-collapse:collapse}.chart-table th,.chart-table td{border:1px solid #d8e2de;padding:5px}.chart-track{height:9px;background:#e5ece9;border-radius:99px;overflow:hidden}.chart-track span{display:block;height:100%;background:#1f7a5c}.report-table{width:100%;border-collapse:collapse;table-layout:fixed;margin-top:8px}.report-table th{background:#11231f;color:white}.report-table th,.report-table td{border:1px solid #cfdad5;padding:5px;vertical-align:top;word-wrap:break-word;white-space:normal}h2{font-size:15px;margin:14px 0 6px}.note{background:#fff8e7;border:1px solid #f0d08a;border-radius:8px;padding:8px;margin:10px 0}@media print{.chart-box,.card{break-inside:avoid}}</style>';return '<!doctype html><html><head><meta charset="utf-8">'+css+'</head><body><div class="report"><div class="hero"><h1>'+h(title)+'</h1><p>'+h(subtitle)+'</p><p>Generated: '+h(new Date().toLocaleString())+'</p></div>'+cards+charts+body+'</div></body></html>';}
+  function reportShell(title,subtitle,cards,charts,body){var css='<style>@page{size:A4 landscape;margin:8mm}body{font-family:Arial,sans-serif;color:#17211f;margin:0;font-size:10.5px}.report{padding:12px}.hero{background:#11231f;color:white;border-radius:10px;padding:14px;margin-bottom:12px}.hero h1{margin:0;font-size:22px}.hero p{margin:5px 0 0;color:#d7e8e2}.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:10px 0}.card{border:1px solid #d8e2de;border-radius:8px;padding:9px;background:#f8fbf9}.card b{display:block;font-size:17px;color:#1f7a5c}.charts{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.chart-box{border:1px solid #d8e2de;border-radius:8px;padding:10px;margin:8px 0;break-inside:avoid}.chart-box h3{margin:0 0 8px;font-size:13px}.chart-table{width:100%;border-collapse:collapse}.chart-table th,.chart-table td{border:1px solid #d8e2de;padding:5px}.chart-track{height:9px;background:#e5ece9;border-radius:99px;overflow:hidden}.chart-track span{display:block;height:100%;background:#1f7a5c}.report-table{width:100%;border-collapse:collapse;table-layout:fixed;margin-top:8px}.report-table th{background:#11231f;color:white}.report-table th,.report-table td{border:1px solid #cfdad5;padding:5px;vertical-align:top;word-wrap:break-word;white-space:normal}h2{font-size:15px;margin:14px 0 6px}.note{background:#fff8e7;border:1px solid #f0d08a;border-radius:8px;padding:8px;margin:10px 0}@media print{.chart-box,.card{break-inside:avoid}}</style>';return '<!doctype html><html><head><meta charset="utf-8">'+css+'</head><body><div class="report"><div class="hero"><h1>'+h(title)+'</h1><p>'+h(subtitle)+'</p><p>Generated: '+h(new Date().toLocaleString())+'</p></div>'+cards+charts+body+'</div><span data-aip5-ready="V38_ACTIVITY_CONTINUE_DATE_PERMISSION_STABLE"></span></body></html>';}
   function cards(items){return '<div class="cards">'+items.map(function(x){return '<div class="card"><span>'+h(x.label)+'</span><b>'+h(x.value)+'</b></div>';}).join('')+'</div>';}
   function dailyRows(entries){return (entries||[]).map(function(e){return '<tr><td>'+h(dshow(e.date))+'</td><td>'+h(entrySiteLabel(e))+'</td><td>'+h(e.system)+'</td><td>'+h(e.specificItem||'')+'</td><td>'+h(e.mainActivity||'')+'</td><td>'+h(e.subActivity||'')+'</td><td>'+h(e.tag||'')+'</td><td>'+h(linkText(e))+'</td><td>'+h(e.plannedQty||0)+' '+h(e.uom||'')+'</td><td>'+h(e.dailyQty||0)+' '+h(e.uom||'')+'</td><td>'+h(pct(e.dailyProgress||0))+'%</td><td>'+h(pct(e.totalAfter||e.progress||0))+'%</td><td>'+h(e.permitNo||'')+'</td><td>'+h(e.docRef||'')+'</td><td>'+h(e.contractor||'')+'</td><td>'+h(e.remarks||'')+'</td></tr>';}).join('')||'<tr><td colspan="16">No matching entries.</td></tr>';}
   function comboRows(combos){return (combos||[]).map(function(c){return '<tr><td>'+h(c.site)+'</td><td>'+h(c.system)+'</td><td>'+h(c.scope)+'</td><td>'+h(c.progress)+'%</td><td>'+h(c.status)+'</td><td>'+h(c.itemCount)+'</td><td>'+h(c.stepCount)+'</td><td>'+h(c.actualCount)+'</td><td>'+h(c.entryCount)+'</td><td>'+h(dshow((c.latest||{}).date))+'</td><td>'+h((c.latest||{}).permitNo||'')+'</td><td>'+h((c.latest||{}).docRef||'')+'</td><td>'+h((c.latest||{}).remarks||'')+'</td></tr>';}).join('')||'<tr><td colspan="13">No matching planned site/system rows.</td></tr>';}
@@ -5687,512 +5698,735 @@ function masterReportHtml(){
 })();
 
 </script>
+
+
+</body></html>');
+    // Never let a report-generated script marker close the main app script or navigate the main page.
+    html = html.replace(/<script[\s\S]*?<\/script>/gi, '');
+    if (!/<\/body>/i.test(html)) html += '
 <script>
-/* === V32_ZERO_ENTRY_DELETE_MIRROR_SAFE ===
-   Focused patch on top of V31:
-   - Purge zero-progress daily entries from in-memory data and all known daily/local storage keys.
-   - Block/auto-remove any new daily entry saved with zero actual progress.
-   - Allow Admin and Daily Entry users to delete daily log entries from the log.
-   - Keep mirrored link rows visible while preventing mirror quantity/progress from being treated as an additional physical quantity.
-*/
+/* === V38_ACTIVITY_CONTINUE_DATE_PERMISSION_STABLE ===
+   Final safety login guard: never let report patches break the login gate.
+   This patch only handles access-gate opening and preserves app data/logic. */
 (function(){
-  'use strict';
-  var MARKER = 'V32_ZERO_ENTRY_DELETE_MIRROR_SAFE';
-  if (window.__V32_ZERO_ENTRY_DELETE_MIRROR_SAFE__) return;
-  window.__V32_ZERO_ENTRY_DELETE_MIRROR_SAFE__ = true;
-  window.AIP5_VERSION_MARKER = MARKER;
-
+  var USERS = [
+    { email:'ziadseller@gmail.com', role:'admin', pin:'220321' },
+    { email:'jetawi333@yahoo.com', role:'viewer', pin:'' },
+    { email:'kyahiya@adnoc.ae', role:'viewer', pin:'' },
+    { email:'ebbygeorge17@gmail.com', role:'daily_entry', pin:'326587' }
+  ];
   function byId(id){ return document.getElementById(id); }
-  function safe(fn, fb){ try { return fn(); } catch(e){ console.warn('[V32]', e); return fb; } }
-  function num(v){ var x = Number(v || 0); return isFinite(x) ? x : 0; }
-  function pct(v){ v = num(v); return Math.max(0, Math.min(100, Math.round(v * 100) / 100)); }
-  function hasPositiveProgress(e){
-    e = e || {};
-    var plan = Math.max(num(e.plannedQty), num(e.plan), num(e.planned));
-    var qty = Math.max(num(e.dailyQty), num(e.qty), num(e.doneQty));
-    var dp = Math.max(num(e.dailyProgress), num(e.progress));
-    var tp = Math.max(num(e.totalAfter), num(e.overallProgress));
-    if (plan > 0 && qty > 0) return true;
-    return dp > 0 || tp > 0;
+  function norm(v){ return String(v || '').trim().toLowerCase(); }
+  function findUser(email){ var e=norm(email); return USERS.find(function(u){ return norm(u.email)===e; }) || null; }
+  function showPin(show){ var p=byId('pinSection'); if(p) p.style.display = show ? 'block' : 'none'; }
+  function setErr(msg){ var e=byId('gateError'); if(e) e.textContent = msg || ''; }
+  function unlock(user){
+    try { window.currentUserEmail = user.email; window.currentUserRole = user.role; } catch(e) {}
+    try { sessionStorage.setItem('aip5_gate_email', user.email); sessionStorage.setItem('aip5_gate_role', user.role); } catch(e) {}
+    document.body.classList.remove('auth-locked');
+    document.body.classList.add('auth-unlocked');
+    var gate=byId('emailGate'), app=byId('appShell');
+    if(gate) gate.style.display='none';
+    if(app){ app.hidden=false; app.style.display='grid'; }
+    try { if(typeof applyRoleUI==='function') applyRoleUI(); } catch(e) {}
+    try { if(typeof bootApp==='function') setTimeout(bootApp, 0); else if(typeof renderAll==='function') setTimeout(function(){renderAll(false);}, 0); } catch(e) {}
+    try { if(window.lucide) setTimeout(function(){lucide.createIcons();},100); } catch(e) {}
   }
-  function normalizedEntry(e){
-    e = Object.assign({}, e || {});
-    var plan = Math.max(num(e.plannedQty), num(e.plan), num(e.planned));
-    var qty = Math.max(num(e.dailyQty), num(e.qty), num(e.doneQty));
-    if (plan > 0 && qty > 0) {
-      var p = pct((qty / plan) * 100);
-      if (p > 0 && p < 0.01) p = 0.01;
-      if (num(e.dailyProgress) <= 0) e.dailyProgress = p;
-      if (num(e.totalAfter) <= 0) e.totalAfter = p;
-      if (!e.status || e.status === 'Not Started') e.status = p >= 100 ? 'Complete' : 'In Progress';
+  function handle(){
+    setErr('');
+    var emailEl=byId('gateEmail'), pinEl=byId('gatePin');
+    var user=findUser(emailEl && emailEl.value);
+    if(!user){ showPin(false); setErr('Access denied. This email is not authorized.'); return; }
+    if(user.pin){
+      showPin(true);
+      if(!pinEl || String(pinEl.value || '').trim() !== user.pin){ setErr('Enter the required PIN for this user.'); if(pinEl) pinEl.focus(); return; }
     }
-    return e;
+    unlock(user);
   }
-  function isDailyStorageKey(k){
-    k = String(k || '').toLowerCase();
-    return (k.indexOf('daily') > -1 || k.indexOf('log') > -1) &&
-           k.indexOf('document') < 0 && k.indexOf('dropdown') < 0 &&
-           k.indexOf('field') < 0 && k.indexOf('config') < 0;
+  function bind(){
+    var btn=byId('gateSubmit'), emailEl=byId('gateEmail'), pinEl=byId('gatePin');
+    if(!btn || btn.dataset.v37LoginBound) return;
+    btn.dataset.v37LoginBound='1';
+    btn.onclick = function(e){ if(e){e.preventDefault(); e.stopPropagation();} handle(); return false; };
+    if(emailEl){ emailEl.addEventListener('input', function(){ var u=findUser(emailEl.value); showPin(!!(u && u.pin)); setErr(''); }); emailEl.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); handle(); } }); }
+    if(pinEl){ pinEl.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); handle(); } }); }
   }
-  function parseList(raw){
-    if (!raw) return null;
-    var p = JSON.parse(raw);
-    if (Array.isArray(p)) return p;
-    if (p && typeof p === 'object') return Object.values(p);
-    return null;
-  }
-  function purgeArray(arr){
-    var removed = 0;
-    var out = (Array.isArray(arr) ? arr : []).map(normalizedEntry).filter(function(e){
-      var keep = hasPositiveProgress(e);
-      if (!keep) removed++;
-      return keep;
-    });
-    return {out: out, removed: removed};
-  }
-  function persistDailyEntries(list){
-    list = Array.isArray(list) ? list : [];
-    safe(function(){ window.dailyEntries = list; }, null);
-    safe(function(){ dailyEntries = list; }, null);
-    safe(function(){ localStorage.setItem(typeof logKey !== 'undefined' ? logKey : 'aip5-daily-log-v5-advanced-scope', JSON.stringify(list)); }, null);
-    safe(function(){ localStorage.setItem('aip5-daily-log-v32-clean', JSON.stringify(list)); }, null);
-    safe(function(){
-      if (typeof fbDb !== 'undefined' && fbDb && fbDb.ref) {
-        var obj = {};
-        list.forEach(function(e, i){ obj['e' + i] = e; });
-        fbDb.ref('/data/dailyEntries').set(obj);
-      }
-    }, null);
-  }
-  function purgeZeroEntries(showNotice){
-    var totalRemoved = 0;
-    var base = [];
-    safe(function(){ if (Array.isArray(window.dailyEntries)) base = base.concat(window.dailyEntries); }, null);
-    safe(function(){ if (Array.isArray(dailyEntries)) base = base.concat(dailyEntries); }, null);
-
-    safe(function(){
-      for (var i = 0; i < localStorage.length; i++) {
-        var k = localStorage.key(i);
-        if (!isDailyStorageKey(k)) continue;
-        var raw = localStorage.getItem(k);
-        var list = parseList(raw);
-        if (!list) continue;
-        var res = purgeArray(list);
-        totalRemoved += res.removed;
-        localStorage.setItem(k, JSON.stringify(res.out));
-        base = base.concat(res.out);
-      }
-    }, null);
-
-    // Deduplicate after cleanup.
-    var seen = new Set();
-    var merged = [];
-    purgeArray(base).out.forEach(function(e){
-      var key = String(e.id || '') || [e.date, e.assetId, e.assetLabel, e.system, e.specificItem, e.mainActivity, e.subActivity, e.tag, e.linkFrom, e.linkTo, e.dailyQty, e.plannedQty, e.remarks].join('|').toLowerCase();
-      if (!seen.has(key)) { seen.add(key); merged.push(e); }
-    });
-    persistDailyEntries(merged);
-    if (showNotice && totalRemoved > 0) {
-      var lbl = byId('lastUpdatedLabel');
-      if (lbl) lbl.textContent = 'Removed ' + totalRemoved + ' zero-progress daily entries';
-    }
-    return {entries: merged, removed: totalRemoved};
-  }
-  window.AIP5_purgeZeroDailyEntries = purgeZeroEntries;
-
-  function canDeleteEntry(entry){
-    var role = String(window.currentUserRole || (typeof currentUserRole !== 'undefined' ? currentUserRole : '') || '').toLowerCase();
-    var email = String(window.currentUserEmail || (typeof currentUserEmail !== 'undefined' ? currentUserEmail : '') || '').toLowerCase();
-    if (role === 'admin') return true;
-    if (role === 'daily_entry') {
-      var owner = String((entry && (entry.enteredBy || entry.createdBy || entry.userEmail)) || '').toLowerCase();
-      return !owner || owner === email;
-    }
-    return false;
-  }
-  function stableDeleteDailyEntry(entryId){
-    var state = purgeZeroEntries(false).entries;
-    var entry = state.find(function(x){ return String(x.id) === String(entryId); });
-    if (!entry) return;
-    if (!canDeleteEntry(entry)) { alert('Only Admin can delete any entry. Daily Entry users can delete their own entries only.'); return; }
-    if (!confirm('Delete this daily entry from the log and recalculate progress?')) return;
-    var asset = entry.assetId;
-    var filtered = state.filter(function(x){ return String(x.id) !== String(entryId); });
-    persistDailyEntries(filtered);
-    safe(function(){ if (typeof recomputeAssetProgress === 'function' && asset) recomputeAssetProgress(asset); }, null);
-    safe(function(){ if (typeof renderAll === 'function') renderAll(false); }, null);
-    setTimeout(function(){
-      safe(function(){ if (typeof renderLog === 'function') renderLog(); }, null);
-      safe(function(){ if (typeof renderKpis === 'function') renderKpis(); }, null);
-    }, 60);
-  }
-  window.deleteDailyEntry = stableDeleteDailyEntry;
-  safe(function(){ deleteDailyEntry = stableDeleteDailyEntry; }, null);
-
-  // Mirror helper for reports: keep mirror records visible, but mark them as display-only duplicates of the same physical link.
-  function resolveSiteId(v){
-    var s = String(v || '').trim();
-    if (!s) return '';
-    var low = s.toLowerCase();
-    var rows = safe(function(){ return (typeof DATA !== 'undefined' && DATA.items) ? DATA.items : []; }, []);
-    var r = rows.find(function(x){
-      var labels = [x.id, x.site, x.displayId, x.name];
-      safe(function(){ if (typeof label === 'function') labels.push(label(x)); }, null);
-      return labels.some(function(y){ return String(y || '').toLowerCase() === low; });
-    });
-    return r ? r.id : s;
-  }
-  function canonicalLinkKey(e){
-    e = e || {};
-    var a = resolveSiteId(e.linkFrom || ''), b = resolveSiteId(e.linkTo || '');
-    var ends = [a, b].filter(Boolean).sort().join('~');
-    return [e.system || '', e.specificItem || '', e.mainActivity || '', e.subActivity || '', e.tag || '', ends || resolveSiteId(e.assetId || e.assetLabel || '')].map(function(x){ return String(x || '').trim().toLowerCase(); }).join('|');
-  }
-  window.AIP5_canonicalPhysicalLinkKey = canonicalLinkKey;
-
-  // Wrap report HTML generators to clean zero entries before every report/export.
-  var oldMasterReportHtml = window.masterReportHtml;
-  var oldDailyReportHtml = window.dailyReportHtml;
-  window.masterReportHtml = function(){ purgeZeroEntries(false); return oldMasterReportHtml ? oldMasterReportHtml.apply(this, arguments) : '<html><body>No report generator found.</body></html>'; };
-  window.dailyReportHtml = function(){ purgeZeroEntries(false); return oldDailyReportHtml ? oldDailyReportHtml.apply(this, arguments) : '<html><body>No report generator found.</body></html>'; };
-
-  // Patch renderAll/save to always remove accidental zero entries after any save/import/recovery.
-  var oldSave = window.save;
-  window.save = function(){
-    purgeZeroEntries(false);
-    var r = oldSave ? oldSave.apply(this, arguments) : undefined;
-    purgeZeroEntries(false);
-    return r;
-  };
-  safe(function(){ save = window.save; }, null);
-
-  var oldRenderAll = window.renderAll;
-  window.renderAll = function(){
-    purgeZeroEntries(false);
-    var r = oldRenderAll ? oldRenderAll.apply(this, arguments) : undefined;
-    setTimeout(function(){ purgeZeroEntries(false); safe(function(){ if (typeof renderLog === 'function') renderLog(); }, null); }, 80);
-    return r;
-  };
-
-  function installDeleteStyle(){
-    var css = '.daily-entry-user .delete-entry{display:inline-grid!important}.viewer-user .delete-entry,.field-user.viewer-user .delete-entry{display:none!important}.admin-user .delete-entry{display:inline-grid!important}';
-    var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
-  }
-  function refreshV32(){
-    purgeZeroEntries(true);
-    installDeleteStyle();
-    safe(function(){ if (typeof renderLog === 'function') renderLog(); }, null);
-    safe(function(){ if (typeof renderKpis === 'function') renderKpis(); }, null);
-  }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function(){ setTimeout(refreshV32, 500); setTimeout(refreshV32, 1800); });
-  else { setTimeout(refreshV32, 500); setTimeout(refreshV32, 1800); }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', bind); else bind();
+  setTimeout(bind,300); setTimeout(bind,1200);
+  window.AIP5_V37_LOGIN_GUARD_READY = true;
 })();
 </script>
 
+</body></html>';
+    return html;
+  }
+  function printInHiddenFrame(html){
+    html = safePrintableHtml(html);
+    var frame = byId('aip5StablePrintFrame');
+    if (frame && frame.parentNode) frame.parentNode.removeChild(frame);
+    frame = document.createElement('iframe');
+    frame.id = 'aip5StablePrintFrame';
+    frame.setAttribute('aria-hidden','true');
+    frame.style.position = 'fixed';
+    frame.style.right = '0';
+    frame.style.bottom = '0';
+    frame.style.width = '0';
+    frame.style.height = '0';
+    frame.style.border = '0';
+    frame.style.visibility = 'hidden';
+    document.body.appendChild(frame);
+    var cleanup = function(){
+      try { if (frame && frame.parentNode) frame.parentNode.removeChild(frame); } catch(e){}
+      try { window.focus(); } catch(e){}
+    };
+    try {
+      var doc = frame.contentDocument || frame.contentWindow.document;
+      doc.open(); doc.write(html); doc.close();
+      frame.onload = function(){
+        setTimeout(function(){
+          try {
+            frame.contentWindow.focus();
+            frame.contentWindow.onafterprint = cleanup;
+            frame.contentWindow.print();
+            setTimeout(cleanup, 1800);
+          } catch(e) {
+            cleanup();
+            var blob = new Blob([html], {type:'text/html'});
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob); a.download = 'telecom-report.html';
+            a.click(); setTimeout(function(){URL.revokeObjectURL(a.href);},1000);
+            alert('Print dialog was blocked. The report HTML was downloaded instead.');
+          }
+        }, 180);
+      };
+      setTimeout(function(){ if (frame && frame.parentNode) cleanup(); }, 8000);
+    } catch(e) { cleanup(); console.warn('[V36 print]', e); }
+  }
+  function reportHtml(kind){
+    if (kind === 'master') {
+      if (typeof window.masterReportHtml === 'function') return window.masterReportHtml(false);
+      if (typeof window.masterReportHtmlV21 === 'function') return window.masterReportHtmlV21(false);
+      if (typeof window.masterReportV20 === 'function') return window.masterReportV20(false);
+    }
+    if (typeof window.dailyReportHtml === 'function') return window.dailyReportHtml(false);
+    if (typeof window.dailyReportHtmlV21 === 'function') return window.dailyReportHtmlV21(false);
+    if (typeof window.dailyReportV20 === 'function') return window.dailyReportV20(false);
+    return '<!doctype html><html><body><h1>Report</h1><p>No report generator found.</p>
+
+
+</body></html>';
+  }
+  window.openDailyReport = function(print){ if (typeof requireExport === 'function' && !requireExport()) return; return printInHiddenFrame(reportHtml('daily')); };
+  window.openMasterReport = function(print){ if (typeof requireExport === 'function' && !requireExport()) return; return printInHiddenFrame(reportHtml('master')); };
+  window.openReport = function(print){ return window.openDailyReport(print); };
+
+  function rebindButton(id, handler){
+    var el = byId(id); if (!el) return;
+    var clone = el.cloneNode(true);
+    el.parentNode.replaceChild(clone, el);
+    clone.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); handler(e); });
+  }
+  function bindFinalPrintButtons(){
+    rebindButton('printBtn', function(){ window.openDailyReport(true); });
+    rebindButton('pdfBtn', function(){ window.openDailyReport(true); });
+    rebindButton('dailyPrintReportBtn', function(){ window.openDailyReport(true); });
+    rebindButton('masterPrintBtn', function(){ window.openMasterReport(true); });
+    rebindButton('masterPdfBtn', function(){ window.openMasterReport(true); });
+    rebindButton('dailyLogPrintBtn', function(){ window.openDailyReport(true); });
+  }
+
+  function initV36(){
+    ensureActivityRefField();
+    patchSaveRecords();
+    patchEditDateAndRef();
+    bindFinalPrintButtons();
+    ['entryPlannedQty','entryDailyQty','entryActivityRef','entryTag','entryLinkFrom','entryLinkTo','entrySystem','entrySpecificItem','entryMainActivity','entrySubActivity','entryProjectScope','entryCableType'].forEach(function(id){
+      var el = byId(id); if (!el || el.dataset.v36PreviewBound) return;
+      el.dataset.v36PreviewBound = '1';
+      el.addEventListener('input', cumulativePreview);
+      el.addEventListener('change', function(){ setTimeout(cumulativePreview, 60); });
+    });
+    cumulativePreview();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function(){ setTimeout(initV36, 400); setTimeout(initV36, 1600); });
+  else { setTimeout(initV36, 400); setTimeout(initV36, 1600); }
+})();
+</script>
+
+<span data-aip5-ready="V38_ACTIVITY_CONTINUE_DATE_PERMISSION_STABLE"></span>
 <script>
-/* === V40_CLEAN_ZERO_DELETE_CUMULATIVE_STABLE ===
-   Clean stable patch:
-   - Removes accidental zero-progress entries and prevents new 0% saves.
-   - Admin can edit/delete any daily entry from Latest Daily Entries.
-   - Daily Entry user can edit/delete only his own entries; Viewer remains read-only.
-   - Latest Daily Entries shows all filtered entries and never exposes raw script text.
-   - Same physical activity/link accumulates across days using Activity Ref when provided,
-     otherwise by Site + System + Item + Activity + Work Step + Tag + Link.
+/* === V38_ACTIVITY_CONTINUE_DATE_PERMISSION_STABLE ===
+   Final safety patch on top of V37:
+   - Calendar date inputs everywhere.
+   - Original manual entry date is preserved on edit/update.
+   - Activity Ref / Continue dropdown for cumulative progress.
+   - Auto-generate Activity Ref for first/new activities.
+   - Daily Entry users can create/edit/delete only their own entries; Admin can edit/delete all.
+   - Viewer remains read-only.
 */
 (function(){
   'use strict';
-  var MARK='V40_CLEAN_ZERO_DELETE_CUMULATIVE_STABLE';
-  if(window.__AIP5_V40_CLEAN__) return;
-  window.__AIP5_V40_CLEAN__ = true;
-  window.AIP5_VERSION_MARKER = MARK;
-  function byId(id){ return document.getElementById(id); }
-  function text(v){ return String(v == null ? '' : v); }
-  function lower(v){ return text(v).trim().toLowerCase(); }
-  function num(v){ var n = Number(v || 0); return isFinite(n) ? n : 0; }
-  function pct(v){ v = num(v); return Math.max(0, Math.min(100, Math.round(v * 100) / 100)); }
-  function html(v){ return text(v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
-  function role(){ try{return lower(window.currentUserRole || (typeof currentUserRole !== 'undefined' ? currentUserRole : '') || sessionStorage.getItem('aip5_gate_role') || '')}catch(e){return ''} }
-  function email(){ try{return lower(window.currentUserEmail || (typeof currentUserEmail !== 'undefined' ? currentUserEmail : '') || sessionStorage.getItem('aip5_gate_email') || '')}catch(e){return ''} }
-  function isAdmin(){ return role() === 'admin'; }
-  function isDailyEntry(){ return role() === 'daily_entry'; }
-  function owner(e){ return lower(e && (e.enteredByEmail || e.createdByEmail || e.enteredBy || e.createdBy || e.userEmail || e.ownerEmail || e.updatedByEmail || '')); }
-  function canModify(e){ if(isAdmin()) return true; if(isDailyEntry()) return !!owner(e) && owner(e) === email(); return false; }
-  function getDaily(){ try{ return Array.isArray(dailyEntries) ? dailyEntries : (Array.isArray(window.dailyEntries) ? window.dailyEntries : []); }catch(e){ return Array.isArray(window.dailyEntries) ? window.dailyEntries : []; } }
-  function setDaily(arr){ arr = Array.isArray(arr) ? arr : []; try{ dailyEntries = arr; }catch(e){} window.dailyEntries = arr; }
-  function positive(e){
-    var plan = Math.max(num(e && e.plannedQty), num(e && e.plan), num(e && e.planned));
-    var qty = Math.max(num(e && e.dailyQty), num(e && e.qty), num(e && e.doneQty));
-    var dp = Math.max(num(e && e.dailyProgress), num(e && e.progress));
-    var tp = Math.max(num(e && e.totalAfter), num(e && e.overallProgress));
-    return (plan > 0 && qty > 0) || dp > 0 || tp > 0;
+  var MARK='V38_ACTIVITY_CONTINUE_DATE_PERMISSION_STABLE';
+  window.AIP5_V38_READY = MARK;
+  function qs(id){ return document.getElementById(id); }
+  function all(sel){ return Array.prototype.slice.call(document.querySelectorAll(sel)); }
+  function txt(v){ return String(v == null ? '' : v); }
+  function lower(v){ return txt(v).trim().toLowerCase(); }
+  function n(v){ v = Number(v || 0); return isFinite(v) ? v : 0; }
+  function clamp(v){ return Math.max(0, Math.min(100, Math.round(n(v)*100)/100)); }
+  function role(){ try { return lower(window.currentUserRole || (typeof currentUserRole !== 'undefined' ? currentUserRole : '')); } catch(e){ return lower(window.currentUserRole); } }
+  function email(){ try { return lower(window.currentUserEmail || (typeof currentUserEmail !== 'undefined' ? currentUserEmail : '')); } catch(e){ return lower(window.currentUserEmail); } }
+  function isAdminRole(){ return role() === 'admin'; }
+  function isDailyEntryRole(){ return role() === 'daily_entry'; }
+  function hasDailyArray(){ try { return Array.isArray(dailyEntries); } catch(e){ return false; } }
+  function getDaily(){ try { return Array.isArray(dailyEntries) ? dailyEntries : []; } catch(e){ return []; } }
+  function setDaily(arr){ try { dailyEntries = arr; } catch(e){} }
+  function htmlSafe(v){
+    return txt(v).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
   }
-  function normalize(e){
-    e = Object.assign({}, e || {});
-    var plan = Math.max(num(e.plannedQty), num(e.plan), num(e.planned));
-    var qty = Math.max(num(e.dailyQty), num(e.qty), num(e.doneQty));
-    if(plan > 0 && qty > 0){
-      var p = pct((qty / plan) * 100);
-      if(p > 0 && p < 0.01) p = 0.01;
-      if(num(e.dailyProgress) <= 0) e.dailyProgress = p;
-      if(num(e.totalAfter) <= 0) e.totalAfter = p;
-      if(!e.status || e.status === 'Not Started') e.status = p >= 100 ? 'Complete' : 'In Progress';
+  function parseIso(v){
+    if(!v) return '';
+    v = txt(v).trim();
+    if(/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+    try { if(typeof dateValue === 'function'){ var dv = dateValue(v); if(/^\d{4}-\d{2}-\d{2}$/.test(dv)) return dv; } } catch(e){}
+    var m = v.match(/^(\d{1,2})[-\s\/]([A-Za-z]{3,})[-\s\/](\d{2,4})$/);
+    if(m){
+      var months = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+      var mo = months.indexOf(m[2].slice(0,3).toLowerCase()) + 1;
+      var yy = Number(m[3]); if(yy < 100) yy += 2000;
+      if(mo) return yy + '-' + String(mo).padStart(2,'0') + '-' + String(Number(m[1])).padStart(2,'0');
     }
-    return e;
+    m = v.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{2,4})$/);
+    if(m){ var y = Number(m[3]); if(y < 100) y += 2000; return y + '-' + String(Number(m[2])).padStart(2,'0') + '-' + String(Number(m[1])).padStart(2,'0'); }
+    var d = new Date(v); if(!isNaN(d)) return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    return '';
   }
-  function keyOf(e){
-    return String(e && e.id || '') || [e && e.date, e && e.assetId, e && e.assetLabel, e && e.system, e && e.specificItem, e && e.mainActivity, e && e.subActivity, e && e.tag, e && e.activityRef, e && e.linkFrom, e && e.linkTo, e && e.dailyQty, e && e.plannedQty, e && e.remarks].join('|').toLowerCase();
+  function niceDate(v){
+    try { if(typeof displayDate === 'function') return displayDate(v); } catch(e){}
+    return parseIso(v) || txt(v);
   }
-  function cleanList(list){
-    var seen = new Set(), out = [], removed = 0;
-    (Array.isArray(list)?list:[]).map(normalize).forEach(function(e){
-      if(!positive(e)){ removed++; return; }
-      var k = keyOf(e);
-      if(!seen.has(k)){ seen.add(k); out.push(e); }
+  function systemFieldsChanged(){
+    try { if(typeof updateProgressPreview === 'function') updateProgressPreview(); } catch(e){}
+    setTimeout(populateContinueActivityOptions, 30);
+  }
+  function makeInputsCalendar(){
+    var ids = ['entryDate','masterFilterFrom','masterFilterTo','dailyFilterFrom','dailyFilterTo','docEntryDate','docEntrySignedDate','masterFilterDateFrom','masterFilterDateTo'];
+    ids.forEach(function(id){
+      var el = qs(id); if(!el) return;
+      var iso = parseIso(el.value);
+      el.type = 'date';
+      if(iso) el.value = iso;
+      el.placeholder = 'yyyy-mm-dd';
     });
-    return {list:out, removed:removed};
-  }
-  function isDailyKey(k){
-    k = lower(k);
-    return (k.indexOf('daily') > -1 || k.indexOf('log') > -1) && k.indexOf('document') < 0 && k.indexOf('dropdown') < 0 && k.indexOf('field') < 0 && k.indexOf('config') < 0;
-  }
-  function canonicalKeys(){
-    var keys = [];
-    try{ if(typeof logKey !== 'undefined' && logKey) keys.push(logKey); }catch(e){}
-    keys.push('aip5-daily-log-v5-advanced-scope','aip5-daily-log-v32-clean','aip5-daily-log-v40-clean');
-    return Array.from(new Set(keys));
-  }
-  function persist(list){
-    list = cleanList(list).list;
-    setDaily(list);
-    try{ canonicalKeys().forEach(function(k){ localStorage.setItem(k, JSON.stringify(list)); }); }catch(e){}
-    try{
-      if(typeof fbDb !== 'undefined' && fbDb && fbDb.ref){
-        var obj={}; list.forEach(function(e,i){ obj['e'+i]=e; });
-        fbDb.ref('/data/dailyEntries').set(obj);
+    all('input').forEach(function(el){
+      var id = el.id || '';
+      var name = el.name || '';
+      if(/date/i.test(id) || /date/i.test(name)){
+        var iso = parseIso(el.value);
+        try { el.type = 'date'; } catch(e){}
+        if(iso) el.value = iso;
       }
-    }catch(e){}
-    return list;
+    });
   }
-  function cleanup(show){
-    var base = [];
-    base = base.concat(getDaily());
-    try{
-      for(var i=0;i<localStorage.length;i++){
-        var k = localStorage.key(i); if(!isDailyKey(k)) continue;
-        var raw = localStorage.getItem(k), parsed = null;
-        try{ parsed = JSON.parse(raw); }catch(e){}
-        var arr = Array.isArray(parsed) ? parsed : (parsed && typeof parsed === 'object' ? Object.values(parsed) : []);
-        base = base.concat(arr);
-      }
-    }catch(e){}
-    var res = cleanList(base);
-    persist(res.list);
-    try{
-      for(var j=0;j<localStorage.length;j++){
-        var kk = localStorage.key(j); if(isDailyKey(kk)) localStorage.setItem(kk, JSON.stringify(res.list));
-      }
-    }catch(e){}
-    if(show && res.removed){ var lbl=byId('lastUpdatedLabel'); if(lbl) lbl.textContent='Removed '+res.removed+' zero-progress entries'; }
-    return res.list;
+  window.normalizeDateField = function(id){
+    var el = qs(id); if(!el || !el.value) return;
+    var iso = parseIso(el.value);
+    if(!iso) return;
+    if(el.type === 'date') el.value = iso; else el.value = niceDate(iso);
+  };
+  function entryOwner(e){ return lower(e && (e.enteredByEmail || e.enteredBy || e.entryBy || e.userEmail || e.createdBy || e.ownerEmail || '')); }
+  function canModifyEntry(e){
+    if(isAdminRole()) return true;
+    if(isDailyEntryRole()) return entryOwner(e) && entryOwner(e) === email();
+    return false;
   }
-  window.AIP5_V40_cleanupDaily = cleanup;
-
-  function linkText(e){ return [e && e.linkFrom, e && e.linkTo].map(function(x){return text(x).trim();}).filter(Boolean).sort().join(' <-> '); }
-  function activityRef(e){ return text(e && (e.activityRef || e.relatedActivityId || e.activityNo || e.activityCode || '')).trim(); }
-  function cumulativeKey(e){
-    var ref = activityRef(e);
+  function canStartEntry(){ return isAdminRole() || isDailyEntryRole(); }
+  function canonicalEnds(e){
+    var ends = [e && e.linkFrom, e && e.linkTo].map(function(x){return txt(x).trim();}).filter(Boolean).sort(function(a,b){return a.localeCompare(b);});
+    return ends.join('<->');
+  }
+  function continuationBaseKey(e){
+    e = e || {};
+    var hasLink = txt(e.linkFrom).trim() || txt(e.linkTo).trim();
+    return [
+      hasLink ? 'link' : 'activity',
+      hasLink ? canonicalEnds(e) : txt(e.assetId || e.assetLabel),
+      e.system, e.specificItem, e.mainActivity, e.subActivity, e.projectScope, e.cableType, e.tag
+    ].map(lower).join('|');
+  }
+  function generatedRefFromEntry(e){
+    var site = txt(e.assetId || e.assetLabel || 'SITE').replace(/[^A-Za-z0-9]+/g,'').slice(0,8).toUpperCase() || 'SITE';
+    var sys = txt(e.system || 'SYS').replace(/[^A-Za-z0-9]+/g,'').slice(0,5).toUpperCase() || 'SYS';
+    var act = txt(e.mainActivity || e.subActivity || 'ACT').replace(/[^A-Za-z0-9]+/g,'').slice(0,5).toUpperCase() || 'ACT';
+    var day = parseIso(e.date) || new Date().toISOString().slice(0,10);
+    var base = 'ACT-' + site + '-' + sys + '-' + act + '-' + day.replace(/-/g,'');
+    var used = {};
+    getDaily().forEach(function(x){ if(x.activityRef) used[lower(x.activityRef)] = true; });
+    if(!used[lower(base)]) return base;
+    var i=2; while(used[lower(base+'-'+i)]) i++;
+    return base + '-' + i;
+  }
+  function activityRefOf(e){ return txt(e && (e.activityRef || e.relatedActivityId || e.activityNo || e.activityCode || '')).trim(); }
+  function ensureActivityRefs(){
+    if(!hasDailyArray()) return;
+    var map = {};
+    var changed = false;
+    getDaily().slice().sort(function(a,b){ return (parseIso(a.date)||'').localeCompare(parseIso(b.date)||'') || n(a.id)-n(b.id); }).forEach(function(e){
+      if(activityRefOf(e)){ map[continuationBaseKey(e)] = activityRefOf(e); return; }
+      var key = continuationBaseKey(e);
+      if(map[key]) e.activityRef = map[key]; else { e.activityRef = generatedRefFromEntry(e); map[key] = e.activityRef; }
+      changed = true;
+    });
+    if(changed){ try { if(typeof save === 'function') save(); } catch(e){} }
+  }
+  function findMatchingOpenRef(draft, excludeId){
+    var key = continuationBaseKey(draft);
+    var candidates = getDaily().filter(function(e){
+      if(excludeId && Number(e.id) === Number(excludeId)) return false;
+      if(continuationBaseKey(e) !== key) return false;
+      if(isDailyEntryRole() && entryOwner(e) && entryOwner(e) !== email()) return false;
+      var ref = activityRefOf(e);
+      return !!ref;
+    }).sort(function(a,b){ return (parseIso(a.date)||'').localeCompare(parseIso(b.date)||'') || n(a.id)-n(b.id); });
+    return candidates.length ? activityRefOf(candidates[0]) : '';
+  }
+  function groupKey(e){
+    var ref = activityRefOf(e);
     if(ref) return 'ref|' + lower(ref);
-    return [e && e.assetId, e && e.system, e && e.specificItem, e && e.mainActivity, e && e.subActivity, e && e.projectScope, e && e.cableType, e && e.tag, linkText(e)].map(lower).join('|');
+    return 'key|' + continuationBaseKey(e);
   }
-  window.AIP5_cumulativeKey = cumulativeKey;
-  try{ window.entryKey = cumulativeKey; entryKey = cumulativeKey; }catch(e){}
-  try{ window.groupKey = cumulativeKey; groupKey = cumulativeKey; }catch(e){}
-
-  function ensureActivityRefUi(){
-    var tag = byId('entryTag');
-    if(!tag) return;
-    var tagLabel = tag.closest ? tag.closest('label') : null;
-    if(!byId('entryContinueActivity')){
-      var l1 = document.createElement('label'); l1.setAttribute('data-field','continueActivity');
-      l1.innerHTML = 'Continue Existing Activity<select id="entryContinueActivity"><option value="">New activity / no continuation</option></select>';
-      if(tagLabel && tagLabel.parentNode) tagLabel.parentNode.insertBefore(l1, tagLabel.nextSibling);
+  function groupedStats(entries){
+    var plan = 0, qty = 0;
+    entries.forEach(function(e){ plan = Math.max(plan, n(e.plannedQty)); qty += n(e.dailyQty); });
+    return {plan: plan, qty: qty, progress: plan > 0 ? clamp(qty / plan * 100) : 0};
+  }
+  window.entryKey = function(e){ return groupKey(e); };
+  window.activityProgressForDraft = function(draft, excludeId){
+    var key = groupKey(draft);
+    var related = getDaily().filter(function(e){ return Number(e.id) !== Number(excludeId) && groupKey(e) === key; });
+    var previous = groupedStats(related);
+    var total = groupedStats(related.concat([draft]));
+    return {dailyProgress: n(draft.plannedQty) > 0 ? clamp(n(draft.dailyQty)/n(draft.plannedQty)*100) : 0, previousProgress: previous.progress, totalAfter: total.progress, qty: total.qty, plan: total.plan};
+  };
+  function fieldValue(id){ var el = qs(id); return el ? el.value : ''; }
+  function collectStable(existing, preview){
+    var id = fieldValue('entryAsset');
+    var base = null;
+    try { base = current(DATA.items.find(function(r){return r.id===id;})); } catch(e) { base = {id:id, category:'', type:''}; }
+    var files = [];
+    try { files = preview ? [] : selectedAttachmentFiles.map(function(f){return f.name;}); } catch(e) {}
+    var entry = {
+      id: existing && existing.id ? existing.id : Date.now(),
+      date: parseIso(fieldValue('entryDate')) || parseIso(existing && existing.date) || (new Date()).toISOString().slice(0,10),
+      assetId: id,
+      assetLabel: (typeof label === 'function' && base ? label(base) : id),
+      category: base && base.category || '',
+      type: base && base.type || '',
+      projectScope: fieldValue('entryProjectScope'),
+      system: fieldValue('entrySystem'),
+      specificItem: fieldValue('entrySpecificItem'),
+      stage: fieldValue('entryStage'),
+      mainActivity: fieldValue('entryMainActivity'),
+      subActivity: fieldValue('entrySubActivity'),
+      plannedQty: n(fieldValue('entryPlannedQty')),
+      dailyQty: n(fieldValue('entryDailyQty')),
+      uom: fieldValue('entryUom'),
+      cableType: fieldValue('entryCableType'),
+      tag: txt(fieldValue('entryTag')).trim(),
+      activityRef: txt(fieldValue('entryActivityRef')).trim(),
+      linkFrom: txt(fieldValue('entryLinkFrom')).trim(),
+      linkTo: txt(fieldValue('entryLinkTo')).trim(),
+      mirrorLink: fieldValue('entryMirrorLink') || 'Yes',
+      workLocation: txt(fieldValue('entryWorkLocation')).trim(),
+      permitNo: txt(fieldValue('entryPermit')).trim(),
+      docType: fieldValue('entryDocType'),
+      docRef: txt(fieldValue('entryDocRef')).trim(),
+      contractor: fieldValue('entryContractor'),
+      partyType: fieldValue('entryParty'),
+      dailyProgress: 0,
+      previousProgress: 0,
+      totalAfter: 0,
+      status: 'Not Started',
+      owner: base && base.owner || '',
+      remarks: txt(fieldValue('entryRemarks')).trim(),
+      attachments: files.length ? files : (existing && existing.attachments || []),
+      enteredByEmail: existing && existing.enteredByEmail || existing && existing.enteredBy || email(),
+      enteredBy: existing && existing.enteredBy || existing && existing.enteredByEmail || email(),
+      entryBy: existing && existing.entryBy || existing && existing.enteredByEmail || email(),
+      enteredByRole: existing && existing.enteredByRole || role(),
+      createdByRole: existing && existing.createdByRole || role()
+    };
+    if(!entry.activityRef){
+      var match = findMatchingOpenRef(entry, existing && existing.id);
+      entry.activityRef = match || generatedRefFromEntry(entry);
+      var refEl = qs('entryActivityRef'); if(refEl && !preview) refEl.value = entry.activityRef;
     }
-    if(!byId('entryActivityRef')){
-      var l2 = document.createElement('label'); l2.setAttribute('data-field','activityRef');
-      l2.innerHTML = 'Activity Ref / Continuation ID<input id="entryActivityRef" placeholder="Auto or choose from Continue Existing Activity">';
-      var cont = byId('entryContinueActivity'); var contLabel = cont && cont.closest ? cont.closest('label') : null;
-      if(contLabel && contLabel.parentNode) contLabel.parentNode.insertBefore(l2, contLabel.nextSibling);
+    var stats = window.activityProgressForDraft(entry, existing && existing.id);
+    entry.dailyProgress = stats.dailyProgress;
+    entry.previousProgress = stats.previousProgress;
+    entry.totalAfter = stats.totalAfter;
+    try { entry.status = statusFromProgress(entry.totalAfter); } catch(e) { entry.status = entry.totalAfter >= 100 ? 'Complete' : entry.totalAfter > 0 ? 'In Progress' : 'Not Started'; }
+    return entry;
+  }
+  window.collectDailyEntry = collectStable;
+  function validateEntry(entry, old){
+    if(!canStartEntry()){ alert('This user can review, print, and export only. Daily Progress entry is not allowed.'); return false; }
+    if(old && !canModifyEntry(old)){ alert('You can only edit your own daily entries. Admin can edit all entries.'); return false; }
+    if(n(entry.plannedQty) <= 0 || n(entry.dailyQty) <= 0 || n(entry.dailyProgress) <= 0){ alert('Daily entry cannot be saved with zero progress. Please enter Planned Qty and Daily Qty greater than 0.'); return false; }
+    var hasLink = txt(entry.linkFrom).trim() || txt(entry.linkTo).trim();
+    if(hasLink && !txt(entry.tag).trim()){ alert('Please enter the manual Cable/Asset/Link Tag before saving linked progress.'); var tag=qs('entryTag'); if(tag) tag.focus(); return false; }
+    if(isDailyEntryRole()){
+      var sameRef = getDaily().filter(function(e){ return activityRefOf(e) && lower(activityRefOf(e)) === lower(entry.activityRef) && (!old || Number(e.id) !== Number(old.id)); });
+      var foreign = sameRef.find(function(e){ return entryOwner(e) && entryOwner(e) !== email(); });
+      if(foreign){ alert('This Activity Ref belongs to another user. Please start your own activity or ask Admin.'); return false; }
     }
-    var cont = byId('entryContinueActivity');
-    if(cont && !cont.dataset.v40Bound){
-      cont.dataset.v40Bound='1';
-      cont.addEventListener('change', function(){ var ref = byId('entryActivityRef'); if(ref && cont.value) ref.value = cont.value; updatePreview(); });
-    }
-  }
-  function derivedRef(e){
-    var site = text(e && (e.assetId || e.assetLabel || byId('entryAsset') && byId('entryAsset').value || 'SITE')).replace(/[^A-Za-z0-9]+/g,'').slice(0,10) || 'SITE';
-    var sys = text(e && (e.system || byId('entrySystem') && byId('entrySystem').value || 'SYS')).replace(/[^A-Za-z0-9]+/g,'').slice(0,8) || 'SYS';
-    var act = text(e && (e.mainActivity || e.subActivity || byId('entryMainActivity') && byId('entryMainActivity').value || 'ACT')).replace(/[^A-Za-z0-9]+/g,'').slice(0,10) || 'ACT';
-    return [site, sys, act, Date.now().toString().slice(-6)].join('-').toUpperCase();
-  }
-  function populateContinue(){
-    ensureActivityRefUi();
-    var sel=byId('entryContinueActivity'); if(!sel) return;
-    var current=sel.value;
-    var map = new Map();
-    getDaily().forEach(function(e){
-      if(isDailyEntry() && owner(e) !== email()) return;
-      var ref = activityRef(e) || cumulativeKey(e); if(!ref) return;
-      if(!map.has(ref)) map.set(ref, []); map.get(ref).push(e);
-    });
-    var opts=['<option value="">New activity / no continuation</option>'];
-    Array.from(map.keys()).sort().forEach(function(ref){
-      var arr=map.get(ref), first=arr[0]||{}, plan=Math.max.apply(null,[0].concat(arr.map(function(x){return num(x.plannedQty)}))), qty=arr.reduce(function(a,x){return a+num(x.dailyQty)},0), p=plan>0?pct(qty/plan*100):0;
-      opts.push('<option value="'+html(ref)+'">'+html(ref+' | '+(first.assetLabel||first.assetId||'-')+' | '+(first.system||'-')+' | '+(first.mainActivity||first.subActivity||'-')+' | '+qty+'/'+plan+' ('+p+'%)')+'</option>');
-    });
-    sel.innerHTML = opts.join('');
-    if(current && Array.prototype.some.call(sel.options,function(o){return o.value===current})) sel.value=current;
-  }
-  function stampEntry(e){
-    if(!e) return e;
-    var refEl=byId('entryActivityRef'), cont=byId('entryContinueActivity');
-    var ref = text((cont && cont.value) || (refEl && refEl.value) || e.activityRef || '').trim();
-    if(!ref) ref = derivedRef(e);
-    e.activityRef = ref;
-    e.relatedActivityId = ref;
-    if(!owner(e)){
-      e.enteredByEmail = email(); e.createdByEmail = email(); e.userEmail = email();
-      e.enteredByRole = role(); e.createdByRole = role();
-    }
-    return e;
-  }
-  function stampRecentlySaved(){
-    var arr = getDaily(); if(!arr.length) return;
-    var editId = null; try{ editId = window.editingDailyId || (typeof editingDailyId !== 'undefined' ? editingDailyId : null); }catch(e){}
-    var target = editId ? arr.find(function(x){return String(x.id)===String(editId)}) : arr[arr.length-1];
-    stampEntry(target);
-    persist(arr);
-    populateContinue();
-  }
-  var oldCollect = null; try{ oldCollect = window.collectDailyEntry || (typeof collectDailyEntry !== 'undefined' ? collectDailyEntry : null); }catch(e){}
-  if(oldCollect && !oldCollect._v40){
-    var newCollect = function(){ var e = oldCollect.apply(this, arguments); return stampEntry(e); };
-    newCollect._v40 = true; window.collectDailyEntry = newCollect; try{ collectDailyEntry = newCollect; }catch(e){}
-  }
-  function validateDraft(){
-    var p = byId('entryPlannedQty'), q = byId('entryDailyQty');
-    var plan = num(p && p.value), qty = num(q && q.value);
-    if(plan <= 0){ alert('Planned Qty must be greater than zero. Zero-progress entries are not allowed.'); if(p) p.focus(); return false; }
-    if(qty <= 0){ alert('Daily Qty must be greater than zero. Zero-progress entries are not allowed.'); if(q) q.focus(); return false; }
     return true;
   }
-  function updatePreview(){
-    var p=byId('entryPlannedQty'), q=byId('entryDailyQty'), dp=byId('entryProgress'), op=byId('entryOverallProgress');
-    var plan=num(p&&p.value), qty=num(q&&q.value), daily=plan>0?pct(qty/plan*100):0;
-    if(daily>0 && daily<0.01) daily=0.01;
-    if(dp) dp.value=daily;
-    var draft={activityRef: byId('entryActivityRef')&&byId('entryActivityRef').value, assetId:byId('entryAsset')&&byId('entryAsset').value, system:byId('entrySystem')&&byId('entrySystem').value, specificItem:byId('entrySpecificItem')&&byId('entrySpecificItem').value, mainActivity:byId('entryMainActivity')&&byId('entryMainActivity').value, subActivity:byId('entrySubActivity')&&byId('entrySubActivity').value, projectScope:byId('entryProjectScope')&&byId('entryProjectScope').value, cableType:byId('entryCableType')&&byId('entryCableType').value, tag:byId('entryTag')&&byId('entryTag').value, linkFrom:byId('entryLinkFrom')&&byId('entryLinkFrom').value, linkTo:byId('entryLinkTo')&&byId('entryLinkTo').value, plannedQty:plan, dailyQty:qty};
-    var k=cumulativeKey(draft), done=qty, maxPlan=plan;
-    getDaily().forEach(function(e){ if(cumulativeKey(e)===k){ done += num(e.dailyQty); maxPlan = Math.max(maxPlan, num(e.plannedQty)); } });
-    var total=maxPlan>0?pct(done/maxPlan*100):daily;
-    if(total>0 && total<0.01) total=0.01;
-    if(op) op.value=total;
-  }
-
-  var oldAdd = null; try{ oldAdd = window.addDaily || (typeof addDaily !== 'undefined' ? addDaily : null); }catch(e){}
-  if(oldAdd && !oldAdd._v40){
-    var addWrap = function(ev){
-      if(ev){ ev.preventDefault(); ev.stopPropagation(); }
-      ensureActivityRefUi();
-      if(!validateDraft()) return false;
-      var r = oldAdd.apply(this, arguments);
-      setTimeout(function(){ stampRecentlySaved(); cleanup(false); refreshAll(); }, 80);
-      return r;
-    };
-    addWrap._v40=true; window.addDaily=addWrap; try{ addDaily=addWrap; }catch(e){}
-  }
-
-  function stableDelete(id){
-    var arr = cleanup(false), entry = arr.find(function(x){ return String(x.id) === String(id); });
-    if(!entry) return false;
-    if(!canModify(entry)){ alert('Admin can delete any entry. Daily Entry users can delete only their own entries. Viewers cannot delete.'); return false; }
-    if(!confirm(isAdmin() ? 'Admin delete: delete this daily entry?' : 'Delete your own daily entry?')) return false;
-    var asset = entry.assetId;
-    arr = arr.filter(function(x){ return String(x.id) !== String(id); });
-    persist(arr);
-    try{ if(typeof recomputeAssetProgress === 'function' && asset) recomputeAssetProgress(asset); }catch(e){}
-    try{ if(typeof renderAll === 'function') renderAll(false); else renderLog(); }catch(e){ renderLog(); }
+  function saveDailyV38(ev){
+    if(ev){ ev.preventDefault(); ev.stopPropagation(); }
+    var old = null;
+    try { old = editingDailyId ? getDaily().find(function(x){return Number(x.id)===Number(editingDailyId);}) : null; } catch(e){}
+    var entry = collectStable(old, false);
+    if(!validateEntry(entry, old)) return false;
+    var arr = getDaily().slice();
+    if(old) arr = arr.map(function(x){ return Number(x.id)===Number(old.id) ? entry : x; }); else arr.push(entry);
+    setDaily(arr);
+    try { if(typeof recomputeAssetProgress === 'function'){ if(old && old.assetId !== entry.assetId) recomputeAssetProgress(old.assetId); recomputeAssetProgress(entry.assetId); } } catch(e){}
+    try { if(typeof save === 'function') save(); } catch(e){}
+    try { if(typeof resetDailyForm === 'function') resetDailyForm(); } catch(e){}
+    var lbl = qs('lastUpdatedLabel'); if(lbl) lbl.textContent = 'Last updated ' + (typeof displayDateTime === 'function' ? displayDateTime(new Date()) : new Date().toLocaleString());
+    try { if(typeof renderAll === 'function') renderAll(false); else if(typeof renderLog === 'function') renderLog(); } catch(e){ try{ renderLog(); }catch(_){} }
+    try { populateContinueActivityOptions(); } catch(e){}
     return false;
   }
-  window.deleteDailyEntry = stableDelete; try{ deleteDailyEntry = stableDelete; }catch(e){}
-
-  var oldLoadEdit = null; try{ oldLoadEdit = window.loadDailyEntryForEdit || (typeof loadDailyEntryForEdit !== 'undefined' ? loadDailyEntryForEdit : null); }catch(e){}
-  if(oldLoadEdit && !window.loadDailyEntryForEditOriginal) window.loadDailyEntryForEditOriginal = oldLoadEdit;
-  window.loadDailyEntryForEdit = function(id){
-    var entry = getDaily().find(function(x){return String(x.id)===String(id)});
-    if(!entry) return false;
-    if(!canModify(entry)){ alert('Admin can edit any entry. Daily Entry users can edit only their own entries.'); return false; }
-    var r=false;
-    try{ r = window.loadDailyEntryForEditOriginal ? window.loadDailyEntryForEditOriginal(Number(id)) : false; }catch(e){ r=false; }
-    setTimeout(function(){
-      ensureActivityRefUi();
-      var ref=byId('entryActivityRef'); if(ref) ref.value = activityRef(entry);
-      var d=byId('entryDate'); if(d && entry.date) d.value = entry.date;
-      updatePreview();
-    },80);
-    return r;
-  };
-  try{ loadDailyEntryForEdit = window.loadDailyEntryForEdit; }catch(e){}
-
-  function displayDateSafe(v){ try{ return typeof displayDate === 'function' ? displayDate(v) : text(v); }catch(e){ return text(v); } }
-  function sortDate(v){ try{ return typeof dateValue === 'function' ? dateValue(v) : text(v); }catch(e){ return text(v); } }
-  function siteName(e){ return e.assetLabel || e.assetId || e.site || '-'; }
-  function link(e){ var parts=[e.linkFrom,e.linkTo].map(text).map(function(x){return x.trim()}).filter(Boolean); return parts.length?parts.join(' → '):''; }
-  function renderLog(){
-    var box=byId('dailyLog'); if(!box) return;
-    var filtered; try{ filtered = typeof filteredDailyEntries === 'function' ? filteredDailyEntries('daily') : getDaily(); }catch(e){ filtered = getDaily(); }
-    filtered = cleanList(filtered).list.slice().sort(function(a,b){ return sortDate(b.date).localeCompare(sortDate(a.date)) || String(b.id||'').localeCompare(String(a.id||'')); });
-    var last=byId('lastEntryLabel'); if(last) last.textContent = getDaily().length ? displayDateSafe(getDaily().slice().sort(function(a,b){return sortDate(b.date).localeCompare(sortDate(a.date))})[0].date) : 'No entries yet';
-    var count=byId('dailyFilterCount'); if(count) count.textContent = filtered.length + ' of ' + getDaily().length + ' entries selected for daily report.';
-    if(!filtered.length){ box.innerHTML='<div class="log-item"><strong>No daily entries</strong><span>No matching positive-progress entries found.</span></div>'; return; }
-    box.innerHTML = filtered.map(function(e){
-      var allowed = canModify(e);
-      var daily = num(e.dailyProgress) || (num(e.plannedQty)>0 ? pct(num(e.dailyQty)/num(e.plannedQty)*100) : 0);
-      var total = num(e.totalAfter) || daily;
-      return '<div class="log-item" data-entry-id="'+html(e.id)+'"><div class="log-actions">'
-        + (allowed ? '<button class="edit-entry" data-id="'+html(e.id)+'" title="Edit">Edit</button><button class="delete-entry" data-id="'+html(e.id)+'" title="Delete">Delete</button>' : '')
-        + '</div><strong>'+html(displayDateSafe(e.date))+' · '+html(siteName(e))+' · '+html(e.system||'-')+'</strong>'
-        + '<span>'+html([e.specificItem,e.mainActivity,e.subActivity].filter(Boolean).join(' / '))+'</span>'
-        + '<span><b>Activity Ref:</b> '+html(activityRef(e)||'-')+' | <b>Tag:</b> '+html(e.tag||'-')+' | <b>Link:</b> '+html(link(e)||'-')+'</span>'
-        + '<span><b>Qty:</b> '+html(num(e.dailyQty))+' / '+html(num(e.plannedQty))+' '+html(e.uom||'')+' | <b>Daily:</b> '+html(daily)+'% | <b>Cumulative:</b> '+html(total)+'%</span>'
-        + '<span><b>Permit/PTW:</b> '+html(e.permit||'-')+' | <b>Doc:</b> '+html(e.docRef||'-')+' | <b>Remarks:</b> '+html(e.remarks||'-')+'</span></div>';
-    }).join('');
-    box.querySelectorAll('.delete-entry').forEach(function(b){ b.onclick=function(ev){ev.preventDefault();ev.stopPropagation();return stableDelete(b.dataset.id)}; });
-    box.querySelectorAll('.edit-entry').forEach(function(b){ b.onclick=function(ev){ev.preventDefault();ev.stopPropagation();return window.loadDailyEntryForEdit(b.dataset.id)}; });
+  window.addDaily = saveDailyV38;
+  window.saveDailyV38 = saveDailyV38;
+  function stableDeleteDailyEntry(entryId){
+    var entry = getDaily().find(function(x){ return Number(x.id) === Number(entryId); });
+    if(!entry) return;
+    if(!canModifyEntry(entry)){ alert('Admin can delete any daily entry. Daily Entry users can delete only their own entries. Viewers cannot delete entries.'); return; }
+    var msg = isAdminRole() ? 'Admin delete: please ensure this deletion is coordinated/verbally agreed when needed. Delete this entry?' : 'Delete your own daily entry?';
+    if(!confirm(msg)) return;
+    setDaily(getDaily().filter(function(x){ return Number(x.id) !== Number(entryId); }));
+    try { if(typeof recomputeAssetProgress === 'function') recomputeAssetProgress(entry.assetId); } catch(e){}
+    try { if(typeof save === 'function') save(); } catch(e){}
+    try { if(typeof renderAll === 'function') renderAll(false); else renderLog(); } catch(e){ try{ renderLog(); }catch(_){} }
   }
-  window.renderLog = renderLog; try{ renderLog = window.renderLog; }catch(e){}
-
-  var oldSave = window.save; window.save = function(){ cleanup(false); var r = oldSave ? oldSave.apply(this, arguments) : undefined; cleanup(false); return r; }; try{ save = window.save; }catch(e){}
-  var oldRenderAll = window.renderAll; window.renderAll = function(){ cleanup(false); var r = oldRenderAll ? oldRenderAll.apply(this, arguments) : undefined; setTimeout(refreshAll,80); return r; }; try{ renderAll = window.renderAll; }catch(e){}
-  function refreshAll(){
-    cleanup(true); ensureActivityRefUi(); populateContinue(); updatePreview(); renderLog();
-    try{ if(typeof renderKpis === 'function') renderKpis(); }catch(e){}
-    try{ if(window.lucide) lucide.createIcons(); }catch(e){}
+  window.deleteDailyEntry = stableDeleteDailyEntry;
+  function stableLoadForEdit(entryId){
+    var entry = getDaily().find(function(x){ return Number(x.id) === Number(entryId); });
+    if(!entry) return;
+    if(!canModifyEntry(entry)){ alert('Admin can edit any daily entry. Daily Entry users can edit only their own entries.'); return; }
+    try { editingDailyId = Number(entryId); } catch(e){}
+    var btnSpan = qs('saveDailyBtn') && qs('saveDailyBtn').querySelector('span'); if(btnSpan) btnSpan.textContent = 'Update daily entry';
+    var cancel = qs('cancelDailyEditBtn'); if(cancel) cancel.style.display = 'inline-flex';
+    function setVal(id, val){ var el=qs(id); if(el) el.value = val == null ? '' : val; }
+    setVal('entryDate', parseIso(entry.date) || parseIso(entry.entryDate) || '');
+    setVal('entryAsset', entry.assetId || ''); try{ if(typeof renderSystemChoices === 'function') renderSystemChoices(); }catch(e){}
+    ['entrySystem','entrySpecificItem','entryMainActivity','entrySubActivity','entryProjectScope','entryStage','entryUom','entryCableType','entryDocType','entryContractor','entryParty'].forEach(function(id){ var prop = id.replace(/^entry/,''); prop = prop.charAt(0).toLowerCase()+prop.slice(1); var el=qs(id); if(el && entry[prop]){ try{ if(typeof ensureOption === 'function') ensureOption(el, entry[prop]); }catch(e){} el.value=entry[prop]; } });
+    try{ if(typeof renderSpecificItems === 'function') renderSpecificItems(); if(qs('entrySpecificItem')) qs('entrySpecificItem').value=entry.specificItem||''; if(typeof renderMainActivities === 'function') renderMainActivities(); if(qs('entryMainActivity')) qs('entryMainActivity').value=entry.mainActivity||''; if(typeof renderSubActivities === 'function') renderSubActivities(); if(qs('entrySubActivity')) qs('entrySubActivity').value=entry.subActivity||''; }catch(e){}
+    setVal('entryPlannedQty', entry.plannedQty || 0); setVal('entryDailyQty', entry.dailyQty || 0); setVal('entryTag', entry.tag || ''); setVal('entryActivityRef', activityRefOf(entry)); setVal('entryLinkFrom', entry.linkFrom || ''); setVal('entryLinkTo', entry.linkTo || ''); setVal('entryMirrorLink', entry.mirrorLink || 'Yes'); setVal('entryWorkLocation', entry.workLocation || ''); setVal('entryPermit', entry.permitNo || ''); setVal('entryDocRef', entry.docRef || ''); setVal('entryProgress', entry.dailyProgress || 0); setVal('entryOverallProgress', entry.totalAfter || 0); setVal('entryRemarks', entry.remarks || '');
+    try { selectedAttachmentFiles=[]; var attach=qs('entryAttachment'); if(attach) attach.value=''; if(typeof renderAttachmentList === 'function') renderAttachmentList(entry.attachments||[]); }catch(e){}
+    try { updateProgressPreview(); populateContinueActivityOptions(); } catch(e){}
+    try { document.getElementById('daily').scrollIntoView({behavior:'smooth',block:'start'}); } catch(e){}
   }
-  function bindInputs(){
-    ensureActivityRefUi();
-    ['entryPlannedQty','entryDailyQty','entryActivityRef','entryContinueActivity','entryAsset','entrySystem','entrySpecificItem','entryMainActivity','entrySubActivity','entryTag','entryLinkFrom','entryLinkTo'].forEach(function(id){
-      var el=byId(id); if(!el || el.dataset.v40Bound) return; el.dataset.v40Bound='1';
-      el.addEventListener('input', updatePreview); el.addEventListener('change', function(){ setTimeout(function(){ populateContinue(); updatePreview(); },40); });
+  window.loadDailyEntryForEdit = stableLoadForEdit;
+  function addContinueDropdown(){
+    if(qs('entryContinueActivity')) return;
+    var ref = qs('entryActivityRef'); if(!ref) return;
+    var label = document.createElement('label');
+    label.setAttribute('data-field','continueActivity');
+    label.innerHTML = 'Continue Existing Activity<select id="entryContinueActivity"><option value="">New activity / Auto-generate ref</option></select>';
+    var parent = ref.closest('label'); if(parent && parent.parentNode) parent.parentNode.insertBefore(label, parent);
+    qs('entryContinueActivity').addEventListener('change', function(){ applyContinueSelection(this.value); });
+  }
+  function optionLabelForRef(ref, arr){
+    var first = arr.slice().sort(function(a,b){ return (parseIso(a.date)||'').localeCompare(parseIso(b.date)||'') || n(a.id)-n(b.id); })[0] || {};
+    var stats = groupedStats(arr);
+    return ref + ' | ' + (first.assetLabel || first.assetId || '-') + ' | ' + (first.system || '-') + ' | ' + (first.mainActivity || first.subActivity || '-') + ' | ' + stats.qty + '/' + stats.plan + ' ' + (first.uom || '') + ' (' + stats.progress + '%)';
+  }
+  function populateContinueActivityOptions(){
+    addContinueDropdown();
+    var sel = qs('entryContinueActivity'); if(!sel) return;
+    var current = sel.value;
+    var groups = {};
+    getDaily().forEach(function(e){
+      var ref = activityRefOf(e); if(!ref) return;
+      if(isDailyEntryRole() && entryOwner(e) !== email()) return;
+      var key = lower(ref); (groups[key] || (groups[key]=[])).push(e);
     });
-    var form=byId('dailyForm'); if(form && !form.dataset.v40Submit){ form.dataset.v40Submit='1'; form.addEventListener('submit', function(e){ if(!validateDraft()){ e.preventDefault(); e.stopPropagation(); return false; } setTimeout(function(){ stampRecentlySaved(); cleanup(false); refreshAll(); },100); }, true); }
-    var btn=byId('saveDailyBtn'); if(btn && !btn.dataset.v40Save){ btn.dataset.v40Save='1'; btn.addEventListener('click', function(e){ if(!validateDraft()){ e.preventDefault(); e.stopPropagation(); return false; } setTimeout(function(){ stampRecentlySaved(); cleanup(false); refreshAll(); },140); }, true); }
+    var opts = ['<option value="">New activity / Auto-generate ref</option>'];
+    Object.keys(groups).sort().forEach(function(key){
+      var ref = activityRefOf(groups[key][0]);
+      var stats = groupedStats(groups[key]);
+      var ongoing = stats.progress < 100 ? 'Ongoing' : 'Complete';
+      opts.push('<option value="'+htmlSafe(ref)+'">'+htmlSafe(optionLabelForRef(ref, groups[key])+' - '+ongoing)+'</option>');
+    });
+    sel.innerHTML = opts.join('');
+    if(current && Array.prototype.some.call(sel.options, function(o){return o.value===current;})) sel.value=current;
   }
-  var css=document.createElement('style'); css.textContent='.admin-user .edit-entry,.admin-user .delete-entry{display:inline-grid!important}.daily-entry-user .edit-entry,.daily-entry-user .delete-entry{display:inline-grid!important}.viewer-user .edit-entry,.viewer-user .delete-entry,.field-user.viewer-user .edit-entry,.field-user.viewer-user .delete-entry{display:none!important}.log-actions button{width:auto!important;min-width:52px;padding:4px 8px!important;font-size:11px!important}'; document.head.appendChild(css);
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', function(){ setTimeout(bindInputs,250); setTimeout(refreshAll,650); setTimeout(refreshAll,1800); }); else { setTimeout(bindInputs,250); setTimeout(refreshAll,650); setTimeout(refreshAll,1800); }
-  setInterval(function(){ bindInputs(); }, 2500);
+  function applyContinueSelection(ref){
+    if(!ref) return;
+    var arr = getDaily().filter(function(e){ return lower(activityRefOf(e)) === lower(ref); });
+    if(isDailyEntryRole()) arr = arr.filter(function(e){ return entryOwner(e) === email(); });
+    if(!arr.length){ alert('This activity reference is not available for your user.'); return; }
+    var first = arr.slice().sort(function(a,b){ return (parseIso(a.date)||'').localeCompare(parseIso(b.date)||'') || n(a.id)-n(b.id); })[0];
+    function set(id,val){ var el=qs(id); if(el) el.value = val || ''; }
+    set('entryActivityRef', activityRefOf(first));
+    set('entryAsset', first.assetId); try{ if(typeof renderSystemChoices === 'function') renderSystemChoices(); }catch(e){}
+    set('entryProjectScope', first.projectScope); set('entrySystem', first.system); try{ if(typeof renderSpecificItems === 'function') renderSpecificItems(); }catch(e){}
+    set('entrySpecificItem', first.specificItem); try{ if(typeof renderMainActivities === 'function') renderMainActivities(); }catch(e){}
+    set('entryMainActivity', first.mainActivity); try{ if(typeof renderSubActivities === 'function') renderSubActivities(); }catch(e){}
+    set('entrySubActivity', first.subActivity); set('entryStage', first.stage); set('entryPlannedQty', first.plannedQty); set('entryUom', first.uom); set('entryCableType', first.cableType); set('entryTag', first.tag); set('entryLinkFrom', first.linkFrom); set('entryLinkTo', first.linkTo); set('entryMirrorLink', first.mirrorLink || 'Yes'); set('entryWorkLocation', first.workLocation); set('entryPermit', first.permitNo); set('entryDocType', first.docType); set('entryDocRef', first.docRef); set('entryContractor', first.contractor); set('entryParty', first.partyType);
+    set('entryDailyQty', 0);
+    try { updateProgressPreview(); } catch(e){}
+  }
+  window.populateContinueActivityOptions = populateContinueActivityOptions;
+  window.updateProgressPreview = function(){
+    var p = qs('entryProgress'), t = qs('entryOverallProgress'); if(!p || !t) return;
+    var draft = collectStable(null, true);
+    var stats = window.activityProgressForDraft(draft, (typeof editingDailyId !== 'undefined' ? editingDailyId : null));
+    p.value = stats.dailyProgress; t.value = stats.totalAfter;
+    var note = qs('entryCalcNote'); if(note){ note.textContent = 'Daily ' + stats.dailyProgress + '% from ' + n(draft.dailyQty) + ' / ' + n(draft.plannedQty) + ' ' + (draft.uom || '') + '. Cumulative for Activity Ref ' + (draft.activityRef || '(auto)') + ': ' + stats.qty + ' / ' + stats.plan + ' = ' + stats.totalAfter + '%.'; }
+  };
+  function rebind(){
+    makeInputsCalendar(); addContinueDropdown(); ensureActivityRefs(); populateContinueActivityOptions();
+    var form = qs('dailyForm'); if(form){ form.onsubmit = saveDailyV38; form.addEventListener('submit', saveDailyV38, true); }
+    var saveBtn = qs('saveDailyBtn'); if(saveBtn){ saveBtn.onclick = saveDailyV38; }
+    ['entryAsset','entrySystem','entrySpecificItem','entryMainActivity','entrySubActivity','entryTag','entryLinkFrom','entryLinkTo','entryPlannedQty','entryDailyQty','entryActivityRef','entryMirrorLink','entryProjectScope','entryCableType','entryUom'].forEach(function(id){ var el=qs(id); if(el && !el.dataset.v38bind){ el.dataset.v38bind='1'; el.addEventListener('input', systemFieldsChanged); el.addEventListener('change', systemFieldsChanged); } });
+    var oldRenderLog = window.renderLog || (typeof renderLog !== 'undefined' ? renderLog : null);
+    if(oldRenderLog && !oldRenderLog._v38wrapped){
+      var wrapped = function(){
+        var r = oldRenderLog.apply(this, arguments);
+        var box = qs('dailyLog');
+        if(box){
+          box.querySelectorAll('.edit-entry').forEach(function(b){ b.onclick=function(ev){ev.preventDefault(); stableLoadForEdit(Number(b.dataset.id));}; });
+          box.querySelectorAll('.delete-entry').forEach(function(b){ b.onclick=function(ev){ev.preventDefault(); stableDeleteDailyEntry(Number(b.dataset.id));}; });
+        }
+        return r;
+      };
+      wrapped._v38wrapped = true;
+      try { renderLog = wrapped; } catch(e){}
+      window.renderLog = wrapped;
+    }
+    try { if(typeof renderLog === 'function') renderLog(); } catch(e){}
+  }
+  document.addEventListener('DOMContentLoaded', function(){ setTimeout(rebind, 200); setTimeout(rebind, 1000); });
+  setTimeout(rebind, 500); setTimeout(rebind, 2000);
+})();
+
+</script>
+
+<script>
+/* === V41_DAILY_REPORT_PREVIEW_CUMULATIVE_DELETE_DATE_STABLE ===
+   Focused stable patch:
+   - Admin can edit/delete any daily entry and reports update immediately.
+   - Daily Entry user can edit/delete only own entries and continue only own activities.
+   - Entry date is always the selected activity date, not today's date.
+   - Continue Existing Activity / Activity Ref drives cumulative progress across days.
+   - All date inputs use calendar pickers.
+   - Print/PDF opens a full-page report preview inside the website first, then Print/Save PDF.
+   - Latest Daily Entries can be opened in a full-page review overlay.
+*/
+(function(){
+  'use strict';
+  var MARK='V41_DAILY_REPORT_PREVIEW_CUMULATIVE_DELETE_DATE_STABLE';
+  if(window.__AIP5_V41_STABLE__) return;
+  window.__AIP5_V41_STABLE__=true;
+  window.AIP5_VERSION_MARKER=MARK;
+
+  function byId(id){return document.getElementById(id);}
+  function all(sel,root){return Array.prototype.slice.call((root||document).querySelectorAll(sel));}
+  function txt(v){return String(v==null?'':v);}
+  function lower(v){return txt(v).trim().toLowerCase();}
+  function n(v){var x=Number(v||0);return isFinite(x)?x:0;}
+  function pct(v){return Math.max(0,Math.min(100,Math.round(n(v)*100)/100));}
+  function esc(v){return txt(v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function role(){try{return lower(window.currentUserRole||(typeof currentUserRole!=='undefined'?currentUserRole:'')||sessionStorage.getItem('aip5_gate_role')||'');}catch(e){return lower(sessionStorage.getItem('aip5_gate_role')||'');}}
+  function userEmail(){try{return lower(window.currentUserEmail||(typeof currentUserEmail!=='undefined'?currentUserEmail:'')||sessionStorage.getItem('aip5_gate_email')||'');}catch(e){return lower(sessionStorage.getItem('aip5_gate_email')||'');}}
+  function isAdmin(){return role()==='admin';}
+  function isDaily(){return role()==='daily_entry';}
+  function canEnter(){return isAdmin()||isDaily();}
+  function ownerOf(e){return lower(e&&(e.enteredByEmail||e.enteredBy||e.entryBy||e.userEmail||e.createdBy||e.ownerEmail||e.updatedByEmail||''));}
+  function canModify(e){if(isAdmin())return true;if(isDaily())return ownerOf(e)&&ownerOf(e)===userEmail();return false;}
+  function getDaily(){try{return Array.isArray(dailyEntries)?dailyEntries:[]}catch(e){return [];}}
+  function setDaily(arr){try{dailyEntries=arr;}catch(e){} window.dailyEntries=arr;}
+  function monthIdx(m){return ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'].indexOf(txt(m).slice(0,3).toLowerCase())+1;}
+  function iso(v){
+    if(!v) return '';
+    v=txt(v).trim();
+    if(/^\d{4}-\d{2}-\d{2}$/.test(v))return v;
+    try{if(typeof dateValue==='function'){var d0=dateValue(v);if(/^\d{4}-\d{2}-\d{2}$/.test(d0))return d0;}}catch(e){}
+    var m=v.match(/^(\d{1,2})[-\s\/]([A-Za-z]{3,})[-\s\/](\d{2,4})$/);
+    if(m){var mo=monthIdx(m[2]);var y=Number(m[3]);if(y<100)y+=2000;if(mo)return y+'-'+String(mo).padStart(2,'0')+'-'+String(Number(m[1])).padStart(2,'0');}
+    m=v.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{2,4})$/);
+    if(m){var y2=Number(m[3]);if(y2<100)y2+=2000;return y2+'-'+String(Number(m[2])).padStart(2,'0')+'-'+String(Number(m[1])).padStart(2,'0');}
+    var d=new Date(v);if(!isNaN(d))return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    return '';
+  }
+  function niceDate(v){try{if(typeof displayDate==='function')return displayDate(v);}catch(e){}return iso(v)||txt(v);}
+  function statusFrom(p){try{return typeof statusFromProgress==='function'?statusFromProgress(p):(p>=100?'Complete':p>0?'In Progress':'Not Started');}catch(e){return p>=100?'Complete':p>0?'In Progress':'Not Started';}}
+  function linkText(e){var a=[e&&e.linkFrom,e&&e.linkTo].map(txt).map(function(x){return x.trim();}).filter(Boolean);return a.length?a.join(' → '):'';}
+  function canonicalEnds(e){return [e&&e.linkFrom,e&&e.linkTo].map(txt).map(function(x){return x.trim();}).filter(Boolean).sort(function(a,b){return a.localeCompare(b);}).join('<->');}
+  function baseKey(e){
+    e=e||{};var hasLink=txt(e.linkFrom).trim()||txt(e.linkTo).trim();
+    return [hasLink?'link':'activity',hasLink?canonicalEnds(e):(e.assetId||e.assetLabel||''),e.projectScope,e.system,e.specificItem,e.mainActivity,e.subActivity,e.stage,e.cableType,e.tag].map(lower).join('|');
+  }
+  function activityRef(e){return txt(e&&(e.activityRef||e.relatedActivityId||e.activityNo||e.activityCode||'')).trim();}
+  function groupKey(e){var r=activityRef(e);return r?'ref|'+lower(r):'key|'+baseKey(e);}
+  window.entryKey=groupKey;
+  function groupedStats(list){var plan=0,qty=0;list.forEach(function(e){plan=Math.max(plan,n(e.plannedQty));qty+=n(e.dailyQty);});return {plan:plan,qty:qty,progress:plan>0?pct(qty/plan*100):0};}
+  window.activityProgressForDraft=function(draft,excludeId){var key=groupKey(draft);var related=getDaily().filter(function(e){return String(e.id)!==String(excludeId||'')&&groupKey(e)===key;});var previous=groupedStats(related);var total=groupedStats(related.concat([draft]));return {dailyProgress:n(draft.plannedQty)>0?pct(n(draft.dailyQty)/n(draft.plannedQty)*100):0,previousProgress:previous.progress,totalAfter:total.progress,qty:total.qty,plan:total.plan};};
+  function generatedRef(e){
+    var site=txt(e.assetId||e.assetLabel||'SITE').replace(/[^A-Za-z0-9]+/g,'').slice(0,8).toUpperCase()||'SITE';
+    var sys=txt(e.system||'SYS').replace(/[^A-Za-z0-9]+/g,'').slice(0,5).toUpperCase()||'SYS';
+    var act=txt(e.mainActivity||e.subActivity||'ACT').replace(/[^A-Za-z0-9]+/g,'').slice(0,5).toUpperCase()||'ACT';
+    var day=iso(e.date)||new Date().toISOString().slice(0,10);var base='ACT-'+site+'-'+sys+'-'+act+'-'+day.replace(/-/g,'');
+    var used={};getDaily().forEach(function(x){if(activityRef(x))used[lower(activityRef(x))]=true;});var out=base,i=2;while(used[lower(out)])out=base+'-'+(i++);return out;
+  }
+  function makeDatePickers(){
+    var ids=['entryDate','masterFilterFrom','masterFilterTo','dailyFilterFrom','dailyFilterTo','docEntryDate','docEntrySignedDate','masterFilterDateFrom','masterFilterDateTo','documentDate','documentSignatureDate'];
+    ids.forEach(function(id){var el=byId(id);if(!el)return;var old=iso(el.value);try{el.type='date';}catch(e){}if(old)el.value=old;el.placeholder='yyyy-mm-dd';});
+    all('input').forEach(function(el){if(/date/i.test(el.id||'')||/date/i.test(el.name||'')){var old=iso(el.value);try{el.type='date';}catch(e){}if(old)el.value=old;}});
+  }
+  window.normalizeDateField=function(id){var el=byId(id);if(!el||!el.value)return;var d=iso(el.value);if(d)el.value=(el.type==='date'?d:niceDate(d));};
+
+  function cleanPositiveEntries(list){
+    var seen={};
+    return (Array.isArray(list)?list:[]).filter(function(e){
+      if(!e||typeof e!=='object')return false;
+      var daily=n(e.dailyProgress)||(n(e.plannedQty)>0?pct(n(e.dailyQty)/n(e.plannedQty)*100):0);
+      if(n(e.plannedQty)<=0||n(e.dailyQty)<=0||daily<=0)return false;
+      if(!e.id)e.id=Date.now()+Math.floor(Math.random()*100000);
+      var sig=[e.id,e.date,e.assetId,e.system,e.mainActivity,e.subActivity,e.tag,e.activityRef,e.dailyQty].map(txt).join('|');
+      if(seen[sig])return false;seen[sig]=true;
+      e.date=iso(e.date)||iso(e.entryDate)||e.date;
+      if(!e.dailyProgress)e.dailyProgress=daily;
+      if(!e.totalAfter)e.totalAfter=daily;
+      return true;
+    });
+  }
+  function dailyStorageKeys(){
+    var keys=[];
+    try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(/daily|log|progress/i.test(k||''))keys.push(k);}}catch(e){}
+    try{if(typeof logKey!=='undefined'&&logKey)keys.push(logKey);}catch(e){}
+    return Array.from(new Set(keys));
+  }
+  function persistDaily(list){
+    list=cleanPositiveEntries(list);
+    setDaily(list);
+    try{if(typeof logKey!=='undefined')localStorage.setItem(logKey,JSON.stringify(list));}catch(e){}
+    // Update only array-shaped daily/progress log keys; do not touch document registers.
+    dailyStorageKeys().forEach(function(k){
+      try{var v=JSON.parse(localStorage.getItem(k)||'null');if(Array.isArray(v)&&v.some(function(x){return x&&typeof x==='object'&&('dailyQty'in x||'plannedQty'in x||'assetId'in x)}))localStorage.setItem(k,JSON.stringify(list));}catch(e){}
+    });
+    try{if(window._fbDb&&window._fbUpdate&&window._fbRef){var obj={};list.forEach(function(e,i){obj['e'+i]=e;});var up={};up['/data/dailyEntries']=obj;window._fbUpdate(window._fbRef(window._fbDb),up).catch(function(){});}}catch(e){}
+    return list;
+  }
+  function recomputeAll(){
+    try{var ids={};getDaily().forEach(function(e){if(e.assetId)ids[e.assetId]=1;});Object.keys(ids).forEach(function(id){try{if(typeof recomputeAssetProgress==='function')recomputeAssetProgress(id);}catch(e){}});}catch(e){}
+  }
+  function refreshNow(){try{recomputeAll();}catch(e){}try{if(typeof save==='function')save();}catch(e){}try{if(typeof renderAll==='function')renderAll(false);else if(typeof renderLog==='function')renderLog();}catch(e){try{renderLog();}catch(_){}}setTimeout(function(){try{renderLog();}catch(e){}},50);}
+
+  function ensureContinueUi(){
+    var ref=byId('entryActivityRef');if(!ref)return;
+    if(!byId('entryContinueActivity')){
+      var label=document.createElement('label');label.setAttribute('data-field','continueActivity');
+      label.innerHTML='Continue Existing Activity<select id="entryContinueActivity"><option value="">New activity / Auto-generate ref</option></select>';
+      var parent=ref.closest('label');if(parent&&parent.parentNode)parent.parentNode.insertBefore(label,parent);
+    }
+    var sel=byId('entryContinueActivity');if(sel&&!sel.dataset.v41bound){sel.dataset.v41bound='1';sel.addEventListener('change',function(){applyContinue(this.value);});}
+  }
+  function optionLabel(ref,arr){var first=arr.slice().sort(function(a,b){return (iso(a.date)||'').localeCompare(iso(b.date)||'')||n(a.id)-n(b.id);})[0]||{};var st=groupedStats(arr);return ref+' | '+(first.assetLabel||first.assetId||'-')+' | '+(first.system||'-')+' | '+(first.mainActivity||first.subActivity||'-')+' | '+st.qty+'/'+st.plan+' '+(first.uom||'')+' ('+st.progress+'%)';}
+  function populateContinue(){
+    ensureContinueUi();var sel=byId('entryContinueActivity');if(!sel)return;var current=sel.value,groups={};
+    getDaily().forEach(function(e){var r=activityRef(e);if(!r)return;if(isDaily()&&ownerOf(e)!==userEmail())return;(groups[lower(r)]||(groups[lower(r)]=[])).push(e);});
+    var opts=['<option value="">New activity / Auto-generate ref</option>'];Object.keys(groups).sort().forEach(function(k){var r=activityRef(groups[k][0]);var st=groupedStats(groups[k]);opts.push('<option value="'+esc(r)+'">'+esc(optionLabel(r,groups[k])+' - '+(st.progress>=100?'Complete':'Ongoing'))+'</option>');});
+    sel.innerHTML=opts.join('');if(current&&all('option',sel).some(function(o){return o.value===current;}))sel.value=current;
+  }
+  function applyContinue(ref){
+    if(!ref)return;var arr=getDaily().filter(function(e){return lower(activityRef(e))===lower(ref);});if(isDaily())arr=arr.filter(function(e){return ownerOf(e)===userEmail();});if(!arr.length){alert('This activity reference is not available for your user.');return;}
+    var first=arr.slice().sort(function(a,b){return (iso(a.date)||'').localeCompare(iso(b.date)||'')||n(a.id)-n(b.id);})[0];
+    function set(id,val){var el=byId(id);if(el)el.value=val==null?'':val;}
+    set('entryActivityRef',activityRef(first));set('entryAsset',first.assetId);try{if(typeof renderSystemChoices==='function')renderSystemChoices();}catch(e){}
+    ['ProjectScope','System','SpecificItem','MainActivity','SubActivity','Stage','PlannedQty','Uom','CableType','Tag','LinkFrom','LinkTo','MirrorLink','WorkLocation','Permit','DocType','DocRef','Contractor','Party'].forEach(function(suf){var id='entry'+suf;var prop=suf.charAt(0).toLowerCase()+suf.slice(1);if(prop==='permit')prop='permitNo';if(prop==='party')prop='partyType';set(id,first[prop]||'');try{if(id==='entrySystem'&&typeof renderSpecificItems==='function')renderSpecificItems();if(id==='entrySpecificItem'&&typeof renderMainActivities==='function')renderMainActivities();if(id==='entryMainActivity'&&typeof renderSubActivities==='function')renderSubActivities();}catch(e){}});
+    set('entryDailyQty',0);updatePreview();
+  }
+
+  function collectEntry(existing,preview){
+    var id=(byId('entryAsset')||{}).value||'';var base={id:id,category:'',type:''};
+    try{base=typeof current==='function'?current(DATA.items.find(function(r){return r.id===id;})||base):base;}catch(e){}
+    function val(x){var el=byId(x);return el?el.value:'';}
+    var selectedRef=val('entryContinueActivity');
+    var files=[];try{files=preview?[]:selectedAttachmentFiles.map(function(f){return f.name;});}catch(e){}
+    var entry={id:existing&&existing.id?existing.id:Date.now(),date:iso(val('entryDate'))||iso(existing&&existing.date)||new Date().toISOString().slice(0,10),assetId:id,assetLabel:(typeof label==='function'?label(base):id),category:base.category||'',type:base.type||'',projectScope:val('entryProjectScope'),system:val('entrySystem'),specificItem:val('entrySpecificItem'),stage:val('entryStage'),mainActivity:val('entryMainActivity'),subActivity:val('entrySubActivity'),plannedQty:n(val('entryPlannedQty')),dailyQty:n(val('entryDailyQty')),uom:val('entryUom'),cableType:val('entryCableType'),tag:txt(val('entryTag')).trim(),activityRef:txt(selectedRef||val('entryActivityRef')).trim(),linkFrom:txt(val('entryLinkFrom')).trim(),linkTo:txt(val('entryLinkTo')).trim(),mirrorLink:val('entryMirrorLink')||'Yes',workLocation:txt(val('entryWorkLocation')).trim(),permitNo:txt(val('entryPermit')).trim(),docType:val('entryDocType'),docRef:txt(val('entryDocRef')).trim(),contractor:val('entryContractor'),partyType:val('entryParty'),dailyProgress:0,previousProgress:0,totalAfter:0,status:'Not Started',owner:base.owner||'',remarks:txt(val('entryRemarks')).trim(),attachments:files.length?files:(existing&&existing.attachments||[]),enteredByEmail:existing&&existing.enteredByEmail||existing&&existing.enteredBy||userEmail(),enteredBy:existing&&existing.enteredBy||existing&&existing.enteredByEmail||userEmail(),entryBy:existing&&existing.entryBy||existing&&existing.enteredByEmail||userEmail(),enteredByRole:existing&&existing.enteredByRole||role(),createdByRole:existing&&existing.createdByRole||role()};
+    if(!entry.activityRef){entry.activityRef=generatedRef(entry);var refEl=byId('entryActivityRef');if(refEl&&!preview)refEl.value=entry.activityRef;}
+    var st=window.activityProgressForDraft(entry,existing&&existing.id);entry.dailyProgress=st.dailyProgress;entry.previousProgress=st.previousProgress;entry.totalAfter=st.totalAfter;entry.status=statusFrom(st.totalAfter);return entry;
+  }
+  window.collectDailyEntry=collectEntry;
+  function validate(entry,old){
+    if(!canEnter()){alert('This user can review, print, and export only.');return false;}
+    if(old&&!canModify(old)){alert('Daily Entry users can edit only their own entries. Admin can edit all entries.');return false;}
+    if(n(entry.plannedQty)<=0||n(entry.dailyQty)<=0||n(entry.dailyProgress)<=0){alert('Daily entry cannot be saved with zero progress. Please enter Planned Qty and Daily Qty greater than 0.');return false;}
+    if((entry.linkFrom||entry.linkTo)&&!entry.tag){alert('Please enter Cable/Asset/Link Tag for linked work.');var tag=byId('entryTag');if(tag)tag.focus();return false;}
+    if(isDaily()){
+      var foreign=getDaily().find(function(e){return lower(activityRef(e))===lower(entry.activityRef)&&String(e.id)!==String(old&&old.id||'')&&ownerOf(e)&&ownerOf(e)!==userEmail();});
+      if(foreign){alert('This Activity Ref belongs to another user. You can continue only activities you started.');return false;}
+    }
+    return true;
+  }
+  function saveEntry(ev){
+    if(ev){ev.preventDefault();ev.stopPropagation();if(ev.stopImmediatePropagation)ev.stopImmediatePropagation();}
+    var old=null;try{old=editingDailyId?getDaily().find(function(x){return String(x.id)===String(editingDailyId);}):null;}catch(e){}
+    var entry=collectEntry(old,false);if(!validate(entry,old))return false;
+    var arr=getDaily().slice();if(old)arr=arr.map(function(x){return String(x.id)===String(old.id)?entry:x;});else arr.push(entry);persistDaily(arr);
+    try{if(typeof resetDailyForm==='function')resetDailyForm();}catch(e){}try{editingDailyId=null;}catch(e){}
+    var lbl=byId('lastUpdatedLabel');if(lbl)lbl.textContent='Last updated '+new Date().toLocaleString();refreshNow();populateContinue();return false;
+  }
+  window.addDaily=saveEntry;try{addDaily=saveEntry;}catch(e){};
+  function editEntry(id){
+    var entry=getDaily().find(function(x){return String(x.id)===String(id);});if(!entry)return;if(!canModify(entry)){alert('Admin can edit any entry. Daily Entry users can edit only their own entries.');return;}
+    try{editingDailyId=entry.id;}catch(e){};var sp=byId('saveDailyBtn')&&byId('saveDailyBtn').querySelector('span');if(sp)sp.textContent='Update daily entry';var cancel=byId('cancelDailyEditBtn');if(cancel)cancel.style.display='inline-flex';
+    function set(id,val){var el=byId(id);if(!el)return;el.value=val==null?'':val;}
+    set('entryDate',iso(entry.date)||iso(entry.entryDate)||'');set('entryAsset',entry.assetId);try{if(typeof renderSystemChoices==='function')renderSystemChoices();}catch(e){}
+    set('entryProjectScope',entry.projectScope);set('entrySystem',entry.system);try{if(typeof renderSpecificItems==='function')renderSpecificItems();}catch(e){}set('entrySpecificItem',entry.specificItem);try{if(typeof renderMainActivities==='function')renderMainActivities();}catch(e){}set('entryMainActivity',entry.mainActivity);try{if(typeof renderSubActivities==='function')renderSubActivities();}catch(e){}set('entrySubActivity',entry.subActivity);set('entryStage',entry.stage);set('entryPlannedQty',entry.plannedQty);set('entryDailyQty',entry.dailyQty);set('entryUom',entry.uom);set('entryCableType',entry.cableType);set('entryTag',entry.tag);set('entryActivityRef',activityRef(entry));set('entryContinueActivity','');set('entryLinkFrom',entry.linkFrom);set('entryLinkTo',entry.linkTo);set('entryMirrorLink',entry.mirrorLink||'Yes');set('entryWorkLocation',entry.workLocation);set('entryPermit',entry.permitNo);set('entryDocType',entry.docType);set('entryDocRef',entry.docRef);set('entryContractor',entry.contractor);set('entryParty',entry.partyType);set('entryProgress',entry.dailyProgress);set('entryOverallProgress',entry.totalAfter);set('entryRemarks',entry.remarks);
+    try{selectedAttachmentFiles=[];var attach=byId('entryAttachment');if(attach)attach.value='';if(typeof renderAttachmentList==='function')renderAttachmentList(entry.attachments||[]);}catch(e){}
+    makeDatePickers();updatePreview();populateContinue();try{document.getElementById('daily').scrollIntoView({behavior:'smooth',block:'start'});}catch(e){}
+  }
+  window.loadDailyEntryForEdit=editEntry;try{loadDailyEntryForEdit=editEntry;}catch(e){};
+  function deleteEntry(id){
+    var entry=getDaily().find(function(x){return String(x.id)===String(id);});if(!entry)return;if(!canModify(entry)){alert('Admin can delete any entry. Daily Entry users can delete only their own entries.');return;}
+    var msg=isAdmin()?'Admin delete: this will update Daily and Master reports immediately. Continue?':'Delete your own daily entry?';if(!confirm(msg))return;
+    persistDaily(getDaily().filter(function(x){return String(x.id)!==String(id);}));try{if(String(editingDailyId)===String(id))editingDailyId=null;}catch(e){}refreshNow();populateContinue();
+  }
+  window.deleteDailyEntry=deleteEntry;try{deleteDailyEntry=deleteEntry;}catch(e){};
+  function updatePreview(){var p=byId('entryProgress'),t=byId('entryOverallProgress');if(!p||!t)return;var old=null;try{old=editingDailyId?getDaily().find(function(x){return String(x.id)===String(editingDailyId);}):null;}catch(e){}var d=collectEntry(old,true);var st=window.activityProgressForDraft(d,old&&old.id);p.value=st.dailyProgress;t.value=st.totalAfter;var note=byId('entryCalcNote');if(note)note.textContent='Daily '+st.dailyProgress+'% from '+d.dailyQty+' / '+d.plannedQty+' '+(d.uom||'')+'. Activity Ref '+(d.activityRef||'(auto)')+' cumulative: '+st.qty+' / '+st.plan+' = '+st.totalAfter+'%.';}
+  window.updateProgressPreview=updatePreview;
+
+  function logHtml(e){var allowed=canModify(e);var daily=n(e.dailyProgress)||(n(e.plannedQty)>0?pct(n(e.dailyQty)/n(e.plannedQty)*100):0);var total=n(e.totalAfter)||daily;return '<div class="log-item" data-v41-entry="'+esc(e.id)+'"><div class="log-actions">'+(allowed?'<button class="edit-entry" data-id="'+esc(e.id)+'" title="Edit">Edit</button><button class="delete-entry" data-id="'+esc(e.id)+'" title="Delete">Delete</button>':'')+'<button class="view-entry" data-id="'+esc(e.id)+'" title="Open full view">Open</button></div><strong>'+esc(niceDate(e.date))+' - '+esc(e.assetLabel||e.assetId)+' - +'+esc(daily)+'%</strong><span>'+esc(e.projectScope||'')+' / '+esc(e.system||'')+' / '+esc(e.specificItem||'')+' / '+esc(e.mainActivity||'')+' / '+esc(e.subActivity||'')+'</span><span>Activity Ref: '+esc(activityRef(e)||'-')+' · Activity total: '+esc(total)+'% · Qty: '+esc(e.dailyQty)+' / '+esc(e.plannedQty)+' '+esc(e.uom||'')+'</span><span>Tag: '+esc(e.tag||'-')+' · Link: '+esc(linkText(e)||'-')+' · Mirror: '+esc(e.mirrorLink||'Yes')+'</span><span>Permit/PTW: '+esc(e.permitNo||'-')+' · Doc: '+esc(e.docType||'-')+' '+esc(e.docRef||'')+'</span><span>'+esc(e.remarks||'No remarks')+'</span></div>';}
+  function selectedDaily(){try{return typeof filteredDailyEntries==='function'?filteredDailyEntries('daily'):getDaily();}catch(e){return getDaily();}}
+  function renderLogV41(){var box=byId('dailyLog');if(!box)return;var entries=cleanPositiveEntries(selectedDaily()).slice().sort(function(a,b){return (iso(b.date)||'').localeCompare(iso(a.date)||'')||String(b.id).localeCompare(String(a.id));});var lbl=byId('lastEntryLabel');if(lbl)lbl.textContent=entries.length?niceDate(entries[0].date):'No entries yet';var count=byId('dailyFilterCount');if(count)count.textContent=entries.length+' of '+cleanPositiveEntries(getDaily()).length+' entries selected for daily report.';box.innerHTML=entries.length?entries.map(logHtml).join(''):'<div class="log-item"><strong>No daily entries</strong><span>No matching positive-progress entries found.</span></div>';try{if(window.lucide)lucide.createIcons();}catch(e){} }
+  window.renderLog=renderLogV41;try{renderLog=renderLogV41;}catch(e){};
+  function ensureFullLogButton(){var head=byId('dailyLog')&&byId('dailyLog').parentElement&&byId('dailyLog').parentElement.querySelector('.head');if(head&&!byId('fullDailyLogBtn')){var b=document.createElement('button');b.type='button';b.id='fullDailyLogBtn';b.className='btn';b.textContent='Open full daily log';b.onclick=function(){showDailyLogFull();};head.appendChild(b);}}
+  function detailRows(e){var rows=[['Date',niceDate(e.date)],['Site',e.assetLabel||e.assetId],['System',e.system],['Sub-System / Item',e.specificItem],['Activity',e.mainActivity],['Work Step / Detail',e.subActivity],['Activity Ref',activityRef(e)||'-'],['Planned Qty',e.plannedQty+' '+(e.uom||'')],['Daily Qty',e.dailyQty+' '+(e.uom||'')],['Daily Progress',e.dailyProgress+'%'],['Cumulative Progress',e.totalAfter+'%'],['Tag',e.tag],['Link',linkText(e)],['Permit / PTW',e.permitNo],['Document',[(e.docType||''),(e.docRef||'')].join(' ')],['Remarks',e.remarks]];return '<table><tbody>'+rows.map(function(r){return '<tr><th>'+esc(r[0])+'</th><td>'+esc(r[1]||'-')+'</td></tr>';}).join('')+'</tbody></table>';}
+  function overlayBase(title,body){var old=byId('v41Overlay');if(old)old.remove();var div=document.createElement('div');div.id='v41Overlay';div.innerHTML='<div class="v41-overlay-card"><div class="v41-toolbar"><strong>'+esc(title)+'</strong><div><button type="button" id="v41OverlayPrint" style="display:none">Print / Save PDF</button><button type="button" id="v41OverlayBack">Back to tracker</button></div></div><div class="v41-overlay-body">'+body+'</div></div>';document.body.appendChild(div);byId('v41OverlayBack').onclick=function(){div.remove();};return div;}
+  function showEntry(id){var e=getDaily().find(function(x){return String(x.id)===String(id);});if(!e)return;var actions=canModify(e)?'<button type="button" data-edit="'+esc(e.id)+'">Edit this entry</button><button type="button" data-del="'+esc(e.id)+'">Delete this entry</button>':'';var ov=overlayBase('Daily Entry Details',actions+'<div class="v41-detail">'+detailRows(e)+'</div>');all('[data-edit]',ov).forEach(function(b){b.onclick=function(){ov.remove();editEntry(b.dataset.edit);};});all('[data-del]',ov).forEach(function(b){b.onclick=function(){deleteEntry(b.dataset.del);ov.remove();};});}
+  function showDailyLogFull(){var entries=cleanPositiveEntries(selectedDaily()).slice().sort(function(a,b){return (iso(b.date)||'').localeCompare(iso(a.date)||'')||String(b.id).localeCompare(String(a.id));});var body='<div class="v41-full-log">'+(entries.length?entries.map(logHtml).join(''):'<p>No entries.</p>')+'</div>';var ov=overlayBase('Full Daily Entries Review',body);}
+  window.showDailyLogFull=showDailyLogFull;window.showDailyEntryFull=showEntry;
+
+  function reportFonts(html){html=String(html||'');var css='<style id="v41-report-fonts">@page{size:A4 landscape;margin:8mm}body{font-size:11.5px!important;line-height:1.35!important}.report-table,.report-table th,.report-table td,table,th,td{font-size:10.5px!important;line-height:1.3!important}.report-table th,th{font-size:10.8px!important}.header h1,h1{font-size:22px!important}h2{font-size:15px!important}.card strong{font-size:14px!important}.v41-print-toolbar{position:sticky;top:0;background:#10231f;color:#fff;padding:10px;z-index:9999;display:flex;justify-content:space-between;gap:10px}.v41-print-toolbar button{background:#fff;color:#10231f;border:0;border-radius:6px;padding:8px 12px;font-weight:bold}@media print{.v41-print-toolbar{display:none!important}}</style>';if(/<head[\s\S]*?>/i.test(html))return html.replace(/<head([\s\S]*?)>/i,function(m,a){return '<head'+a+'>'+css;});return '<!doctype html><html><head><meta charset="utf-8">'+css+'</head><body>'+html+'</body></html>';}
+  function getReport(kind){try{if(typeof getReportHtml==='function')return getReportHtml(kind,false);}catch(e){}try{if(kind==='master'&&typeof masterReportHtml==='function')return masterReportHtml(false);if(typeof dailyReportHtml==='function')return dailyReportHtml(false);}catch(e){}return '<!doctype html><html><body><h1>'+esc(kind==='master'?'Master Progress Report':'Daily Progress Report')+'</h1><p>No report data available.</p></body></html>';}
+  function previewReport(kind){var title=kind==='master'?'Master Progress Report':'Daily Progress Report';var html=reportFonts(getReport(kind));var ov=overlayBase(title+' Preview','<iframe id="v41ReportFrame" style="width:100%;height:calc(100vh - 98px);border:0;background:#fff"></iframe>');var printBtn=byId('v41OverlayPrint');if(printBtn){printBtn.style.display='inline-block';printBtn.onclick=function(){var f=byId('v41ReportFrame');try{f.contentWindow.focus();f.contentWindow.print();}catch(e){window.print();}};}var f=byId('v41ReportFrame');var doc=f.contentWindow.document;doc.open();doc.write(html);doc.close();}
+  window.openMasterReport=function(print){previewReport('master');};window.openDailyReport=function(print){previewReport('daily');};window.openReport=function(print){previewReport('daily');};
+  function bindClicks(){
+    makeDatePickers();ensureContinueUi();populateContinue();ensureFullLogButton();
+    var form=byId('dailyForm');if(form&&!form.dataset.v41Form){form.dataset.v41Form='1';form.addEventListener('submit',saveEntry,true);}var saveBtn=byId('saveDailyBtn');if(saveBtn)saveBtn.onclick=saveEntry;
+    ['entryDate','entryAsset','entrySystem','entrySpecificItem','entryMainActivity','entrySubActivity','entryTag','entryLinkFrom','entryLinkTo','entryPlannedQty','entryDailyQty','entryActivityRef','entryMirrorLink','entryProjectScope','entryCableType','entryUom'].forEach(function(id){var el=byId(id);if(el&&!el.dataset.v41bind){el.dataset.v41bind='1';el.addEventListener('input',function(){updatePreview();populateContinue();});el.addEventListener('change',function(){updatePreview();populateContinue();});}});
+    var log=byId('dailyLog');if(log&&!log.dataset.v41click){log.dataset.v41click='1';log.addEventListener('click',function(ev){var b=ev.target.closest('button');if(!b)return;if(b.classList.contains('edit-entry')){ev.preventDefault();ev.stopImmediatePropagation();editEntry(b.dataset.id);}else if(b.classList.contains('delete-entry')){ev.preventDefault();ev.stopImmediatePropagation();deleteEntry(b.dataset.id);}else if(b.classList.contains('view-entry')){ev.preventDefault();ev.stopImmediatePropagation();showEntry(b.dataset.id);}},true);log.addEventListener('click',function(ev){if(ev.target.closest('button'))return;var item=ev.target.closest('[data-v41-entry]');if(item)showEntry(item.dataset.v41Entry);});}
+    persistDaily(getDaily());renderLogV41();
+  }
+  var style=document.createElement('style');style.textContent='#v41Overlay{position:fixed;inset:0;background:rgba(7,16,22,.86);z-index:999999;padding:14px}.v41-overlay-card{height:100%;background:#fff;border-radius:10px;overflow:hidden;display:flex;flex-direction:column}.v41-toolbar{background:#10231f;color:#fff;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px}.v41-toolbar button,.v41-detail button,.v41-full-log button{border:1px solid #d8e2de;border-radius:7px;background:#fff;padding:7px 10px;cursor:pointer}.v41-overlay-body{padding:12px;overflow:auto}.v41-detail table{width:100%;border-collapse:collapse}.v41-detail th,.v41-detail td{border:1px solid #d8e2de;padding:8px;text-align:left;vertical-align:top}.v41-detail th{width:220px;background:#f7faf8}.v41-full-log{display:grid;gap:10px}.log-item{cursor:pointer}.log-actions button{font-size:11px;min-width:auto;width:auto;padding:4px 7px}';document.head.appendChild(style);
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(bindClicks,250);setTimeout(bindClicks,1200);});else{setTimeout(bindClicks,250);setTimeout(bindClicks,1200);}setInterval(function(){try{bindClicks();}catch(e){}},3000);
 })();
 </script>
-<span data-aip5-ready="V40_CLEAN_ZERO_DELETE_CUMULATIVE_STABLE" style="display:none"></span>
-
 </body></html>
