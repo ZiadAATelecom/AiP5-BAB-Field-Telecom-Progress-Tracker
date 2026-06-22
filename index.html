@@ -6039,10 +6039,118 @@ function masterReportHtml(){
   }
 
   function safePrintableHtml(html){
-    html = String(html || '<!doctype html><html><body>No report</body></html>');
-    // Never let embedded script markers close the main app script or navigate the main page.
+    html = String(html || '<!doctype html><html><body>No report
+<script>
+/* === V38_ACTIVITY_CONTINUE_DATE_PERMISSION_STABLE ===
+   Final safety login guard: never let report patches break the login gate.
+   This patch only handles access-gate opening and preserves app data/logic. */
+(function(){
+  var USERS = [
+    { email:'ziadseller@gmail.com', role:'admin', pin:'220321' },
+    { email:'jetawi333@yahoo.com', role:'viewer', pin:'' },
+    { email:'kyahiya@adnoc.ae', role:'viewer', pin:'' },
+    { email:'ebbygeorge17@gmail.com', role:'daily_entry', pin:'326587' }
+  ];
+  function byId(id){ return document.getElementById(id); }
+  function norm(v){ return String(v || '').trim().toLowerCase(); }
+  function findUser(email){ var e=norm(email); return USERS.find(function(u){ return norm(u.email)===e; }) || null; }
+  function showPin(show){ var p=byId('pinSection'); if(p) p.style.display = show ? 'block' : 'none'; }
+  function setErr(msg){ var e=byId('gateError'); if(e) e.textContent = msg || ''; }
+  function unlock(user){
+    try { window.currentUserEmail = user.email; window.currentUserRole = user.role; } catch(e) {}
+    try { sessionStorage.setItem('aip5_gate_email', user.email); sessionStorage.setItem('aip5_gate_role', user.role); } catch(e) {}
+    document.body.classList.remove('auth-locked');
+    document.body.classList.add('auth-unlocked');
+    var gate=byId('emailGate'), app=byId('appShell');
+    if(gate) gate.style.display='none';
+    if(app){ app.hidden=false; app.style.display='grid'; }
+    try { if(typeof applyRoleUI==='function') applyRoleUI(); } catch(e) {}
+    try { if(typeof bootApp==='function') setTimeout(bootApp, 0); else if(typeof renderAll==='function') setTimeout(function(){renderAll(false);}, 0); } catch(e) {}
+    try { if(window.lucide) setTimeout(function(){lucide.createIcons();},100); } catch(e) {}
+  }
+  function handle(){
+    setErr('');
+    var emailEl=byId('gateEmail'), pinEl=byId('gatePin');
+    var user=findUser(emailEl && emailEl.value);
+    if(!user){ showPin(false); setErr('Access denied. This email is not authorized.'); return; }
+    if(user.pin){
+      showPin(true);
+      if(!pinEl || String(pinEl.value || '').trim() !== user.pin){ setErr('Enter the required PIN for this user.'); if(pinEl) pinEl.focus(); return; }
+    }
+    unlock(user);
+  }
+  function bind(){
+    var btn=byId('gateSubmit'), emailEl=byId('gateEmail'), pinEl=byId('gatePin');
+    if(!btn || btn.dataset.v37LoginBound) return;
+    btn.dataset.v37LoginBound='1';
+    btn.onclick = function(e){ if(e){e.preventDefault(); e.stopPropagation();} handle(); return false; };
+    if(emailEl){ emailEl.addEventListener('input', function(){ var u=findUser(emailEl.value); showPin(!!(u && u.pin)); setErr(''); }); emailEl.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); handle(); } }); }
+    if(pinEl){ pinEl.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); handle(); } }); }
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', bind); else bind();
+  setTimeout(bind,300); setTimeout(bind,1200);
+  window.AIP5_V37_LOGIN_GUARD_READY = true;
+})();
+</script>
+
+</body></html>');
+    // Never let a report-generated script marker close the main app script or navigate the main page.
     html = html.replace(/<script[\s\S]*?<\/script>/gi, '');
-    if (!/<\/body>/i.test(html)) html += '</body></html>';
+    if (!/<\/body>/i.test(html)) html += '
+<script>
+/* === V38_ACTIVITY_CONTINUE_DATE_PERMISSION_STABLE ===
+   Final safety login guard: never let report patches break the login gate.
+   This patch only handles access-gate opening and preserves app data/logic. */
+(function(){
+  var USERS = [
+    { email:'ziadseller@gmail.com', role:'admin', pin:'220321' },
+    { email:'jetawi333@yahoo.com', role:'viewer', pin:'' },
+    { email:'kyahiya@adnoc.ae', role:'viewer', pin:'' },
+    { email:'ebbygeorge17@gmail.com', role:'daily_entry', pin:'326587' }
+  ];
+  function byId(id){ return document.getElementById(id); }
+  function norm(v){ return String(v || '').trim().toLowerCase(); }
+  function findUser(email){ var e=norm(email); return USERS.find(function(u){ return norm(u.email)===e; }) || null; }
+  function showPin(show){ var p=byId('pinSection'); if(p) p.style.display = show ? 'block' : 'none'; }
+  function setErr(msg){ var e=byId('gateError'); if(e) e.textContent = msg || ''; }
+  function unlock(user){
+    try { window.currentUserEmail = user.email; window.currentUserRole = user.role; } catch(e) {}
+    try { sessionStorage.setItem('aip5_gate_email', user.email); sessionStorage.setItem('aip5_gate_role', user.role); } catch(e) {}
+    document.body.classList.remove('auth-locked');
+    document.body.classList.add('auth-unlocked');
+    var gate=byId('emailGate'), app=byId('appShell');
+    if(gate) gate.style.display='none';
+    if(app){ app.hidden=false; app.style.display='grid'; }
+    try { if(typeof applyRoleUI==='function') applyRoleUI(); } catch(e) {}
+    try { if(typeof bootApp==='function') setTimeout(bootApp, 0); else if(typeof renderAll==='function') setTimeout(function(){renderAll(false);}, 0); } catch(e) {}
+    try { if(window.lucide) setTimeout(function(){lucide.createIcons();},100); } catch(e) {}
+  }
+  function handle(){
+    setErr('');
+    var emailEl=byId('gateEmail'), pinEl=byId('gatePin');
+    var user=findUser(emailEl && emailEl.value);
+    if(!user){ showPin(false); setErr('Access denied. This email is not authorized.'); return; }
+    if(user.pin){
+      showPin(true);
+      if(!pinEl || String(pinEl.value || '').trim() !== user.pin){ setErr('Enter the required PIN for this user.'); if(pinEl) pinEl.focus(); return; }
+    }
+    unlock(user);
+  }
+  function bind(){
+    var btn=byId('gateSubmit'), emailEl=byId('gateEmail'), pinEl=byId('gatePin');
+    if(!btn || btn.dataset.v37LoginBound) return;
+    btn.dataset.v37LoginBound='1';
+    btn.onclick = function(e){ if(e){e.preventDefault(); e.stopPropagation();} handle(); return false; };
+    if(emailEl){ emailEl.addEventListener('input', function(){ var u=findUser(emailEl.value); showPin(!!(u && u.pin)); setErr(''); }); emailEl.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); handle(); } }); }
+    if(pinEl){ pinEl.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); handle(); } }); }
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', bind); else bind();
+  setTimeout(bind,300); setTimeout(bind,1200);
+  window.AIP5_V37_LOGIN_GUARD_READY = true;
+})();
+</script>
+
+</body></html>';
     return html;
   }
   function printInHiddenFrame(html){
@@ -6096,7 +6204,61 @@ function masterReportHtml(){
     if (typeof window.dailyReportHtml === 'function') return window.dailyReportHtml(false);
     if (typeof window.dailyReportHtmlV21 === 'function') return window.dailyReportHtmlV21(false);
     if (typeof window.dailyReportV20 === 'function') return window.dailyReportV20(false);
-    return '<!doctype html><html><body><h1>Report</h1><p>No report generator found.</p></body></html>';
+    return '<!doctype html><html><body><h1>Report</h1><p>No report generator found.</p>
+<script>
+/* === V38_ACTIVITY_CONTINUE_DATE_PERMISSION_STABLE ===
+   Final safety login guard: never let report patches break the login gate.
+   This patch only handles access-gate opening and preserves app data/logic. */
+(function(){
+  var USERS = [
+    { email:'ziadseller@gmail.com', role:'admin', pin:'220321' },
+    { email:'jetawi333@yahoo.com', role:'viewer', pin:'' },
+    { email:'kyahiya@adnoc.ae', role:'viewer', pin:'' },
+    { email:'ebbygeorge17@gmail.com', role:'daily_entry', pin:'326587' }
+  ];
+  function byId(id){ return document.getElementById(id); }
+  function norm(v){ return String(v || '').trim().toLowerCase(); }
+  function findUser(email){ var e=norm(email); return USERS.find(function(u){ return norm(u.email)===e; }) || null; }
+  function showPin(show){ var p=byId('pinSection'); if(p) p.style.display = show ? 'block' : 'none'; }
+  function setErr(msg){ var e=byId('gateError'); if(e) e.textContent = msg || ''; }
+  function unlock(user){
+    try { window.currentUserEmail = user.email; window.currentUserRole = user.role; } catch(e) {}
+    try { sessionStorage.setItem('aip5_gate_email', user.email); sessionStorage.setItem('aip5_gate_role', user.role); } catch(e) {}
+    document.body.classList.remove('auth-locked');
+    document.body.classList.add('auth-unlocked');
+    var gate=byId('emailGate'), app=byId('appShell');
+    if(gate) gate.style.display='none';
+    if(app){ app.hidden=false; app.style.display='grid'; }
+    try { if(typeof applyRoleUI==='function') applyRoleUI(); } catch(e) {}
+    try { if(typeof bootApp==='function') setTimeout(bootApp, 0); else if(typeof renderAll==='function') setTimeout(function(){renderAll(false);}, 0); } catch(e) {}
+    try { if(window.lucide) setTimeout(function(){lucide.createIcons();},100); } catch(e) {}
+  }
+  function handle(){
+    setErr('');
+    var emailEl=byId('gateEmail'), pinEl=byId('gatePin');
+    var user=findUser(emailEl && emailEl.value);
+    if(!user){ showPin(false); setErr('Access denied. This email is not authorized.'); return; }
+    if(user.pin){
+      showPin(true);
+      if(!pinEl || String(pinEl.value || '').trim() !== user.pin){ setErr('Enter the required PIN for this user.'); if(pinEl) pinEl.focus(); return; }
+    }
+    unlock(user);
+  }
+  function bind(){
+    var btn=byId('gateSubmit'), emailEl=byId('gateEmail'), pinEl=byId('gatePin');
+    if(!btn || btn.dataset.v37LoginBound) return;
+    btn.dataset.v37LoginBound='1';
+    btn.onclick = function(e){ if(e){e.preventDefault(); e.stopPropagation();} handle(); return false; };
+    if(emailEl){ emailEl.addEventListener('input', function(){ var u=findUser(emailEl.value); showPin(!!(u && u.pin)); setErr(''); }); emailEl.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); handle(); } }); }
+    if(pinEl){ pinEl.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); handle(); } }); }
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', bind); else bind();
+  setTimeout(bind,300); setTimeout(bind,1200);
+  window.AIP5_V37_LOGIN_GUARD_READY = true;
+})();
+</script>
+
+</body></html>';
   }
   window.openDailyReport = function(print){ if (typeof requireExport === 'function' && !requireExport()) return; return printInHiddenFrame(reportHtml('daily')); };
   window.openMasterReport = function(print){ if (typeof requireExport === 'function' && !requireExport()) return; return printInHiddenFrame(reportHtml('master')); };
@@ -6498,4 +6660,176 @@ function masterReportHtml(){
 })();
 
 </script>
+
+
+<style>
+/* === V39_PERMISSION_DELETE_OWN_FIX CSS === */
+.admin-user .edit-entry,
+.admin-user .delete-entry,
+.daily-entry-user .edit-entry,
+.daily-entry-user .delete-entry{
+  display:inline-grid!important;
+}
+.viewer-user .edit-entry,
+.viewer-user .delete-entry,
+.field-user.viewer-user .edit-entry,
+.field-user.viewer-user .delete-entry{
+  display:none!important;
+}
+</style>
+<script>
+/* === V39_PERMISSION_DELETE_OWN_FIX ===
+   - Admin can edit/delete any daily entry.
+   - Daily Entry user can edit/delete only own entries.
+   - Daily Entry user can continue only own activity references.
+   - Viewer remains read-only.
+*/
+(function(){
+  'use strict';
+  var MARK='V39_PERMISSION_DELETE_OWN_FIX';
+  window.AIP5_V39_READY = MARK;
+  function byId(id){return document.getElementById(id)}
+  function text(v){return String(v == null ? '' : v)}
+  function lower(v){return text(v).trim().toLowerCase()}
+  function num(v){v=Number(v||0); return isFinite(v)?v:0}
+  function esc(v){return text(v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+  function getRole(){
+    try{ if(typeof currentUserRole !== 'undefined' && currentUserRole) return lower(currentUserRole); }catch(e){}
+    try{ if(window.currentUserRole) return lower(window.currentUserRole); }catch(e){}
+    try{ return lower(sessionStorage.getItem('aip5_gate_role') || sessionStorage.getItem('aip5_role') || sessionStorage.getItem('AIP5_ROLE') || ''); }catch(e){ return ''; }
+  }
+  function getEmail(){
+    try{ if(typeof currentUserEmail !== 'undefined' && currentUserEmail) return lower(currentUserEmail); }catch(e){}
+    try{ if(window.currentUserEmail) return lower(window.currentUserEmail); }catch(e){}
+    try{ return lower(sessionStorage.getItem('aip5_gate_email') || sessionStorage.getItem('aip5_email') || sessionStorage.getItem('AIP5_EMAIL') || ''); }catch(e){ return ''; }
+  }
+  function isAdmin(){return getRole()==='admin'}
+  function isDailyEntry(){return getRole()==='daily_entry'}
+  function getDaily(){try{return Array.isArray(dailyEntries)?dailyEntries:[]}catch(e){return []}}
+  function setDaily(arr){try{dailyEntries=arr}catch(e){}}
+  function ownerOf(e){
+    return lower(e && (e.enteredByEmail || e.enteredBy || e.entryBy || e.userEmail || e.createdBy || e.ownerEmail || e.createdByEmail || e.updatedByEmail || ''));
+  }
+  function canModify(e){
+    if(isAdmin()) return true;
+    if(isDailyEntry()) return !!ownerOf(e) && ownerOf(e)===getEmail();
+    return false;
+  }
+  window.canModifyDailyEntryV39 = canModify;
+  function afterDataChange(assetId){
+    try{ if(typeof recomputeAssetProgress==='function' && assetId) recomputeAssetProgress(assetId); }catch(e){}
+    try{ if(typeof save==='function') save(); }catch(e){}
+    try{ if(typeof renderAll==='function') renderAll(false); else if(typeof renderLog==='function') renderLog(); }catch(e){try{if(typeof renderLog==='function')renderLog()}catch(_){}}
+    try{ if(typeof populateContinueActivityOptions==='function') populateContinueActivityOptions(); }catch(e){}
+  }
+  function deleteEntry(id){
+    var entry=getDaily().find(function(x){return Number(x.id)===Number(id)});
+    if(!entry) return false;
+    if(!canModify(entry)){
+      alert('Admin can delete any entry. Daily Entry users can delete only entries created by their own login. Viewers cannot delete.');
+      return false;
+    }
+    var msg = isAdmin()
+      ? 'Admin delete: delete this daily entry? Please coordinate verbally with the data-entry user when required.'
+      : 'Delete your own daily entry?';
+    if(!confirm(msg)) return false;
+    var assetId=entry.assetId;
+    setDaily(getDaily().filter(function(x){return Number(x.id)!==Number(id)}));
+    try{ if(typeof editingDailyId !== 'undefined' && Number(editingDailyId)===Number(id) && typeof resetDailyForm==='function') resetDailyForm(); }catch(e){}
+    afterDataChange(assetId);
+    return false;
+  }
+  function editEntry(id){
+    var entry=getDaily().find(function(x){return Number(x.id)===Number(id)});
+    if(!entry) return false;
+    if(!canModify(entry)){
+      alert('Admin can edit any entry. Daily Entry users can edit only entries created by their own login.');
+      return false;
+    }
+    try{
+      if(typeof stableLoadForEdit==='function') return stableLoadForEdit(Number(id));
+    }catch(e){}
+    try{
+      if(typeof loadDailyEntryForEdit==='function') return loadDailyEntryForEdit(Number(id));
+    }catch(e){console.warn('[V39 edit fallback]',e)}
+    return false;
+  }
+  window.deleteDailyEntry = deleteEntry;
+  window.loadDailyEntryForEdit = editEntry;
+  try{ deleteDailyEntry = deleteEntry; }catch(e){}
+  try{ loadDailyEntryForEdit = editEntry; }catch(e){}
+
+  function patchDailyLogActions(){
+    var box=byId('dailyLog'); if(!box) return;
+    box.querySelectorAll('.edit-entry,.delete-entry').forEach(function(btn){
+      var entry=getDaily().find(function(x){return Number(x.id)===Number(btn.dataset.id)});
+      var allowed=entry && canModify(entry);
+      if(btn.classList.contains('edit-entry') || btn.classList.contains('delete-entry')){
+        btn.style.display = allowed ? 'inline-grid' : 'none';
+      }
+      if(btn.dataset.v39Bound) return;
+      btn.dataset.v39Bound='1';
+      btn.onclick=function(ev){
+        if(ev){ev.preventDefault(); ev.stopPropagation();}
+        var id=Number(btn.dataset.id);
+        if(btn.classList.contains('delete-entry')) return deleteEntry(id);
+        return editEntry(id);
+      };
+    });
+  }
+
+  var oldRenderLog=null;
+  try{ oldRenderLog = window.renderLog || (typeof renderLog !== 'undefined' ? renderLog : null); }catch(e){}
+  if(oldRenderLog && !oldRenderLog._v39wrapped){
+    var wrapped=function(){
+      var out=oldRenderLog.apply(this, arguments);
+      patchDailyLogActions();
+      return out;
+    };
+    wrapped._v39wrapped=true;
+    try{renderLog=wrapped}catch(e){}
+    window.renderLog=wrapped;
+  }
+
+  function refOf(e){return text(e && (e.activityRef || e.relatedActivityId || e.activityNo || e.activityCode || '')).trim()}
+  function rebuildContinueDropdownOwnOnly(){
+    var sel=byId('entryContinueActivity'); if(!sel) return;
+    var current=sel.value;
+    var groups={};
+    getDaily().forEach(function(e){
+      var ref=refOf(e); if(!ref) return;
+      if(isDailyEntry() && !canModify(e)) return;
+      var k=lower(ref); (groups[k]||(groups[k]=[])).push(e);
+    });
+    var opts=['<option value="">New activity / Auto-generate ref</option>'];
+    Object.keys(groups).sort().forEach(function(k){
+      var arr=groups[k], first=arr[0]||{}, qty=0, plan=0;
+      arr.forEach(function(e){qty+=num(e.dailyQty); plan=Math.max(plan,num(e.plannedQty));});
+      var pct=plan>0?Math.min(100,Math.round(qty/plan*10000)/100):0;
+      var label=refOf(first)+' | '+(first.assetLabel||first.assetId||'-')+' | '+(first.system||'-')+' | '+(first.mainActivity||first.subActivity||'-')+' | '+qty+'/'+plan+' '+(first.uom||'')+' ('+pct+'%)';
+      opts.push('<option value="'+esc(refOf(first))+'">'+esc(label)+'</option>');
+    });
+    sel.innerHTML=opts.join('');
+    if(current && Array.prototype.some.call(sel.options,function(o){return o.value===current})) sel.value=current;
+  }
+  var oldPopulate=null;
+  try{ oldPopulate=window.populateContinueActivityOptions || (typeof populateContinueActivityOptions!=='undefined'?populateContinueActivityOptions:null); }catch(e){}
+  window.populateContinueActivityOptions=function(){
+    try{ if(oldPopulate) oldPopulate.apply(this, arguments); }catch(e){}
+    rebuildContinueDropdownOwnOnly();
+  };
+  try{ populateContinueActivityOptions=window.populateContinueActivityOptions; }catch(e){}
+
+  function init(){
+    var style=document.createElement('style');
+    style.textContent='.admin-user .edit-entry,.admin-user .delete-entry,.daily-entry-user .edit-entry,.daily-entry-user .delete-entry{display:inline-grid!important}.viewer-user .edit-entry,.viewer-user .delete-entry,.field-user.viewer-user .edit-entry,.field-user.viewer-user .delete-entry{display:none!important}';
+    document.head.appendChild(style);
+    patchDailyLogActions();
+    rebuildContinueDropdownOwnOnly();
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', function(){setTimeout(init,200);setTimeout(init,1000);}); else {setTimeout(init,200);setTimeout(init,1000);}
+  setInterval(patchDailyLogActions,1500);
+})();
+</script>
+<span data-aip5-ready="V39_PERMISSION_DELETE_OWN_FIX"></span>
 </body></html>
