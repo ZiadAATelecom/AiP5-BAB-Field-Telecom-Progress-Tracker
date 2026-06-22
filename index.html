@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<!-- V31_RECOVERY_REPORT_PRINT_PERMIT_WEIGHT_FIX -->
+<!-- V32_ZERO_ENTRY_DELETE_MIRROR_SAFE -->
+<!-- Based on V31_RECOVERY_REPORT_PRINT_PERMIT_WEIGHT_FIX -->
 <!-- saved from url=(0038)http://127.0.0.1:8095/aip5telecom-zaa/ -->
 <html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="tracker-version" content="V30_CUMULATIVE_WEIGHTED_PROGRESS_STATION_SYSTEMS"><title>AiP5 BAB Field Telecom Progress Control - V16C Login Restored</title><!-- LOGIN-STABLE-V8 --><link rel="preconnect" href="https://fonts.googleapis.com/"><link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin=""><link href="./css2" rel="stylesheet"><script src="./lucide.min.js.download"></script><style>
 :root{--ink:#17211f;--muted:#60706b;--line:#d8e2de;--deep:#11231f;--green:#1f7a5c;--mint:#39aa7d;--cyan:#18788d;--gold:#b27616;--red:#b53d49;--soft:#edf3f0;--shadow:0 18px 44px rgba(23,33,31,.1)}
@@ -433,7 +434,101 @@ body.auth-unlocked #appShell{display:grid!important}
 
   function fallbackReportHtml(kind){
     var title = kind === 'master' ? 'Master Progress Report' : 'Daily Progress Report';
-    return '<!doctype html><html><head><meta charset="utf-8"><title>'+esc(title)+'</title>'+reportCss()+'</head><body><div class="report-page"><div class="header"><h1>'+esc(title)+'</h1><p>Generated: '+esc(new Date().toLocaleString())+'</p></div><h2>Latest Daily Entries</h2><table class="report-table"><thead><tr><th>Date</th><th>Site</th><th>System</th><th>Sub-System / Item</th><th>Activity</th><th>Work Step</th><th>Tag</th><th>Planned Qty</th><th>Daily Qty</th><th>Progress %</th><th>Remarks</th></tr></thead><tbody>'+fallbackRows()+'</tbody></table></div></body></html>';
+    return '<!doctype html><html><head><meta charset="utf-8"><title>'+esc(title)+'</title>'+reportCss()+'</head><body><div class="report-page"><div class="header"><h1>'+esc(title)+'</h1><p>Generated: '+esc(new Date().toLocaleString())+'</p></div><h2>Latest Daily Entries</h2><table class="report-table"><thead><tr><th>Date</th><th>Site</th><th>System</th><th>Sub-System / Item</th><th>Activity</th><th>Work Step</th><th>Tag</th><th>Planned Qty</th><th>Daily Qty</th><th>Progress %</th><th>Remarks</th></tr></thead><tbody>'+fallbackRows()+'</tbody></table></div>
+<script>
+/* === V33_NO_AUTO_ENTRIES_ZERO_BLOCK ===
+   Focused patch on top of V32:
+   - Never create or re-merge daily entries on login from old backup/demo keys.
+   - Keep only actual user-entered positive-progress entries.
+   - Block manual/imported entries with zero progress before saving.
+   - Keep mirrored link rows as report display only; physical quantity is not doubled. */
+(function(){
+  'use strict';
+  if (window.__V33_NO_AUTO_ENTRIES_ZERO_BLOCK__) return;
+  window.__V33_NO_AUTO_ENTRIES_ZERO_BLOCK__ = true;
+  window.AIP5_VERSION_MARKER='V33_NO_AUTO_ENTRIES_ZERO_BLOCK';
+  function $id(id){return document.getElementById(id);}
+  function safe(fn,fb){try{return fn();}catch(e){console.warn('[V33]',e);return fb;}}
+  function num(v){var n=Number(v||0);return isFinite(n)?n:0;}
+  function dkey(v){try{if(typeof dateValue==='function')return dateValue(v)||'';}catch(e){}return String(v||'');}
+  function canonicalDailyKey(){return (typeof logKey!=='undefined' && logKey) ? logKey : 'aip5-daily-log-v5-advanced-scope';}
+  function readKey(k){return safe(function(){var raw=localStorage.getItem(k);if(!raw)return[];var p=JSON.parse(raw);return Array.isArray(p)?p:(p&&typeof p==='object'?Object.values(p):[]);},[]);}
+  function siteOf(e){return String((e&& (e.assetId||e.asset||e.site||e.assetLabel)) || '').trim();}
+  function isPositive(e){e=e||{};var plan=num(e.plannedQty||e.plan||e.planned),qty=num(e.dailyQty||e.qty||e.doneQty),dp=num(e.dailyProgress||e.progress),ta=num(e.totalAfter||e.overallProgress);return (plan>0&&qty>0)||dp>0||ta>0;}
+  function semKey(e){e=e||{};return [dkey(e.date),siteOf(e),e.system,e.specificItem,e.mainActivity,e.subActivity,e.tag,e.linkFrom,e.linkTo,e.plannedQty,e.dailyQty,e.uom,e.permitNo,e.docRef,e.remarks].map(function(x){return String(x||'').trim().toLowerCase();}).join('|');}
+  function cleanList(list){var seen={},out=[];(Array.isArray(list)?list:[]).forEach(function(e){if(!e||typeof e!=='object')return;if(!isPositive(e))return;var k=semKey(e);if(!seen[k]){seen[k]=1;out.push(e);}});out.sort(function(a,b){return dkey(b.date).localeCompare(dkey(a.date))||String(b.id||'').localeCompare(String(a.id||''));});return out;}
+  function writeCanonical(list){list=cleanList(list);safe(function(){window.dailyEntries=list;},null);safe(function(){dailyEntries=list;},null);safe(function(){localStorage.setItem(canonicalDailyKey(),JSON.stringify(list));},null);safe(function(){localStorage.setItem('aip5-daily-log-v33-clean',JSON.stringify(list));},null);return list;}
+  function currentClean(){var list=[];safe(function(){if(Array.isArray(window.dailyEntries))list=list.concat(window.dailyEntries);},null);safe(function(){if(Array.isArray(dailyEntries))list=list.concat(dailyEntries);},null);list=list.concat(readKey(canonicalDailyKey()));list=list.concat(readKey('aip5-daily-log-v33-clean'));return writeCanonical(list);}
+  window.AIP5_cleanDailyEntriesNoAutoMerge = currentClean;
+
+  // Override recoverDaily if older patches call it. It now reads only canonical/current data, not all historical backup keys.
+  window.AIP5_recoverDailyEntries = currentClean;
+
+  // Guard manual form submission: no zero progress entries are allowed.
+  function formHasPositiveWork(){
+    var plan=num(($id('entryPlannedQty')||{}).value), qty=num(($id('entryDailyQty')||{}).value), dp=num(($id('entryProgress')||{}).value), total=num(($id('entryOverallProgress')||{}).value);
+    return (plan>0 && qty>0) || dp>0 || total>0;
+  }
+  function installSubmitGuard(){
+    var form=$id('dailyForm');
+    if(!form || form.__v33ZeroGuard) return;
+    form.__v33ZeroGuard=true;
+    form.addEventListener('submit',function(ev){
+      if(!formHasPositiveWork()){
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+        alert('Daily Entry was not saved. Please enter Planned Qty and Daily Qty greater than zero, or enter a positive progress percentage.');
+        return false;
+      }
+    },true);
+  }
+
+  // Patch save so saving only cleans the current/canonical daily log; it does not recover old duplicated keys on every login.
+  var previousSave = (typeof window.save==='function') ? window.save : (typeof save==='function' ? save : null);
+  window.save=function(){
+    currentClean();
+    var r=safe(function(){return previousSave?previousSave.apply(this,arguments):undefined;},undefined);
+    currentClean();
+    return r;
+  };
+  safe(function(){save=window.save;},null);
+
+  // Import cleanup: imported rows with zero actual progress are removed immediately.
+  var oldImport = (typeof window.importAllValidRows==='function') ? window.importAllValidRows : (typeof importAllValidRows==='function'?importAllValidRows:null);
+  if(oldImport){
+    window.importAllValidRows=function(){
+      var before=currentClean().length;
+      var r=safe(function(){return oldImport.apply(this,arguments);},undefined);
+      var after=currentClean();
+      if(after.length===before){
+        var lbl=$id('dailyImportStatus');
+        if(lbl) lbl.textContent='Import completed. Zero-progress rows were ignored; only positive progress entries are kept.';
+      }
+      return r;
+    };
+    safe(function(){importAllValidRows=window.importAllValidRows;},null);
+  }
+
+  // Patch rendering and reporting entry sources to use the clean canonical list only.
+  var oldFiltered = window.filteredDailyEntries;
+  window.filteredDailyEntries=function(prefix){
+    currentClean();
+    return oldFiltered ? oldFiltered.apply(this,arguments) : (window.dailyEntries||[]);
+  };
+
+  // Re-run a light clean after login/render without creating any new entries.
+  function refresh(){
+    currentClean();
+    installSubmitGuard();
+    safe(function(){if(typeof renderLog==='function')renderLog();},null);
+    safe(function(){if(typeof renderKpis==='function')renderKpis();},null);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){setTimeout(refresh,250);setTimeout(refresh,1500);});
+  else {setTimeout(refresh,250);setTimeout(refresh,1500);}
+})();
+</script>
+
+</body></html>';
   }
 
   function reportCss(){
@@ -481,7 +576,101 @@ body.auth-unlocked #appShell{display:grid!important}
     html = html.replace(/<button[^>]*class=["'][^"']*print-btn[^"']*["'][\s\S]*?<\/button>/gi, '');
     var css = reportCss();
     if(/<head[\s\S]*?>/i.test(html)) html = html.replace(/<head([\s\S]*?)>/i, function(m, attrs){ return '<head'+attrs+'>'+css; });
-    else html = '<!doctype html><html><head><meta charset="utf-8">'+css+'</head><body>'+html+'</body></html>';
+    else html = '<!doctype html><html><head><meta charset="utf-8">'+css+'</head><body>'+html+'
+<script>
+/* === V33_NO_AUTO_ENTRIES_ZERO_BLOCK ===
+   Focused patch on top of V32:
+   - Never create or re-merge daily entries on login from old backup/demo keys.
+   - Keep only actual user-entered positive-progress entries.
+   - Block manual/imported entries with zero progress before saving.
+   - Keep mirrored link rows as report display only; physical quantity is not doubled. */
+(function(){
+  'use strict';
+  if (window.__V33_NO_AUTO_ENTRIES_ZERO_BLOCK__) return;
+  window.__V33_NO_AUTO_ENTRIES_ZERO_BLOCK__ = true;
+  window.AIP5_VERSION_MARKER='V33_NO_AUTO_ENTRIES_ZERO_BLOCK';
+  function $id(id){return document.getElementById(id);}
+  function safe(fn,fb){try{return fn();}catch(e){console.warn('[V33]',e);return fb;}}
+  function num(v){var n=Number(v||0);return isFinite(n)?n:0;}
+  function dkey(v){try{if(typeof dateValue==='function')return dateValue(v)||'';}catch(e){}return String(v||'');}
+  function canonicalDailyKey(){return (typeof logKey!=='undefined' && logKey) ? logKey : 'aip5-daily-log-v5-advanced-scope';}
+  function readKey(k){return safe(function(){var raw=localStorage.getItem(k);if(!raw)return[];var p=JSON.parse(raw);return Array.isArray(p)?p:(p&&typeof p==='object'?Object.values(p):[]);},[]);}
+  function siteOf(e){return String((e&& (e.assetId||e.asset||e.site||e.assetLabel)) || '').trim();}
+  function isPositive(e){e=e||{};var plan=num(e.plannedQty||e.plan||e.planned),qty=num(e.dailyQty||e.qty||e.doneQty),dp=num(e.dailyProgress||e.progress),ta=num(e.totalAfter||e.overallProgress);return (plan>0&&qty>0)||dp>0||ta>0;}
+  function semKey(e){e=e||{};return [dkey(e.date),siteOf(e),e.system,e.specificItem,e.mainActivity,e.subActivity,e.tag,e.linkFrom,e.linkTo,e.plannedQty,e.dailyQty,e.uom,e.permitNo,e.docRef,e.remarks].map(function(x){return String(x||'').trim().toLowerCase();}).join('|');}
+  function cleanList(list){var seen={},out=[];(Array.isArray(list)?list:[]).forEach(function(e){if(!e||typeof e!=='object')return;if(!isPositive(e))return;var k=semKey(e);if(!seen[k]){seen[k]=1;out.push(e);}});out.sort(function(a,b){return dkey(b.date).localeCompare(dkey(a.date))||String(b.id||'').localeCompare(String(a.id||''));});return out;}
+  function writeCanonical(list){list=cleanList(list);safe(function(){window.dailyEntries=list;},null);safe(function(){dailyEntries=list;},null);safe(function(){localStorage.setItem(canonicalDailyKey(),JSON.stringify(list));},null);safe(function(){localStorage.setItem('aip5-daily-log-v33-clean',JSON.stringify(list));},null);return list;}
+  function currentClean(){var list=[];safe(function(){if(Array.isArray(window.dailyEntries))list=list.concat(window.dailyEntries);},null);safe(function(){if(Array.isArray(dailyEntries))list=list.concat(dailyEntries);},null);list=list.concat(readKey(canonicalDailyKey()));list=list.concat(readKey('aip5-daily-log-v33-clean'));return writeCanonical(list);}
+  window.AIP5_cleanDailyEntriesNoAutoMerge = currentClean;
+
+  // Override recoverDaily if older patches call it. It now reads only canonical/current data, not all historical backup keys.
+  window.AIP5_recoverDailyEntries = currentClean;
+
+  // Guard manual form submission: no zero progress entries are allowed.
+  function formHasPositiveWork(){
+    var plan=num(($id('entryPlannedQty')||{}).value), qty=num(($id('entryDailyQty')||{}).value), dp=num(($id('entryProgress')||{}).value), total=num(($id('entryOverallProgress')||{}).value);
+    return (plan>0 && qty>0) || dp>0 || total>0;
+  }
+  function installSubmitGuard(){
+    var form=$id('dailyForm');
+    if(!form || form.__v33ZeroGuard) return;
+    form.__v33ZeroGuard=true;
+    form.addEventListener('submit',function(ev){
+      if(!formHasPositiveWork()){
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+        alert('Daily Entry was not saved. Please enter Planned Qty and Daily Qty greater than zero, or enter a positive progress percentage.');
+        return false;
+      }
+    },true);
+  }
+
+  // Patch save so saving only cleans the current/canonical daily log; it does not recover old duplicated keys on every login.
+  var previousSave = (typeof window.save==='function') ? window.save : (typeof save==='function' ? save : null);
+  window.save=function(){
+    currentClean();
+    var r=safe(function(){return previousSave?previousSave.apply(this,arguments):undefined;},undefined);
+    currentClean();
+    return r;
+  };
+  safe(function(){save=window.save;},null);
+
+  // Import cleanup: imported rows with zero actual progress are removed immediately.
+  var oldImport = (typeof window.importAllValidRows==='function') ? window.importAllValidRows : (typeof importAllValidRows==='function'?importAllValidRows:null);
+  if(oldImport){
+    window.importAllValidRows=function(){
+      var before=currentClean().length;
+      var r=safe(function(){return oldImport.apply(this,arguments);},undefined);
+      var after=currentClean();
+      if(after.length===before){
+        var lbl=$id('dailyImportStatus');
+        if(lbl) lbl.textContent='Import completed. Zero-progress rows were ignored; only positive progress entries are kept.';
+      }
+      return r;
+    };
+    safe(function(){importAllValidRows=window.importAllValidRows;},null);
+  }
+
+  // Patch rendering and reporting entry sources to use the clean canonical list only.
+  var oldFiltered = window.filteredDailyEntries;
+  window.filteredDailyEntries=function(prefix){
+    currentClean();
+    return oldFiltered ? oldFiltered.apply(this,arguments) : (window.dailyEntries||[]);
+  };
+
+  // Re-run a light clean after login/render without creating any new entries.
+  function refresh(){
+    currentClean();
+    installSubmitGuard();
+    safe(function(){if(typeof renderLog==='function')renderLog();},null);
+    safe(function(){if(typeof renderKpis==='function')renderKpis();},null);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){setTimeout(refresh,250);setTimeout(refresh,1500);});
+  else {setTimeout(refresh,250);setTimeout(refresh,1500);}
+})();
+</script>
+
+</body></html>';
     return html;
   }
 
@@ -3181,7 +3370,101 @@ function reportAssetRemarks(row,entries,system){const related=reportEntriesForAs
 function sortReportAssetsByActivity(rows,entries){const original=new Map(rows.map((r,i)=>[r.id,i]));return rows.slice().sort((a,b)=>{const ae=latestReportEntry(entries,a.id),be=latestReportEntry(entries,b.id);const ad=ae?dateValue(ae.date):'',bd=be?dateValue(be.date):'';return (ad?0:1)-(bd?0:1)||bd.localeCompare(ad)||masterProgressRank(a)-masterProgressRank(b)||Number(b.progress||0)-Number(a.progress||0)||(original.get(a.id)||0)-(original.get(b.id)||0)})}
 function groupedMasterDetailRows(entries){const groups=groupedByEntryKey(entries);return Object.values(groups).map(list=>{const latest=list.slice().sort((a,b)=>dateValue(b.date).localeCompare(dateValue(a.date))||String(b.id).localeCompare(String(a.id)))[0]||{};const st=groupStats(list);return{latest,plan:st.plan,qty:st.qty,progress:st.progress}}).sort((a,b)=>String(a.latest.assetLabel||'').localeCompare(String(b.latest.assetLabel||''))||String(a.latest.system||'').localeCompare(String(b.latest.system||''))||String(a.latest.specificItem||'').localeCompare(String(b.latest.specificItem||'')))}
 function masterReportHtml(){
-  return '<!doctype html><html><head><meta charset="utf-8"><title>Master Progress Report</title></head><body><h1>Master Progress Report</h1><p>Report engine is loading...</p></body></html>';
+  return '<!doctype html><html><head><meta charset="utf-8"><title>Master Progress Report</title></head><body><h1>Master Progress Report</h1><p>Report engine is loading...</p>
+<script>
+/* === V33_NO_AUTO_ENTRIES_ZERO_BLOCK ===
+   Focused patch on top of V32:
+   - Never create or re-merge daily entries on login from old backup/demo keys.
+   - Keep only actual user-entered positive-progress entries.
+   - Block manual/imported entries with zero progress before saving.
+   - Keep mirrored link rows as report display only; physical quantity is not doubled. */
+(function(){
+  'use strict';
+  if (window.__V33_NO_AUTO_ENTRIES_ZERO_BLOCK__) return;
+  window.__V33_NO_AUTO_ENTRIES_ZERO_BLOCK__ = true;
+  window.AIP5_VERSION_MARKER='V33_NO_AUTO_ENTRIES_ZERO_BLOCK';
+  function $id(id){return document.getElementById(id);}
+  function safe(fn,fb){try{return fn();}catch(e){console.warn('[V33]',e);return fb;}}
+  function num(v){var n=Number(v||0);return isFinite(n)?n:0;}
+  function dkey(v){try{if(typeof dateValue==='function')return dateValue(v)||'';}catch(e){}return String(v||'');}
+  function canonicalDailyKey(){return (typeof logKey!=='undefined' && logKey) ? logKey : 'aip5-daily-log-v5-advanced-scope';}
+  function readKey(k){return safe(function(){var raw=localStorage.getItem(k);if(!raw)return[];var p=JSON.parse(raw);return Array.isArray(p)?p:(p&&typeof p==='object'?Object.values(p):[]);},[]);}
+  function siteOf(e){return String((e&& (e.assetId||e.asset||e.site||e.assetLabel)) || '').trim();}
+  function isPositive(e){e=e||{};var plan=num(e.plannedQty||e.plan||e.planned),qty=num(e.dailyQty||e.qty||e.doneQty),dp=num(e.dailyProgress||e.progress),ta=num(e.totalAfter||e.overallProgress);return (plan>0&&qty>0)||dp>0||ta>0;}
+  function semKey(e){e=e||{};return [dkey(e.date),siteOf(e),e.system,e.specificItem,e.mainActivity,e.subActivity,e.tag,e.linkFrom,e.linkTo,e.plannedQty,e.dailyQty,e.uom,e.permitNo,e.docRef,e.remarks].map(function(x){return String(x||'').trim().toLowerCase();}).join('|');}
+  function cleanList(list){var seen={},out=[];(Array.isArray(list)?list:[]).forEach(function(e){if(!e||typeof e!=='object')return;if(!isPositive(e))return;var k=semKey(e);if(!seen[k]){seen[k]=1;out.push(e);}});out.sort(function(a,b){return dkey(b.date).localeCompare(dkey(a.date))||String(b.id||'').localeCompare(String(a.id||''));});return out;}
+  function writeCanonical(list){list=cleanList(list);safe(function(){window.dailyEntries=list;},null);safe(function(){dailyEntries=list;},null);safe(function(){localStorage.setItem(canonicalDailyKey(),JSON.stringify(list));},null);safe(function(){localStorage.setItem('aip5-daily-log-v33-clean',JSON.stringify(list));},null);return list;}
+  function currentClean(){var list=[];safe(function(){if(Array.isArray(window.dailyEntries))list=list.concat(window.dailyEntries);},null);safe(function(){if(Array.isArray(dailyEntries))list=list.concat(dailyEntries);},null);list=list.concat(readKey(canonicalDailyKey()));list=list.concat(readKey('aip5-daily-log-v33-clean'));return writeCanonical(list);}
+  window.AIP5_cleanDailyEntriesNoAutoMerge = currentClean;
+
+  // Override recoverDaily if older patches call it. It now reads only canonical/current data, not all historical backup keys.
+  window.AIP5_recoverDailyEntries = currentClean;
+
+  // Guard manual form submission: no zero progress entries are allowed.
+  function formHasPositiveWork(){
+    var plan=num(($id('entryPlannedQty')||{}).value), qty=num(($id('entryDailyQty')||{}).value), dp=num(($id('entryProgress')||{}).value), total=num(($id('entryOverallProgress')||{}).value);
+    return (plan>0 && qty>0) || dp>0 || total>0;
+  }
+  function installSubmitGuard(){
+    var form=$id('dailyForm');
+    if(!form || form.__v33ZeroGuard) return;
+    form.__v33ZeroGuard=true;
+    form.addEventListener('submit',function(ev){
+      if(!formHasPositiveWork()){
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+        alert('Daily Entry was not saved. Please enter Planned Qty and Daily Qty greater than zero, or enter a positive progress percentage.');
+        return false;
+      }
+    },true);
+  }
+
+  // Patch save so saving only cleans the current/canonical daily log; it does not recover old duplicated keys on every login.
+  var previousSave = (typeof window.save==='function') ? window.save : (typeof save==='function' ? save : null);
+  window.save=function(){
+    currentClean();
+    var r=safe(function(){return previousSave?previousSave.apply(this,arguments):undefined;},undefined);
+    currentClean();
+    return r;
+  };
+  safe(function(){save=window.save;},null);
+
+  // Import cleanup: imported rows with zero actual progress are removed immediately.
+  var oldImport = (typeof window.importAllValidRows==='function') ? window.importAllValidRows : (typeof importAllValidRows==='function'?importAllValidRows:null);
+  if(oldImport){
+    window.importAllValidRows=function(){
+      var before=currentClean().length;
+      var r=safe(function(){return oldImport.apply(this,arguments);},undefined);
+      var after=currentClean();
+      if(after.length===before){
+        var lbl=$id('dailyImportStatus');
+        if(lbl) lbl.textContent='Import completed. Zero-progress rows were ignored; only positive progress entries are kept.';
+      }
+      return r;
+    };
+    safe(function(){importAllValidRows=window.importAllValidRows;},null);
+  }
+
+  // Patch rendering and reporting entry sources to use the clean canonical list only.
+  var oldFiltered = window.filteredDailyEntries;
+  window.filteredDailyEntries=function(prefix){
+    currentClean();
+    return oldFiltered ? oldFiltered.apply(this,arguments) : (window.dailyEntries||[]);
+  };
+
+  // Re-run a light clean after login/render without creating any new entries.
+  function refresh(){
+    currentClean();
+    installSubmitGuard();
+    safe(function(){if(typeof renderLog==='function')renderLog();},null);
+    safe(function(){if(typeof renderKpis==='function')renderKpis();},null);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){setTimeout(refresh,250);setTimeout(refresh,1500);});
+  else {setTimeout(refresh,250);setTimeout(refresh,1500);}
+})();
+</script>
+
+</body></html>';
 }
 
 /* === V24_LOGIN_NO_BLOCK_STABLE ===
@@ -3564,7 +3847,101 @@ function masterReportHtml(){
   function reportShell(title, subtitle, cards, charts, sections, excel=false){
     return '<!doctype html><html><head><meta charset="utf-8"><title>'+safeHtml(title)+'</title>'+(excel?excelStyles():reportStyles())+'</head><body>'+(
       excel ? '' : '<button class="print-btn" onclick="window.print()">Print / Save PDF</button>'
-    )+'<div class="header"><div><h1>'+safeHtml(title)+'</h1><div class="muted">'+safeHtml(subtitle||'')+'</div></div><div class="meta">Generated: '+safeHtml(new Date().toLocaleString())+'<br>Project Telecom Progress Tracker</div></div>'+cards+'<div class="charts">'+charts+'</div>'+sections+'</body></html>';
+    )+'<div class="header"><div><h1>'+safeHtml(title)+'</h1><div class="muted">'+safeHtml(subtitle||'')+'</div></div><div class="meta">Generated: '+safeHtml(new Date().toLocaleString())+'<br>Project Telecom Progress Tracker</div></div>'+cards+'<div class="charts">'+charts+'</div>'+sections+'
+<script>
+/* === V33_NO_AUTO_ENTRIES_ZERO_BLOCK ===
+   Focused patch on top of V32:
+   - Never create or re-merge daily entries on login from old backup/demo keys.
+   - Keep only actual user-entered positive-progress entries.
+   - Block manual/imported entries with zero progress before saving.
+   - Keep mirrored link rows as report display only; physical quantity is not doubled. */
+(function(){
+  'use strict';
+  if (window.__V33_NO_AUTO_ENTRIES_ZERO_BLOCK__) return;
+  window.__V33_NO_AUTO_ENTRIES_ZERO_BLOCK__ = true;
+  window.AIP5_VERSION_MARKER='V33_NO_AUTO_ENTRIES_ZERO_BLOCK';
+  function $id(id){return document.getElementById(id);}
+  function safe(fn,fb){try{return fn();}catch(e){console.warn('[V33]',e);return fb;}}
+  function num(v){var n=Number(v||0);return isFinite(n)?n:0;}
+  function dkey(v){try{if(typeof dateValue==='function')return dateValue(v)||'';}catch(e){}return String(v||'');}
+  function canonicalDailyKey(){return (typeof logKey!=='undefined' && logKey) ? logKey : 'aip5-daily-log-v5-advanced-scope';}
+  function readKey(k){return safe(function(){var raw=localStorage.getItem(k);if(!raw)return[];var p=JSON.parse(raw);return Array.isArray(p)?p:(p&&typeof p==='object'?Object.values(p):[]);},[]);}
+  function siteOf(e){return String((e&& (e.assetId||e.asset||e.site||e.assetLabel)) || '').trim();}
+  function isPositive(e){e=e||{};var plan=num(e.plannedQty||e.plan||e.planned),qty=num(e.dailyQty||e.qty||e.doneQty),dp=num(e.dailyProgress||e.progress),ta=num(e.totalAfter||e.overallProgress);return (plan>0&&qty>0)||dp>0||ta>0;}
+  function semKey(e){e=e||{};return [dkey(e.date),siteOf(e),e.system,e.specificItem,e.mainActivity,e.subActivity,e.tag,e.linkFrom,e.linkTo,e.plannedQty,e.dailyQty,e.uom,e.permitNo,e.docRef,e.remarks].map(function(x){return String(x||'').trim().toLowerCase();}).join('|');}
+  function cleanList(list){var seen={},out=[];(Array.isArray(list)?list:[]).forEach(function(e){if(!e||typeof e!=='object')return;if(!isPositive(e))return;var k=semKey(e);if(!seen[k]){seen[k]=1;out.push(e);}});out.sort(function(a,b){return dkey(b.date).localeCompare(dkey(a.date))||String(b.id||'').localeCompare(String(a.id||''));});return out;}
+  function writeCanonical(list){list=cleanList(list);safe(function(){window.dailyEntries=list;},null);safe(function(){dailyEntries=list;},null);safe(function(){localStorage.setItem(canonicalDailyKey(),JSON.stringify(list));},null);safe(function(){localStorage.setItem('aip5-daily-log-v33-clean',JSON.stringify(list));},null);return list;}
+  function currentClean(){var list=[];safe(function(){if(Array.isArray(window.dailyEntries))list=list.concat(window.dailyEntries);},null);safe(function(){if(Array.isArray(dailyEntries))list=list.concat(dailyEntries);},null);list=list.concat(readKey(canonicalDailyKey()));list=list.concat(readKey('aip5-daily-log-v33-clean'));return writeCanonical(list);}
+  window.AIP5_cleanDailyEntriesNoAutoMerge = currentClean;
+
+  // Override recoverDaily if older patches call it. It now reads only canonical/current data, not all historical backup keys.
+  window.AIP5_recoverDailyEntries = currentClean;
+
+  // Guard manual form submission: no zero progress entries are allowed.
+  function formHasPositiveWork(){
+    var plan=num(($id('entryPlannedQty')||{}).value), qty=num(($id('entryDailyQty')||{}).value), dp=num(($id('entryProgress')||{}).value), total=num(($id('entryOverallProgress')||{}).value);
+    return (plan>0 && qty>0) || dp>0 || total>0;
+  }
+  function installSubmitGuard(){
+    var form=$id('dailyForm');
+    if(!form || form.__v33ZeroGuard) return;
+    form.__v33ZeroGuard=true;
+    form.addEventListener('submit',function(ev){
+      if(!formHasPositiveWork()){
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+        alert('Daily Entry was not saved. Please enter Planned Qty and Daily Qty greater than zero, or enter a positive progress percentage.');
+        return false;
+      }
+    },true);
+  }
+
+  // Patch save so saving only cleans the current/canonical daily log; it does not recover old duplicated keys on every login.
+  var previousSave = (typeof window.save==='function') ? window.save : (typeof save==='function' ? save : null);
+  window.save=function(){
+    currentClean();
+    var r=safe(function(){return previousSave?previousSave.apply(this,arguments):undefined;},undefined);
+    currentClean();
+    return r;
+  };
+  safe(function(){save=window.save;},null);
+
+  // Import cleanup: imported rows with zero actual progress are removed immediately.
+  var oldImport = (typeof window.importAllValidRows==='function') ? window.importAllValidRows : (typeof importAllValidRows==='function'?importAllValidRows:null);
+  if(oldImport){
+    window.importAllValidRows=function(){
+      var before=currentClean().length;
+      var r=safe(function(){return oldImport.apply(this,arguments);},undefined);
+      var after=currentClean();
+      if(after.length===before){
+        var lbl=$id('dailyImportStatus');
+        if(lbl) lbl.textContent='Import completed. Zero-progress rows were ignored; only positive progress entries are kept.';
+      }
+      return r;
+    };
+    safe(function(){importAllValidRows=window.importAllValidRows;},null);
+  }
+
+  // Patch rendering and reporting entry sources to use the clean canonical list only.
+  var oldFiltered = window.filteredDailyEntries;
+  window.filteredDailyEntries=function(prefix){
+    currentClean();
+    return oldFiltered ? oldFiltered.apply(this,arguments) : (window.dailyEntries||[]);
+  };
+
+  // Re-run a light clean after login/render without creating any new entries.
+  function refresh(){
+    currentClean();
+    installSubmitGuard();
+    safe(function(){if(typeof renderLog==='function')renderLog();},null);
+    safe(function(){if(typeof renderKpis==='function')renderKpis();},null);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){setTimeout(refresh,250);setTimeout(refresh,1500);});
+  else {setTimeout(refresh,250);setTimeout(refresh,1500);}
+})();
+</script>
+
+</body></html>';
   }
   function makeCards(items){ return '<div class="cards">'+items.map(c=>'<div class="card"><span>'+safeHtml(c.label)+'</span><strong>'+safeHtml(c.value)+'</strong></div>').join('')+'</div>'; }
   function dailyRowsHtml(entries){
@@ -4212,7 +4589,101 @@ function masterReportHtml(){
       if(kind === 'master' && typeof exportMasterExcel === 'function') return exportMasterExcel();
     }catch(err){ console.warn('Primary report export failed; using fallback', err); }
     try{
-      var htmlDoc = kind === 'daily' && typeof dailyReportHtml === 'function' ? dailyReportHtml(true) : (typeof masterReportHtml === 'function' ? masterReportHtml(true) : '<html><body><h1>Telecom Report</h1></body></html>');
+      var htmlDoc = kind === 'daily' && typeof dailyReportHtml === 'function' ? dailyReportHtml(true) : (typeof masterReportHtml === 'function' ? masterReportHtml(true) : '<html><body><h1>Telecom Report</h1>
+<script>
+/* === V33_NO_AUTO_ENTRIES_ZERO_BLOCK ===
+   Focused patch on top of V32:
+   - Never create or re-merge daily entries on login from old backup/demo keys.
+   - Keep only actual user-entered positive-progress entries.
+   - Block manual/imported entries with zero progress before saving.
+   - Keep mirrored link rows as report display only; physical quantity is not doubled. */
+(function(){
+  'use strict';
+  if (window.__V33_NO_AUTO_ENTRIES_ZERO_BLOCK__) return;
+  window.__V33_NO_AUTO_ENTRIES_ZERO_BLOCK__ = true;
+  window.AIP5_VERSION_MARKER='V33_NO_AUTO_ENTRIES_ZERO_BLOCK';
+  function $id(id){return document.getElementById(id);}
+  function safe(fn,fb){try{return fn();}catch(e){console.warn('[V33]',e);return fb;}}
+  function num(v){var n=Number(v||0);return isFinite(n)?n:0;}
+  function dkey(v){try{if(typeof dateValue==='function')return dateValue(v)||'';}catch(e){}return String(v||'');}
+  function canonicalDailyKey(){return (typeof logKey!=='undefined' && logKey) ? logKey : 'aip5-daily-log-v5-advanced-scope';}
+  function readKey(k){return safe(function(){var raw=localStorage.getItem(k);if(!raw)return[];var p=JSON.parse(raw);return Array.isArray(p)?p:(p&&typeof p==='object'?Object.values(p):[]);},[]);}
+  function siteOf(e){return String((e&& (e.assetId||e.asset||e.site||e.assetLabel)) || '').trim();}
+  function isPositive(e){e=e||{};var plan=num(e.plannedQty||e.plan||e.planned),qty=num(e.dailyQty||e.qty||e.doneQty),dp=num(e.dailyProgress||e.progress),ta=num(e.totalAfter||e.overallProgress);return (plan>0&&qty>0)||dp>0||ta>0;}
+  function semKey(e){e=e||{};return [dkey(e.date),siteOf(e),e.system,e.specificItem,e.mainActivity,e.subActivity,e.tag,e.linkFrom,e.linkTo,e.plannedQty,e.dailyQty,e.uom,e.permitNo,e.docRef,e.remarks].map(function(x){return String(x||'').trim().toLowerCase();}).join('|');}
+  function cleanList(list){var seen={},out=[];(Array.isArray(list)?list:[]).forEach(function(e){if(!e||typeof e!=='object')return;if(!isPositive(e))return;var k=semKey(e);if(!seen[k]){seen[k]=1;out.push(e);}});out.sort(function(a,b){return dkey(b.date).localeCompare(dkey(a.date))||String(b.id||'').localeCompare(String(a.id||''));});return out;}
+  function writeCanonical(list){list=cleanList(list);safe(function(){window.dailyEntries=list;},null);safe(function(){dailyEntries=list;},null);safe(function(){localStorage.setItem(canonicalDailyKey(),JSON.stringify(list));},null);safe(function(){localStorage.setItem('aip5-daily-log-v33-clean',JSON.stringify(list));},null);return list;}
+  function currentClean(){var list=[];safe(function(){if(Array.isArray(window.dailyEntries))list=list.concat(window.dailyEntries);},null);safe(function(){if(Array.isArray(dailyEntries))list=list.concat(dailyEntries);},null);list=list.concat(readKey(canonicalDailyKey()));list=list.concat(readKey('aip5-daily-log-v33-clean'));return writeCanonical(list);}
+  window.AIP5_cleanDailyEntriesNoAutoMerge = currentClean;
+
+  // Override recoverDaily if older patches call it. It now reads only canonical/current data, not all historical backup keys.
+  window.AIP5_recoverDailyEntries = currentClean;
+
+  // Guard manual form submission: no zero progress entries are allowed.
+  function formHasPositiveWork(){
+    var plan=num(($id('entryPlannedQty')||{}).value), qty=num(($id('entryDailyQty')||{}).value), dp=num(($id('entryProgress')||{}).value), total=num(($id('entryOverallProgress')||{}).value);
+    return (plan>0 && qty>0) || dp>0 || total>0;
+  }
+  function installSubmitGuard(){
+    var form=$id('dailyForm');
+    if(!form || form.__v33ZeroGuard) return;
+    form.__v33ZeroGuard=true;
+    form.addEventListener('submit',function(ev){
+      if(!formHasPositiveWork()){
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+        alert('Daily Entry was not saved. Please enter Planned Qty and Daily Qty greater than zero, or enter a positive progress percentage.');
+        return false;
+      }
+    },true);
+  }
+
+  // Patch save so saving only cleans the current/canonical daily log; it does not recover old duplicated keys on every login.
+  var previousSave = (typeof window.save==='function') ? window.save : (typeof save==='function' ? save : null);
+  window.save=function(){
+    currentClean();
+    var r=safe(function(){return previousSave?previousSave.apply(this,arguments):undefined;},undefined);
+    currentClean();
+    return r;
+  };
+  safe(function(){save=window.save;},null);
+
+  // Import cleanup: imported rows with zero actual progress are removed immediately.
+  var oldImport = (typeof window.importAllValidRows==='function') ? window.importAllValidRows : (typeof importAllValidRows==='function'?importAllValidRows:null);
+  if(oldImport){
+    window.importAllValidRows=function(){
+      var before=currentClean().length;
+      var r=safe(function(){return oldImport.apply(this,arguments);},undefined);
+      var after=currentClean();
+      if(after.length===before){
+        var lbl=$id('dailyImportStatus');
+        if(lbl) lbl.textContent='Import completed. Zero-progress rows were ignored; only positive progress entries are kept.';
+      }
+      return r;
+    };
+    safe(function(){importAllValidRows=window.importAllValidRows;},null);
+  }
+
+  // Patch rendering and reporting entry sources to use the clean canonical list only.
+  var oldFiltered = window.filteredDailyEntries;
+  window.filteredDailyEntries=function(prefix){
+    currentClean();
+    return oldFiltered ? oldFiltered.apply(this,arguments) : (window.dailyEntries||[]);
+  };
+
+  // Re-run a light clean after login/render without creating any new entries.
+  function refresh(){
+    currentClean();
+    installSubmitGuard();
+    safe(function(){if(typeof renderLog==='function')renderLog();},null);
+    safe(function(){if(typeof renderKpis==='function')renderKpis();},null);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){setTimeout(refresh,250);setTimeout(refresh,1500);});
+  else {setTimeout(refresh,250);setTimeout(refresh,1500);}
+})();
+</script>
+
+</body></html>');
       var blob = new Blob(['\ufeff'+htmlDoc], {type:'application/vnd.ms-excel;charset=utf-8'});
       var a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
@@ -4416,7 +4887,101 @@ function masterReportHtml(){
     ].join('')+'</style>';
   }
   function cardsHtml(items){return '<div class="cards">'+items.map(it=>'<div class="card"><span>'+sh(it.label)+'</span><b>'+sh(it.value)+'</b></div>').join('')+'</div>';}
-  function shell(title,subtitle,cards,charts,sections,excel){return '<!doctype html><html><head><meta charset="utf-8"><title>'+sh(title)+'</title>'+styles(excel)+'</head><body><button class="print-btn" onclick="window.print()">Print / Save PDF</button><div class="header"><h1>'+sh(title)+'</h1><p>'+sh(subtitle)+'</p><p>Generated: '+sh(new Date().toLocaleString())+'</p></div>'+cards+charts+sections+'</body></html>';}
+  function shell(title,subtitle,cards,charts,sections,excel){return '<!doctype html><html><head><meta charset="utf-8"><title>'+sh(title)+'</title>'+styles(excel)+'</head><body><button class="print-btn" onclick="window.print()">Print / Save PDF</button><div class="header"><h1>'+sh(title)+'</h1><p>'+sh(subtitle)+'</p><p>Generated: '+sh(new Date().toLocaleString())+'</p></div>'+cards+charts+sections+'
+<script>
+/* === V33_NO_AUTO_ENTRIES_ZERO_BLOCK ===
+   Focused patch on top of V32:
+   - Never create or re-merge daily entries on login from old backup/demo keys.
+   - Keep only actual user-entered positive-progress entries.
+   - Block manual/imported entries with zero progress before saving.
+   - Keep mirrored link rows as report display only; physical quantity is not doubled. */
+(function(){
+  'use strict';
+  if (window.__V33_NO_AUTO_ENTRIES_ZERO_BLOCK__) return;
+  window.__V33_NO_AUTO_ENTRIES_ZERO_BLOCK__ = true;
+  window.AIP5_VERSION_MARKER='V33_NO_AUTO_ENTRIES_ZERO_BLOCK';
+  function $id(id){return document.getElementById(id);}
+  function safe(fn,fb){try{return fn();}catch(e){console.warn('[V33]',e);return fb;}}
+  function num(v){var n=Number(v||0);return isFinite(n)?n:0;}
+  function dkey(v){try{if(typeof dateValue==='function')return dateValue(v)||'';}catch(e){}return String(v||'');}
+  function canonicalDailyKey(){return (typeof logKey!=='undefined' && logKey) ? logKey : 'aip5-daily-log-v5-advanced-scope';}
+  function readKey(k){return safe(function(){var raw=localStorage.getItem(k);if(!raw)return[];var p=JSON.parse(raw);return Array.isArray(p)?p:(p&&typeof p==='object'?Object.values(p):[]);},[]);}
+  function siteOf(e){return String((e&& (e.assetId||e.asset||e.site||e.assetLabel)) || '').trim();}
+  function isPositive(e){e=e||{};var plan=num(e.plannedQty||e.plan||e.planned),qty=num(e.dailyQty||e.qty||e.doneQty),dp=num(e.dailyProgress||e.progress),ta=num(e.totalAfter||e.overallProgress);return (plan>0&&qty>0)||dp>0||ta>0;}
+  function semKey(e){e=e||{};return [dkey(e.date),siteOf(e),e.system,e.specificItem,e.mainActivity,e.subActivity,e.tag,e.linkFrom,e.linkTo,e.plannedQty,e.dailyQty,e.uom,e.permitNo,e.docRef,e.remarks].map(function(x){return String(x||'').trim().toLowerCase();}).join('|');}
+  function cleanList(list){var seen={},out=[];(Array.isArray(list)?list:[]).forEach(function(e){if(!e||typeof e!=='object')return;if(!isPositive(e))return;var k=semKey(e);if(!seen[k]){seen[k]=1;out.push(e);}});out.sort(function(a,b){return dkey(b.date).localeCompare(dkey(a.date))||String(b.id||'').localeCompare(String(a.id||''));});return out;}
+  function writeCanonical(list){list=cleanList(list);safe(function(){window.dailyEntries=list;},null);safe(function(){dailyEntries=list;},null);safe(function(){localStorage.setItem(canonicalDailyKey(),JSON.stringify(list));},null);safe(function(){localStorage.setItem('aip5-daily-log-v33-clean',JSON.stringify(list));},null);return list;}
+  function currentClean(){var list=[];safe(function(){if(Array.isArray(window.dailyEntries))list=list.concat(window.dailyEntries);},null);safe(function(){if(Array.isArray(dailyEntries))list=list.concat(dailyEntries);},null);list=list.concat(readKey(canonicalDailyKey()));list=list.concat(readKey('aip5-daily-log-v33-clean'));return writeCanonical(list);}
+  window.AIP5_cleanDailyEntriesNoAutoMerge = currentClean;
+
+  // Override recoverDaily if older patches call it. It now reads only canonical/current data, not all historical backup keys.
+  window.AIP5_recoverDailyEntries = currentClean;
+
+  // Guard manual form submission: no zero progress entries are allowed.
+  function formHasPositiveWork(){
+    var plan=num(($id('entryPlannedQty')||{}).value), qty=num(($id('entryDailyQty')||{}).value), dp=num(($id('entryProgress')||{}).value), total=num(($id('entryOverallProgress')||{}).value);
+    return (plan>0 && qty>0) || dp>0 || total>0;
+  }
+  function installSubmitGuard(){
+    var form=$id('dailyForm');
+    if(!form || form.__v33ZeroGuard) return;
+    form.__v33ZeroGuard=true;
+    form.addEventListener('submit',function(ev){
+      if(!formHasPositiveWork()){
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+        alert('Daily Entry was not saved. Please enter Planned Qty and Daily Qty greater than zero, or enter a positive progress percentage.');
+        return false;
+      }
+    },true);
+  }
+
+  // Patch save so saving only cleans the current/canonical daily log; it does not recover old duplicated keys on every login.
+  var previousSave = (typeof window.save==='function') ? window.save : (typeof save==='function' ? save : null);
+  window.save=function(){
+    currentClean();
+    var r=safe(function(){return previousSave?previousSave.apply(this,arguments):undefined;},undefined);
+    currentClean();
+    return r;
+  };
+  safe(function(){save=window.save;},null);
+
+  // Import cleanup: imported rows with zero actual progress are removed immediately.
+  var oldImport = (typeof window.importAllValidRows==='function') ? window.importAllValidRows : (typeof importAllValidRows==='function'?importAllValidRows:null);
+  if(oldImport){
+    window.importAllValidRows=function(){
+      var before=currentClean().length;
+      var r=safe(function(){return oldImport.apply(this,arguments);},undefined);
+      var after=currentClean();
+      if(after.length===before){
+        var lbl=$id('dailyImportStatus');
+        if(lbl) lbl.textContent='Import completed. Zero-progress rows were ignored; only positive progress entries are kept.';
+      }
+      return r;
+    };
+    safe(function(){importAllValidRows=window.importAllValidRows;},null);
+  }
+
+  // Patch rendering and reporting entry sources to use the clean canonical list only.
+  var oldFiltered = window.filteredDailyEntries;
+  window.filteredDailyEntries=function(prefix){
+    currentClean();
+    return oldFiltered ? oldFiltered.apply(this,arguments) : (window.dailyEntries||[]);
+  };
+
+  // Re-run a light clean after login/render without creating any new entries.
+  function refresh(){
+    currentClean();
+    installSubmitGuard();
+    safe(function(){if(typeof renderLog==='function')renderLog();},null);
+    safe(function(){if(typeof renderKpis==='function')renderKpis();},null);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){setTimeout(refresh,250);setTimeout(refresh,1500);});
+  else {setTimeout(refresh,250);setTimeout(refresh,1500);}
+})();
+</script>
+
+</body></html>';}
   function dailyRows(entries){return (entries||[]).map(e=>{const doc=[e.docType,e.docRef].filter(Boolean).join(' ');return '<tr><td>'+sh(dshow(e.date))+'</td><td>'+sh(entrySite(e))+'</td><td>'+sh(e.system)+'</td><td>'+sh(e.specificItem||'')+'</td><td>'+sh(e.mainActivity||'')+'</td><td>'+sh(e.subActivity||'')+'</td><td>'+sh(e.tag||'')+'</td><td>'+sh(linkTxt(e))+'</td><td>'+sh(e.mirrorSide||'Original')+'</td><td>'+sh(e.plannedQty||0)+' '+sh(e.uom||'')+'</td><td>'+sh(e.dailyQty||0)+' '+sh(e.uom||'')+'</td><td>'+sh(e.previousProgress||0)+'%</td><td>'+sh(e.dailyProgress||0)+'%</td><td>'+sh(e.totalAfter||0)+'%</td><td>'+sh(e.status||'')+'</td><td>'+sh(doc)+'</td><td>'+sh(e.contractor||'')+'</td></tr>';}).join('') || '<tr><td colspan="17">No matching daily entries.</td></tr>';}
   function detailRows(groups){return (groups||[]).map(g=>{const e=g.latest||{};return '<tr><td>'+sh(entrySite(e))+'</td><td>'+sh(e.system||'')+'</td><td>'+sh(e.specificItem||'')+'</td><td>'+sh(e.mainActivity||'')+'</td><td>'+sh(e.subActivity||'')+'</td><td>'+sh(e.tag||'')+'</td><td>'+sh(linkTxt(e))+'</td><td>'+sh(e.mirrorSide||'Original')+'</td><td>'+sh(g.plan)+' '+sh(e.uom||'')+'</td><td>'+sh(g.done)+' '+sh(e.uom||'')+'</td><td>'+sh(g.balanceQty)+' '+sh(e.uom||'')+'</td><td>'+sh(g.progress)+'%</td><td>'+sh(g.balancePct)+'%</td><td>'+sh(g.status)+'</td><td>'+sh(dshow(e.date))+'</td><td>'+sh(e.remarks||'')+'</td></tr>';}).join('') || '<tr><td colspan="16">No detailed activity progress found.</td></tr>';}
   function comboRows(combos){return (combos||[]).map(c=>'<tr><td>'+sh(c.assetLabel)+'</td><td>'+sh(c.system)+'</td><td>'+sh(c.scope)+'</td><td>'+sh(c.progress)+'%</td><td>'+sh(c.status)+'</td><td>'+sh(c.entryCount)+'</td><td>'+sh(c.groups.length)+'</td><td>'+sh(dshow(c.latest&&c.latest.date))+'</td><td>'+sh(c.latest&&c.latest.remarks||'')+'</td></tr>').join('') || '<tr><td colspan="9">No planned site/system rows match the filters.</td></tr>';}
@@ -4563,7 +5128,101 @@ function masterReportHtml(){
   function detailRowsV21(){const combos=plannedCombosV21(); const rows=[]; combos.forEach(c=>{(c.units||[]).forEach(u=>rows.push({site:c.assetLabel,system:c.system,specificItem:u.specificItem,mainActivity:u.mainActivity,subActivity:u.subActivity,tag:u.tag||'',progress:n(u.progress),status:statusForProgress(u.progress),plan:n(u.plan),done:n(u.done),balanceQty:n(u.balanceQty),latest:u.latest||{},expected:!u.actual}));}); return rows;}
   function barHtmlV21(title,rows,valueKey='progress',suffix='%'){rows=(rows||[]).slice(0,12); if(!rows.length)return '<div class="chart-box"><h3>'+h(title)+'</h3><p class="muted">No data available.</p></div>'; const max=Math.max(1,...rows.map(r=>n(valueKey==='balance'?r.balance:(valueKey==='count'?r.count:r[valueKey])))); return '<div class="chart-box"><h3>'+h(title)+'</h3><table class="chart-table"><thead><tr><th>Item</th><th>Visual</th><th>Value</th></tr></thead><tbody>'+rows.map(r=>{const raw=valueKey==='balance'?n(r.balance):(valueKey==='count'?n(r.count):pct(r[valueKey])); const w=valueKey==='progress'?pct(raw):pct(raw/max*100); const shown=valueKey==='progress'?raw+suffix:raw; return '<tr><td class="chart-label">'+h(r.label)+'</td><td><div class="chart-track"><span style="width:'+w+'%"></span></div></td><td class="chart-value">'+h(shown)+'</td></tr>';}).join('')+'</tbody></table></div>';}
   function reportStylesV21(){return '<style>@page{size:A4 landscape;margin:8mm}*{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;color:#17211f;margin:14px;font-size:10.5px;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact}h1{font-size:22px;margin:0}h2{font-size:15px;margin:14px 0 7px;border-bottom:2px solid #d8e2de;padding-bottom:4px}h3{font-size:13px;margin:0 0 8px}.print-btn{float:right;background:#1f7a5c;color:white;border:0;border-radius:6px;padding:8px 12px;font-weight:bold}.header{background:#0f1f1c;color:white;border-radius:10px;padding:14px;margin-bottom:12px}.header p{color:#d7e8e2;margin:5px 0 0}.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:10px 0}.card{border:1px solid #bfcac5;border-radius:8px;padding:8px;background:#f7faf8}.card b{display:block;font-size:17px;color:#1f7a5c}.card span{font-size:10px;color:#60706b;font-weight:bold}.charts{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:10px 0}.chart-box{border:1px solid #bfcac5;border-radius:8px;background:#fbfdfc;padding:8px;page-break-inside:avoid}.chart-table,.report-table{width:100%;border-collapse:collapse}.chart-table th,.chart-table td,.report-table th,.report-table td{border:1px solid #cfd9d5;padding:4px;vertical-align:top}.chart-table th,.report-table th{background:#e8f1ed;font-weight:bold}.chart-track{height:10px;background:#e5ece9;border-radius:99px;overflow:hidden}.chart-track span{display:block;height:100%;background:#1f7a5c}.chart-label{width:38%;font-weight:bold}.chart-value{text-align:right;font-weight:bold}.note{border:1px solid #d8e2de;background:#f7faf8;border-radius:8px;padding:8px;margin:10px 0}.muted{color:#60706b}@media print{.print-btn{display:none}body{margin:0;font-size:9.5px}.header,.cards,.chart-box{page-break-inside:avoid}thead{display:table-header-group}tr{page-break-inside:avoid}.report-table th,.report-table td{padding:3px}}</style>';}
-  function shellV21(title,subtitle,cards,charts,sections,excel){return '<!doctype html><html><head><meta charset="utf-8"><title>'+h(title)+'</title>'+reportStylesV21()+'</head><body><button class="print-btn" onclick="window.print()">Print / Save PDF</button><div class="header"><h1>'+h(title)+'</h1><p>'+h(subtitle)+'</p><p>Generated: '+h(new Date().toLocaleString())+'</p></div>'+cards+charts+sections+'</body></html>';}
+  function shellV21(title,subtitle,cards,charts,sections,excel){return '<!doctype html><html><head><meta charset="utf-8"><title>'+h(title)+'</title>'+reportStylesV21()+'</head><body><button class="print-btn" onclick="window.print()">Print / Save PDF</button><div class="header"><h1>'+h(title)+'</h1><p>'+h(subtitle)+'</p><p>Generated: '+h(new Date().toLocaleString())+'</p></div>'+cards+charts+sections+'
+<script>
+/* === V33_NO_AUTO_ENTRIES_ZERO_BLOCK ===
+   Focused patch on top of V32:
+   - Never create or re-merge daily entries on login from old backup/demo keys.
+   - Keep only actual user-entered positive-progress entries.
+   - Block manual/imported entries with zero progress before saving.
+   - Keep mirrored link rows as report display only; physical quantity is not doubled. */
+(function(){
+  'use strict';
+  if (window.__V33_NO_AUTO_ENTRIES_ZERO_BLOCK__) return;
+  window.__V33_NO_AUTO_ENTRIES_ZERO_BLOCK__ = true;
+  window.AIP5_VERSION_MARKER='V33_NO_AUTO_ENTRIES_ZERO_BLOCK';
+  function $id(id){return document.getElementById(id);}
+  function safe(fn,fb){try{return fn();}catch(e){console.warn('[V33]',e);return fb;}}
+  function num(v){var n=Number(v||0);return isFinite(n)?n:0;}
+  function dkey(v){try{if(typeof dateValue==='function')return dateValue(v)||'';}catch(e){}return String(v||'');}
+  function canonicalDailyKey(){return (typeof logKey!=='undefined' && logKey) ? logKey : 'aip5-daily-log-v5-advanced-scope';}
+  function readKey(k){return safe(function(){var raw=localStorage.getItem(k);if(!raw)return[];var p=JSON.parse(raw);return Array.isArray(p)?p:(p&&typeof p==='object'?Object.values(p):[]);},[]);}
+  function siteOf(e){return String((e&& (e.assetId||e.asset||e.site||e.assetLabel)) || '').trim();}
+  function isPositive(e){e=e||{};var plan=num(e.plannedQty||e.plan||e.planned),qty=num(e.dailyQty||e.qty||e.doneQty),dp=num(e.dailyProgress||e.progress),ta=num(e.totalAfter||e.overallProgress);return (plan>0&&qty>0)||dp>0||ta>0;}
+  function semKey(e){e=e||{};return [dkey(e.date),siteOf(e),e.system,e.specificItem,e.mainActivity,e.subActivity,e.tag,e.linkFrom,e.linkTo,e.plannedQty,e.dailyQty,e.uom,e.permitNo,e.docRef,e.remarks].map(function(x){return String(x||'').trim().toLowerCase();}).join('|');}
+  function cleanList(list){var seen={},out=[];(Array.isArray(list)?list:[]).forEach(function(e){if(!e||typeof e!=='object')return;if(!isPositive(e))return;var k=semKey(e);if(!seen[k]){seen[k]=1;out.push(e);}});out.sort(function(a,b){return dkey(b.date).localeCompare(dkey(a.date))||String(b.id||'').localeCompare(String(a.id||''));});return out;}
+  function writeCanonical(list){list=cleanList(list);safe(function(){window.dailyEntries=list;},null);safe(function(){dailyEntries=list;},null);safe(function(){localStorage.setItem(canonicalDailyKey(),JSON.stringify(list));},null);safe(function(){localStorage.setItem('aip5-daily-log-v33-clean',JSON.stringify(list));},null);return list;}
+  function currentClean(){var list=[];safe(function(){if(Array.isArray(window.dailyEntries))list=list.concat(window.dailyEntries);},null);safe(function(){if(Array.isArray(dailyEntries))list=list.concat(dailyEntries);},null);list=list.concat(readKey(canonicalDailyKey()));list=list.concat(readKey('aip5-daily-log-v33-clean'));return writeCanonical(list);}
+  window.AIP5_cleanDailyEntriesNoAutoMerge = currentClean;
+
+  // Override recoverDaily if older patches call it. It now reads only canonical/current data, not all historical backup keys.
+  window.AIP5_recoverDailyEntries = currentClean;
+
+  // Guard manual form submission: no zero progress entries are allowed.
+  function formHasPositiveWork(){
+    var plan=num(($id('entryPlannedQty')||{}).value), qty=num(($id('entryDailyQty')||{}).value), dp=num(($id('entryProgress')||{}).value), total=num(($id('entryOverallProgress')||{}).value);
+    return (plan>0 && qty>0) || dp>0 || total>0;
+  }
+  function installSubmitGuard(){
+    var form=$id('dailyForm');
+    if(!form || form.__v33ZeroGuard) return;
+    form.__v33ZeroGuard=true;
+    form.addEventListener('submit',function(ev){
+      if(!formHasPositiveWork()){
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+        alert('Daily Entry was not saved. Please enter Planned Qty and Daily Qty greater than zero, or enter a positive progress percentage.');
+        return false;
+      }
+    },true);
+  }
+
+  // Patch save so saving only cleans the current/canonical daily log; it does not recover old duplicated keys on every login.
+  var previousSave = (typeof window.save==='function') ? window.save : (typeof save==='function' ? save : null);
+  window.save=function(){
+    currentClean();
+    var r=safe(function(){return previousSave?previousSave.apply(this,arguments):undefined;},undefined);
+    currentClean();
+    return r;
+  };
+  safe(function(){save=window.save;},null);
+
+  // Import cleanup: imported rows with zero actual progress are removed immediately.
+  var oldImport = (typeof window.importAllValidRows==='function') ? window.importAllValidRows : (typeof importAllValidRows==='function'?importAllValidRows:null);
+  if(oldImport){
+    window.importAllValidRows=function(){
+      var before=currentClean().length;
+      var r=safe(function(){return oldImport.apply(this,arguments);},undefined);
+      var after=currentClean();
+      if(after.length===before){
+        var lbl=$id('dailyImportStatus');
+        if(lbl) lbl.textContent='Import completed. Zero-progress rows were ignored; only positive progress entries are kept.';
+      }
+      return r;
+    };
+    safe(function(){importAllValidRows=window.importAllValidRows;},null);
+  }
+
+  // Patch rendering and reporting entry sources to use the clean canonical list only.
+  var oldFiltered = window.filteredDailyEntries;
+  window.filteredDailyEntries=function(prefix){
+    currentClean();
+    return oldFiltered ? oldFiltered.apply(this,arguments) : (window.dailyEntries||[]);
+  };
+
+  // Re-run a light clean after login/render without creating any new entries.
+  function refresh(){
+    currentClean();
+    installSubmitGuard();
+    safe(function(){if(typeof renderLog==='function')renderLog();},null);
+    safe(function(){if(typeof renderKpis==='function')renderKpis();},null);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){setTimeout(refresh,250);setTimeout(refresh,1500);});
+  else {setTimeout(refresh,250);setTimeout(refresh,1500);}
+})();
+</script>
+
+</body></html>';}
   function cardsV21(items){return '<div class="cards">'+items.map(it=>'<div class="card"><span>'+h(it.label)+'</span><b>'+h(it.value)+'</b></div>').join('')+'</div>';}
   function dailyRowsV21(entries){return (entries||[]).map(e=>'<tr><td>'+h(dshow(e.date))+'</td><td>'+h(entrySiteLabel(e))+'</td><td>'+h(e.system)+'</td><td>'+h(e.specificItem)+'</td><td>'+h(e.mainActivity)+'</td><td>'+h(e.subActivity)+'</td><td>'+h(e.tag)+'</td><td>'+h(linkText(e))+'</td><td>'+h(e.mirrorSide||'Original')+'</td><td>'+h(e.plannedQty)+'</td><td>'+h(e.dailyQty)+'</td><td>'+h(e.dailyProgress||'0')+'%</td><td>'+h(e.totalAfter||'0')+'%</td><td>'+h(e.docRef||'')+'</td><td>'+h(e.contractor||'')+'</td><td>'+h(e.remarks||'')+'</td></tr>').join('')||'<tr><td colspan="16">No daily entries found.</td></tr>';}
   function docsHtmlV21(){const docs=window.documentEntries||[]; if(!docs.length)return ''; return '<h2>Document register</h2><table class="report-table"><thead><tr><th>Date</th><th>Type</th><th>Reference</th><th>Title</th><th>Signature Date</th><th>Status</th><th>Related Site</th><th>System</th><th>Remarks</th></tr></thead><tbody>'+docs.map(d=>'<tr><td>'+h(dshow(d.date||d.receivedDate||''))+'</td><td>'+h(d.type||d.docType||'')+'</td><td>'+h(d.ref||d.docRef||d.number||'')+'</td><td>'+h(d.title||'')+'</td><td>'+h(dshow(d.signatureDate||d.signedDate||''))+'</td><td>'+h(d.status||'')+'</td><td>'+h(d.assetLabel||d.assetId||d.site||'')+'</td><td>'+h(d.system||'')+'</td><td>'+h(d.remarks||'')+'</td></tr>').join('')+'</tbody></table>';}
@@ -4699,7 +5358,101 @@ function masterReportHtml(){
   function cards(items){return '<div class="cards">'+items.map(function(c){return '<div class="card"><b>'+h(c.value)+'</b><span>'+h(c.label)+'</span></div>';}).join('')+'</div>';}
   function chart(title,rows,key,suffix){key=key||'progress'; suffix=suffix==null?'%':suffix; rows=(rows||[]).slice(0,12); if(!rows.length)return '<div class="chart-box"><h3>'+h(title)+'</h3><p class="muted">No data available.</p></div>'; var max=Math.max(1,...rows.map(function(r){return n(key==='balance'?r.balance:(key==='count'?r.count:r[key]));})); return '<div class="chart-box"><h3>'+h(title)+'</h3><table class="chart-table"><thead><tr><th>Item</th><th>Visual</th><th>Value</th></tr></thead><tbody>'+rows.map(function(r){var raw=key==='balance'?n(r.balance):(key==='count'?n(r.count):pct(r[key])); var w=key==='progress'?pct(raw):pct(raw/max*100); var shown=key==='progress'?raw+suffix:raw; return '<tr><td class="chart-label">'+h(r.label)+'</td><td><div class="chart-track"><span style="width:'+w+'%"></span></div></td><td class="chart-value">'+h(shown)+'</td></tr>';}).join('')+'</tbody></table></div>';}
   function styles(){return '<style>@page{size:A4 landscape;margin:8mm}*{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;color:#17211f;margin:14px;font-size:10.5px;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact}h1{font-size:22px;margin:0}h2{font-size:15px;margin:14px 0 7px;border-bottom:2px solid #d8e2de;padding-bottom:4px}h3{font-size:13px;margin:0 0 8px}.print-btn{float:right;background:#1f7a5c;color:white;border:0;border-radius:6px;padding:8px 12px;font-weight:bold}.header{background:#0f1f1c;color:white;border-radius:10px;padding:14px;margin-bottom:12px}.header p{color:#d7e8e2;margin:5px 0 0}.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:10px 0}.card{border:1px solid #bfcac5;border-radius:8px;padding:8px;background:#f7faf8}.card b{display:block;font-size:17px;color:#1f7a5c}.card span{font-size:10px;color:#60706b;font-weight:bold}.charts{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:10px 0}.chart-box{border:1px solid #bfcac5;border-radius:8px;background:#fbfdfc;padding:8px;page-break-inside:avoid}.chart-table,.report-table{width:100%;border-collapse:collapse}.chart-table th,.chart-table td,.report-table th,.report-table td{border:1px solid #cfd9d5;padding:4px;vertical-align:top}.chart-table th,.report-table th{background:#e8f1ed;font-weight:bold}.chart-track{height:10px;background:#e5ece9;border-radius:99px;overflow:hidden}.chart-track span{display:block;height:100%;background:#1f7a5c}.chart-label{width:38%;font-weight:bold}.chart-value{text-align:right;font-weight:bold}.note{border:1px solid #d8e2de;background:#f7faf8;border-radius:8px;padding:8px;margin:10px 0}.muted{color:#60706b}@media print{.print-btn{display:none}body{margin:0;font-size:9.6px}.header,.cards,.chart-box{page-break-inside:avoid}thead{display:table-header-group}tr{page-break-inside:avoid}.report-table th,.report-table td{padding:3px}}</style>';}
-  function shell(title,subtitle,cardsHtml,chartsHtml,sections){return '<!doctype html><html><head><meta charset="utf-8"><title>'+h(title)+'</title>'+styles()+'</head><body><button class="print-btn" onclick="window.print()">Print / Save PDF</button><div class="header"><h1>'+h(title)+'</h1><p>'+h(subtitle)+'</p><p>Generated: '+h(new Date().toLocaleString())+'</p></div>'+cardsHtml+chartsHtml+sections+'</body></html>';}
+  function shell(title,subtitle,cardsHtml,chartsHtml,sections){return '<!doctype html><html><head><meta charset="utf-8"><title>'+h(title)+'</title>'+styles()+'</head><body><button class="print-btn" onclick="window.print()">Print / Save PDF</button><div class="header"><h1>'+h(title)+'</h1><p>'+h(subtitle)+'</p><p>Generated: '+h(new Date().toLocaleString())+'</p></div>'+cardsHtml+chartsHtml+sections+'
+<script>
+/* === V33_NO_AUTO_ENTRIES_ZERO_BLOCK ===
+   Focused patch on top of V32:
+   - Never create or re-merge daily entries on login from old backup/demo keys.
+   - Keep only actual user-entered positive-progress entries.
+   - Block manual/imported entries with zero progress before saving.
+   - Keep mirrored link rows as report display only; physical quantity is not doubled. */
+(function(){
+  'use strict';
+  if (window.__V33_NO_AUTO_ENTRIES_ZERO_BLOCK__) return;
+  window.__V33_NO_AUTO_ENTRIES_ZERO_BLOCK__ = true;
+  window.AIP5_VERSION_MARKER='V33_NO_AUTO_ENTRIES_ZERO_BLOCK';
+  function $id(id){return document.getElementById(id);}
+  function safe(fn,fb){try{return fn();}catch(e){console.warn('[V33]',e);return fb;}}
+  function num(v){var n=Number(v||0);return isFinite(n)?n:0;}
+  function dkey(v){try{if(typeof dateValue==='function')return dateValue(v)||'';}catch(e){}return String(v||'');}
+  function canonicalDailyKey(){return (typeof logKey!=='undefined' && logKey) ? logKey : 'aip5-daily-log-v5-advanced-scope';}
+  function readKey(k){return safe(function(){var raw=localStorage.getItem(k);if(!raw)return[];var p=JSON.parse(raw);return Array.isArray(p)?p:(p&&typeof p==='object'?Object.values(p):[]);},[]);}
+  function siteOf(e){return String((e&& (e.assetId||e.asset||e.site||e.assetLabel)) || '').trim();}
+  function isPositive(e){e=e||{};var plan=num(e.plannedQty||e.plan||e.planned),qty=num(e.dailyQty||e.qty||e.doneQty),dp=num(e.dailyProgress||e.progress),ta=num(e.totalAfter||e.overallProgress);return (plan>0&&qty>0)||dp>0||ta>0;}
+  function semKey(e){e=e||{};return [dkey(e.date),siteOf(e),e.system,e.specificItem,e.mainActivity,e.subActivity,e.tag,e.linkFrom,e.linkTo,e.plannedQty,e.dailyQty,e.uom,e.permitNo,e.docRef,e.remarks].map(function(x){return String(x||'').trim().toLowerCase();}).join('|');}
+  function cleanList(list){var seen={},out=[];(Array.isArray(list)?list:[]).forEach(function(e){if(!e||typeof e!=='object')return;if(!isPositive(e))return;var k=semKey(e);if(!seen[k]){seen[k]=1;out.push(e);}});out.sort(function(a,b){return dkey(b.date).localeCompare(dkey(a.date))||String(b.id||'').localeCompare(String(a.id||''));});return out;}
+  function writeCanonical(list){list=cleanList(list);safe(function(){window.dailyEntries=list;},null);safe(function(){dailyEntries=list;},null);safe(function(){localStorage.setItem(canonicalDailyKey(),JSON.stringify(list));},null);safe(function(){localStorage.setItem('aip5-daily-log-v33-clean',JSON.stringify(list));},null);return list;}
+  function currentClean(){var list=[];safe(function(){if(Array.isArray(window.dailyEntries))list=list.concat(window.dailyEntries);},null);safe(function(){if(Array.isArray(dailyEntries))list=list.concat(dailyEntries);},null);list=list.concat(readKey(canonicalDailyKey()));list=list.concat(readKey('aip5-daily-log-v33-clean'));return writeCanonical(list);}
+  window.AIP5_cleanDailyEntriesNoAutoMerge = currentClean;
+
+  // Override recoverDaily if older patches call it. It now reads only canonical/current data, not all historical backup keys.
+  window.AIP5_recoverDailyEntries = currentClean;
+
+  // Guard manual form submission: no zero progress entries are allowed.
+  function formHasPositiveWork(){
+    var plan=num(($id('entryPlannedQty')||{}).value), qty=num(($id('entryDailyQty')||{}).value), dp=num(($id('entryProgress')||{}).value), total=num(($id('entryOverallProgress')||{}).value);
+    return (plan>0 && qty>0) || dp>0 || total>0;
+  }
+  function installSubmitGuard(){
+    var form=$id('dailyForm');
+    if(!form || form.__v33ZeroGuard) return;
+    form.__v33ZeroGuard=true;
+    form.addEventListener('submit',function(ev){
+      if(!formHasPositiveWork()){
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+        alert('Daily Entry was not saved. Please enter Planned Qty and Daily Qty greater than zero, or enter a positive progress percentage.');
+        return false;
+      }
+    },true);
+  }
+
+  // Patch save so saving only cleans the current/canonical daily log; it does not recover old duplicated keys on every login.
+  var previousSave = (typeof window.save==='function') ? window.save : (typeof save==='function' ? save : null);
+  window.save=function(){
+    currentClean();
+    var r=safe(function(){return previousSave?previousSave.apply(this,arguments):undefined;},undefined);
+    currentClean();
+    return r;
+  };
+  safe(function(){save=window.save;},null);
+
+  // Import cleanup: imported rows with zero actual progress are removed immediately.
+  var oldImport = (typeof window.importAllValidRows==='function') ? window.importAllValidRows : (typeof importAllValidRows==='function'?importAllValidRows:null);
+  if(oldImport){
+    window.importAllValidRows=function(){
+      var before=currentClean().length;
+      var r=safe(function(){return oldImport.apply(this,arguments);},undefined);
+      var after=currentClean();
+      if(after.length===before){
+        var lbl=$id('dailyImportStatus');
+        if(lbl) lbl.textContent='Import completed. Zero-progress rows were ignored; only positive progress entries are kept.';
+      }
+      return r;
+    };
+    safe(function(){importAllValidRows=window.importAllValidRows;},null);
+  }
+
+  // Patch rendering and reporting entry sources to use the clean canonical list only.
+  var oldFiltered = window.filteredDailyEntries;
+  window.filteredDailyEntries=function(prefix){
+    currentClean();
+    return oldFiltered ? oldFiltered.apply(this,arguments) : (window.dailyEntries||[]);
+  };
+
+  // Re-run a light clean after login/render without creating any new entries.
+  function refresh(){
+    currentClean();
+    installSubmitGuard();
+    safe(function(){if(typeof renderLog==='function')renderLog();},null);
+    safe(function(){if(typeof renderKpis==='function')renderKpis();},null);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){setTimeout(refresh,250);setTimeout(refresh,1500);});
+  else {setTimeout(refresh,250);setTimeout(refresh,1500);}
+})();
+</script>
+
+</body></html>';}
   function dailyRows(entries){return (entries||[]).map(function(e){return '<tr><td>'+h(dshow(e.date))+'</td><td>'+h(entrySiteLabel(e))+'</td><td>'+h(e.system)+'</td><td>'+h(e.specificItem)+'</td><td>'+h(e.mainActivity)+'</td><td>'+h(e.subActivity)+'</td><td>'+h(e.tag)+'</td><td>'+h(linkText(e))+'</td><td>'+h(e.mirrorSide||'Original')+'</td><td>'+h(e.plannedQty)+'</td><td>'+h(e.dailyQty)+'</td><td>'+h(e.dailyProgress||'0')+'%</td><td>'+h(e.totalAfter||'0')+'%</td><td>'+h(e.docRef||'')+'</td><td>'+h(e.contractor||'')+'</td><td>'+h(e.remarks||'')+'</td></tr>';}).join('')||'<tr><td colspan="16">No daily entries found.</td></tr>';}
   function comboRows(combos){return (combos||[]).map(function(c){return '<tr><td>'+h(c.assetLabel)+'</td><td>'+h(c.system)+'</td><td>'+h(c.scope)+'</td><td>'+h(c.progress)+'%</td><td>'+h(c.status)+'</td><td>'+h(c.subsystemCount)+'</td><td>'+h(c.activityCount)+'</td><td>'+h(c.expectedCount)+'</td><td>'+h(c.actualCount)+'</td><td>'+h(c.entryCount)+'</td><td>'+h(dshow(c.latest&&c.latest.date))+'</td><td>'+h(c.latest&&c.latest.remarks||'')+'</td></tr>';}).join('')||'<tr><td colspan="12">No planned site/system rows match the filters.</td></tr>';}
   function detailRowsHtml(rows){return (rows||[]).map(function(r){return '<tr><td>'+h(r.site)+'</td><td>'+h(r.system)+'</td><td>'+h(r.specificItem)+'</td><td>'+h(r.mainActivity)+'</td><td>'+h(r.subActivity)+'</td><td>'+h(r.tag)+'</td><td>'+h(r.progress)+'%</td><td>'+h(r.status)+'</td><td>'+h(r.plan||'')+'</td><td>'+h(r.done||'')+'</td><td>'+h(r.balanceQty||'')+'</td><td>'+h(r.expected?'Planned / not started':'Actual / calculated')+'</td><td>'+h(dshow(r.latest&&r.latest.date))+'</td><td>'+h(r.latest&&r.latest.remarks||'')+'</td></tr>';}).join('')||'<tr><td colspan="14">No detailed rows found.</td></tr>';}
@@ -5257,7 +6010,101 @@ function masterReportHtml(){
   }
   function cardBlock(items){ return '<div class="cards">'+items.map(function(x){ return '<div class="card"><span>'+h(x.label)+'</span><b>'+h(x.value)+'</b></div>'; }).join('')+'</div>'; }
   function shell(title, subtitle, cards, charts, sections, excel){
-    return '<!doctype html><html><head><meta charset="utf-8"><title>'+h(title)+'</title>'+reportCss()+'</head><body><div class="report-page"><div class="header"><h1>'+h(title)+'</h1><p>'+h(subtitle)+'</p><p>Generated: '+h(new Date().toLocaleString())+'</p></div>'+cards+charts+sections+'</div></body></html>';
+    return '<!doctype html><html><head><meta charset="utf-8"><title>'+h(title)+'</title>'+reportCss()+'</head><body><div class="report-page"><div class="header"><h1>'+h(title)+'</h1><p>'+h(subtitle)+'</p><p>Generated: '+h(new Date().toLocaleString())+'</p></div>'+cards+charts+sections+'</div>
+<script>
+/* === V33_NO_AUTO_ENTRIES_ZERO_BLOCK ===
+   Focused patch on top of V32:
+   - Never create or re-merge daily entries on login from old backup/demo keys.
+   - Keep only actual user-entered positive-progress entries.
+   - Block manual/imported entries with zero progress before saving.
+   - Keep mirrored link rows as report display only; physical quantity is not doubled. */
+(function(){
+  'use strict';
+  if (window.__V33_NO_AUTO_ENTRIES_ZERO_BLOCK__) return;
+  window.__V33_NO_AUTO_ENTRIES_ZERO_BLOCK__ = true;
+  window.AIP5_VERSION_MARKER='V33_NO_AUTO_ENTRIES_ZERO_BLOCK';
+  function $id(id){return document.getElementById(id);}
+  function safe(fn,fb){try{return fn();}catch(e){console.warn('[V33]',e);return fb;}}
+  function num(v){var n=Number(v||0);return isFinite(n)?n:0;}
+  function dkey(v){try{if(typeof dateValue==='function')return dateValue(v)||'';}catch(e){}return String(v||'');}
+  function canonicalDailyKey(){return (typeof logKey!=='undefined' && logKey) ? logKey : 'aip5-daily-log-v5-advanced-scope';}
+  function readKey(k){return safe(function(){var raw=localStorage.getItem(k);if(!raw)return[];var p=JSON.parse(raw);return Array.isArray(p)?p:(p&&typeof p==='object'?Object.values(p):[]);},[]);}
+  function siteOf(e){return String((e&& (e.assetId||e.asset||e.site||e.assetLabel)) || '').trim();}
+  function isPositive(e){e=e||{};var plan=num(e.plannedQty||e.plan||e.planned),qty=num(e.dailyQty||e.qty||e.doneQty),dp=num(e.dailyProgress||e.progress),ta=num(e.totalAfter||e.overallProgress);return (plan>0&&qty>0)||dp>0||ta>0;}
+  function semKey(e){e=e||{};return [dkey(e.date),siteOf(e),e.system,e.specificItem,e.mainActivity,e.subActivity,e.tag,e.linkFrom,e.linkTo,e.plannedQty,e.dailyQty,e.uom,e.permitNo,e.docRef,e.remarks].map(function(x){return String(x||'').trim().toLowerCase();}).join('|');}
+  function cleanList(list){var seen={},out=[];(Array.isArray(list)?list:[]).forEach(function(e){if(!e||typeof e!=='object')return;if(!isPositive(e))return;var k=semKey(e);if(!seen[k]){seen[k]=1;out.push(e);}});out.sort(function(a,b){return dkey(b.date).localeCompare(dkey(a.date))||String(b.id||'').localeCompare(String(a.id||''));});return out;}
+  function writeCanonical(list){list=cleanList(list);safe(function(){window.dailyEntries=list;},null);safe(function(){dailyEntries=list;},null);safe(function(){localStorage.setItem(canonicalDailyKey(),JSON.stringify(list));},null);safe(function(){localStorage.setItem('aip5-daily-log-v33-clean',JSON.stringify(list));},null);return list;}
+  function currentClean(){var list=[];safe(function(){if(Array.isArray(window.dailyEntries))list=list.concat(window.dailyEntries);},null);safe(function(){if(Array.isArray(dailyEntries))list=list.concat(dailyEntries);},null);list=list.concat(readKey(canonicalDailyKey()));list=list.concat(readKey('aip5-daily-log-v33-clean'));return writeCanonical(list);}
+  window.AIP5_cleanDailyEntriesNoAutoMerge = currentClean;
+
+  // Override recoverDaily if older patches call it. It now reads only canonical/current data, not all historical backup keys.
+  window.AIP5_recoverDailyEntries = currentClean;
+
+  // Guard manual form submission: no zero progress entries are allowed.
+  function formHasPositiveWork(){
+    var plan=num(($id('entryPlannedQty')||{}).value), qty=num(($id('entryDailyQty')||{}).value), dp=num(($id('entryProgress')||{}).value), total=num(($id('entryOverallProgress')||{}).value);
+    return (plan>0 && qty>0) || dp>0 || total>0;
+  }
+  function installSubmitGuard(){
+    var form=$id('dailyForm');
+    if(!form || form.__v33ZeroGuard) return;
+    form.__v33ZeroGuard=true;
+    form.addEventListener('submit',function(ev){
+      if(!formHasPositiveWork()){
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+        alert('Daily Entry was not saved. Please enter Planned Qty and Daily Qty greater than zero, or enter a positive progress percentage.');
+        return false;
+      }
+    },true);
+  }
+
+  // Patch save so saving only cleans the current/canonical daily log; it does not recover old duplicated keys on every login.
+  var previousSave = (typeof window.save==='function') ? window.save : (typeof save==='function' ? save : null);
+  window.save=function(){
+    currentClean();
+    var r=safe(function(){return previousSave?previousSave.apply(this,arguments):undefined;},undefined);
+    currentClean();
+    return r;
+  };
+  safe(function(){save=window.save;},null);
+
+  // Import cleanup: imported rows with zero actual progress are removed immediately.
+  var oldImport = (typeof window.importAllValidRows==='function') ? window.importAllValidRows : (typeof importAllValidRows==='function'?importAllValidRows:null);
+  if(oldImport){
+    window.importAllValidRows=function(){
+      var before=currentClean().length;
+      var r=safe(function(){return oldImport.apply(this,arguments);},undefined);
+      var after=currentClean();
+      if(after.length===before){
+        var lbl=$id('dailyImportStatus');
+        if(lbl) lbl.textContent='Import completed. Zero-progress rows were ignored; only positive progress entries are kept.';
+      }
+      return r;
+    };
+    safe(function(){importAllValidRows=window.importAllValidRows;},null);
+  }
+
+  // Patch rendering and reporting entry sources to use the clean canonical list only.
+  var oldFiltered = window.filteredDailyEntries;
+  window.filteredDailyEntries=function(prefix){
+    currentClean();
+    return oldFiltered ? oldFiltered.apply(this,arguments) : (window.dailyEntries||[]);
+  };
+
+  // Re-run a light clean after login/render without creating any new entries.
+  function refresh(){
+    currentClean();
+    installSubmitGuard();
+    safe(function(){if(typeof renderLog==='function')renderLog();},null);
+    safe(function(){if(typeof renderKpis==='function')renderKpis();},null);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){setTimeout(refresh,250);setTimeout(refresh,1500);});
+  else {setTimeout(refresh,250);setTimeout(refresh,1500);}
+})();
+</script>
+
+</body></html>';
   }
   function groupByProgress(items, keyFn){
     var map = new Map();
@@ -5532,7 +6379,101 @@ function masterReportHtml(){
   function bars(title, rows){ rows=(rows||[]).slice(0,12); if(!rows.length) rows=[{label:'No matching data',progress:0}]; return '<div class="chart-box"><h3>'+h(title)+'</h3><table class="chart-table"><thead><tr><th>Item</th><th>Progress</th><th>Value</th></tr></thead><tbody>'+rows.map(function(r){ var v=pct(r.progress); return '<tr><td class="chart-label">'+h(r.label)+'</td><td><div class="chart-track"><span style="width:'+v+'%"></span></div></td><td class="chart-value">'+v+'%</td></tr>'; }).join('')+'</tbody></table></div>'; }
   function reportShell(title, subtitle, cards, charts, body){
     var css = '<style>@page{size:A4 landscape;margin:8mm}body{font-family:Arial,sans-serif;color:#17211f;margin:0;font-size:10.5px}.report{padding:12px}.hero{background:#11231f;color:white;border-radius:10px;padding:14px;margin-bottom:12px}.hero h1{margin:0;font-size:22px}.hero p{margin:5px 0 0;color:#d7e8e2}.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:10px 0}.card{border:1px solid #d8e2de;border-radius:8px;padding:9px;background:#f8fbf9}.card b{display:block;font-size:17px;color:#1f7a5c}.charts{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.chart-box{border:1px solid #d8e2de;border-radius:8px;padding:10px;margin:8px 0;break-inside:avoid}.chart-box h3{margin:0 0 8px;font-size:13px}.chart-table{width:100%;border-collapse:collapse}.chart-table th,.chart-table td{border:1px solid #d8e2de;padding:5px}.chart-track{height:9px;background:#e5ece9;border-radius:99px;overflow:hidden}.chart-track span{display:block;height:100%;background:#1f7a5c}.report-table{width:100%;border-collapse:collapse;table-layout:fixed;margin-top:8px}.report-table th{background:#11231f;color:white}.report-table th,.report-table td{border:1px solid #cfdad5;padding:5px;vertical-align:top;word-wrap:break-word;white-space:normal}h2{font-size:15px;margin:14px 0 6px}.note{background:#fff8e7;border:1px solid #f0d08a;border-radius:8px;padding:8px;margin:10px 0}@media print{.chart-box,.card{break-inside:avoid}}</style>';
-    return '<!doctype html><html><head><meta charset="utf-8">'+css+'</head><body><div class="report"><div class="hero"><h1>'+h(title)+'</h1><p>'+h(subtitle)+'</p><p>Generated: '+h(new Date().toLocaleString())+'</p></div>'+cards+charts+body+'</div></body></html>';
+    return '<!doctype html><html><head><meta charset="utf-8">'+css+'</head><body><div class="report"><div class="hero"><h1>'+h(title)+'</h1><p>'+h(subtitle)+'</p><p>Generated: '+h(new Date().toLocaleString())+'</p></div>'+cards+charts+body+'</div>
+<script>
+/* === V33_NO_AUTO_ENTRIES_ZERO_BLOCK ===
+   Focused patch on top of V32:
+   - Never create or re-merge daily entries on login from old backup/demo keys.
+   - Keep only actual user-entered positive-progress entries.
+   - Block manual/imported entries with zero progress before saving.
+   - Keep mirrored link rows as report display only; physical quantity is not doubled. */
+(function(){
+  'use strict';
+  if (window.__V33_NO_AUTO_ENTRIES_ZERO_BLOCK__) return;
+  window.__V33_NO_AUTO_ENTRIES_ZERO_BLOCK__ = true;
+  window.AIP5_VERSION_MARKER='V33_NO_AUTO_ENTRIES_ZERO_BLOCK';
+  function $id(id){return document.getElementById(id);}
+  function safe(fn,fb){try{return fn();}catch(e){console.warn('[V33]',e);return fb;}}
+  function num(v){var n=Number(v||0);return isFinite(n)?n:0;}
+  function dkey(v){try{if(typeof dateValue==='function')return dateValue(v)||'';}catch(e){}return String(v||'');}
+  function canonicalDailyKey(){return (typeof logKey!=='undefined' && logKey) ? logKey : 'aip5-daily-log-v5-advanced-scope';}
+  function readKey(k){return safe(function(){var raw=localStorage.getItem(k);if(!raw)return[];var p=JSON.parse(raw);return Array.isArray(p)?p:(p&&typeof p==='object'?Object.values(p):[]);},[]);}
+  function siteOf(e){return String((e&& (e.assetId||e.asset||e.site||e.assetLabel)) || '').trim();}
+  function isPositive(e){e=e||{};var plan=num(e.plannedQty||e.plan||e.planned),qty=num(e.dailyQty||e.qty||e.doneQty),dp=num(e.dailyProgress||e.progress),ta=num(e.totalAfter||e.overallProgress);return (plan>0&&qty>0)||dp>0||ta>0;}
+  function semKey(e){e=e||{};return [dkey(e.date),siteOf(e),e.system,e.specificItem,e.mainActivity,e.subActivity,e.tag,e.linkFrom,e.linkTo,e.plannedQty,e.dailyQty,e.uom,e.permitNo,e.docRef,e.remarks].map(function(x){return String(x||'').trim().toLowerCase();}).join('|');}
+  function cleanList(list){var seen={},out=[];(Array.isArray(list)?list:[]).forEach(function(e){if(!e||typeof e!=='object')return;if(!isPositive(e))return;var k=semKey(e);if(!seen[k]){seen[k]=1;out.push(e);}});out.sort(function(a,b){return dkey(b.date).localeCompare(dkey(a.date))||String(b.id||'').localeCompare(String(a.id||''));});return out;}
+  function writeCanonical(list){list=cleanList(list);safe(function(){window.dailyEntries=list;},null);safe(function(){dailyEntries=list;},null);safe(function(){localStorage.setItem(canonicalDailyKey(),JSON.stringify(list));},null);safe(function(){localStorage.setItem('aip5-daily-log-v33-clean',JSON.stringify(list));},null);return list;}
+  function currentClean(){var list=[];safe(function(){if(Array.isArray(window.dailyEntries))list=list.concat(window.dailyEntries);},null);safe(function(){if(Array.isArray(dailyEntries))list=list.concat(dailyEntries);},null);list=list.concat(readKey(canonicalDailyKey()));list=list.concat(readKey('aip5-daily-log-v33-clean'));return writeCanonical(list);}
+  window.AIP5_cleanDailyEntriesNoAutoMerge = currentClean;
+
+  // Override recoverDaily if older patches call it. It now reads only canonical/current data, not all historical backup keys.
+  window.AIP5_recoverDailyEntries = currentClean;
+
+  // Guard manual form submission: no zero progress entries are allowed.
+  function formHasPositiveWork(){
+    var plan=num(($id('entryPlannedQty')||{}).value), qty=num(($id('entryDailyQty')||{}).value), dp=num(($id('entryProgress')||{}).value), total=num(($id('entryOverallProgress')||{}).value);
+    return (plan>0 && qty>0) || dp>0 || total>0;
+  }
+  function installSubmitGuard(){
+    var form=$id('dailyForm');
+    if(!form || form.__v33ZeroGuard) return;
+    form.__v33ZeroGuard=true;
+    form.addEventListener('submit',function(ev){
+      if(!formHasPositiveWork()){
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+        alert('Daily Entry was not saved. Please enter Planned Qty and Daily Qty greater than zero, or enter a positive progress percentage.');
+        return false;
+      }
+    },true);
+  }
+
+  // Patch save so saving only cleans the current/canonical daily log; it does not recover old duplicated keys on every login.
+  var previousSave = (typeof window.save==='function') ? window.save : (typeof save==='function' ? save : null);
+  window.save=function(){
+    currentClean();
+    var r=safe(function(){return previousSave?previousSave.apply(this,arguments):undefined;},undefined);
+    currentClean();
+    return r;
+  };
+  safe(function(){save=window.save;},null);
+
+  // Import cleanup: imported rows with zero actual progress are removed immediately.
+  var oldImport = (typeof window.importAllValidRows==='function') ? window.importAllValidRows : (typeof importAllValidRows==='function'?importAllValidRows:null);
+  if(oldImport){
+    window.importAllValidRows=function(){
+      var before=currentClean().length;
+      var r=safe(function(){return oldImport.apply(this,arguments);},undefined);
+      var after=currentClean();
+      if(after.length===before){
+        var lbl=$id('dailyImportStatus');
+        if(lbl) lbl.textContent='Import completed. Zero-progress rows were ignored; only positive progress entries are kept.';
+      }
+      return r;
+    };
+    safe(function(){importAllValidRows=window.importAllValidRows;},null);
+  }
+
+  // Patch rendering and reporting entry sources to use the clean canonical list only.
+  var oldFiltered = window.filteredDailyEntries;
+  window.filteredDailyEntries=function(prefix){
+    currentClean();
+    return oldFiltered ? oldFiltered.apply(this,arguments) : (window.dailyEntries||[]);
+  };
+
+  // Re-run a light clean after login/render without creating any new entries.
+  function refresh(){
+    currentClean();
+    installSubmitGuard();
+    safe(function(){if(typeof renderLog==='function')renderLog();},null);
+    safe(function(){if(typeof renderKpis==='function')renderKpis();},null);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){setTimeout(refresh,250);setTimeout(refresh,1500);});
+  else {setTimeout(refresh,250);setTimeout(refresh,1500);}
+})();
+</script>
+
+</body></html>';
   }
   function cards(items){ return '<div class="cards">'+items.map(function(x){ return '<div class="card"><span>'+h(x.label)+'</span><b>'+h(x.value)+'</b></div>'; }).join('')+'</div>'; }
   function dailyRows(entries){ return (entries||[]).map(function(e){ return '<tr><td>'+h(showDate(e.date))+'</td><td>'+h(entrySiteLabel(e))+'</td><td>'+h(e.system)+'</td><td>'+h(e.specificItem||'')+'</td><td>'+h(e.mainActivity||'')+'</td><td>'+h(e.subActivity||'')+'</td><td>'+h(e.tag||'')+'</td><td>'+h(linkText(e))+'</td><td>'+h(e.plannedQty||0)+' '+h(e.uom||'')+'</td><td>'+h(e.dailyQty||0)+' '+h(e.uom||'')+'</td><td>'+h(pct(e.dailyProgress||0))+'%</td><td>'+h(pct(e.totalAfter||e.progress||0))+'%</td><td>'+h(e.docRef||'')+'</td><td>'+h(e.contractor||'')+'</td><td>'+h(e.remarks||'')+'</td></tr>'; }).join('') || '<tr><td colspan="15">No matching entries.</td></tr>'; }
@@ -5634,7 +6575,11 @@ function masterReportHtml(){
   function normalizeEntry(e){e=Object.assign({},e||{});e.id=e.id||('e-'+Date.now()+'-'+Math.random().toString(36).slice(2));e.assetId=entrySiteId(e);e.assetLabel=e.assetLabel||siteLabelById(e.assetId);e.system=e.system||'';e.projectScope=e.projectScope||e.scope||'New';e.plannedQty=n(e.plannedQty||e.plan||e.planned||0);e.dailyQty=n(e.dailyQty||e.qty||e.doneQty||0);e.permitNo=e.permitNo||e.permit||e.ptw||e.PTW||'';e.docRef=e.docRef||e.document||e.documentRef||e.ref||'';e.remarks=e.remarks||e.comments||e.notes||'';return e;}
   function collectLocalArrays(matchFn){var out=[];try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(!matchFn(k))continue;var raw=localStorage.getItem(k);if(!raw)continue;var parsed=JSON.parse(raw);if(isArr(parsed))out=out.concat(parsed);else if(isObj(parsed))out=out.concat(Object.values(parsed));}}catch(e){}return out;}
   function mergeEntries(list){var map={},out=[];(list||[]).forEach(function(e){if(!e||typeof e!=='object')return;e=normalizeEntry(e);var k=keyOfEntry(e);if(map[k]){var idx=map[k]-1;try{if(JSON.stringify(e).length>JSON.stringify(out[idx]).length)out[idx]=e;}catch(err){out[idx]=e;}}else{map[k]=out.length+1;out.push(e);}});out.sort(function(a,b){return dkey(b.date).localeCompare(dkey(a.date))||String(b.id||'').localeCompare(String(a.id||''));});return out;}
-  function recoverDaily(){var list=[];safe(function(){if(Array.isArray(dailyEntries))list=list.concat(dailyEntries);},null);safe(function(){if(Array.isArray(window.dailyEntries))list=list.concat(window.dailyEntries);},null);list=list.concat(collectLocalArrays(function(k){k=String(k||'').toLowerCase();return (k.indexOf('daily')>-1||k.indexOf('log')>-1)&&k.indexOf('document')<0&&k.indexOf('dropdown')<0&&k.indexOf('field')<0;}));var out=mergeEntries(list);safe(function(){dailyEntries=out;},null);window.dailyEntries=out;safe(function(){localStorage.setItem(typeof logKey!=='undefined'?logKey:'aip5-daily-log-v5-advanced-scope',JSON.stringify(out));},null);return out;}
+  function isRealDailyEntry(e){e=e||{};var plan=n(e.plannedQty||e.plan||e.planned||0),qty=n(e.dailyQty||e.qty||e.doneQty||0),dp=n(e.dailyProgress||e.progress||0),ta=n(e.totalAfter||e.overallProgress||0);return (plan>0&&qty>0)||dp>0||ta>0;}
+  function semanticEntryKey(e){return [dkey(e.date),entrySiteId(e),e.system,e.specificItem,e.mainActivity,e.subActivity,e.tag,e.linkFrom,e.linkTo,e.plannedQty,e.dailyQty,e.uom,e.permitNo,e.docRef,e.remarks].map(function(x){return String(x||'').trim().toLowerCase();}).join('|');}
+  function readDailyKey(k){var list=[];safe(function(){var raw=localStorage.getItem(k);if(!raw)return;var parsed=JSON.parse(raw);if(Array.isArray(parsed))list=parsed;else if(parsed&&typeof parsed==='object')list=Object.values(parsed);},null);return list;}
+  function cleanDailyList(list){var map={},out=[];(list||[]).forEach(function(e){if(!e||typeof e!=='object')return;e=normalizeEntry(e);if(!isRealDailyEntry(e))return;var k=semanticEntryKey(e);if(!map[k]){map[k]=out.length+1;out.push(e);}else{var idx=map[k]-1;try{if(JSON.stringify(e).length>JSON.stringify(out[idx]).length)out[idx]=e;}catch(err){out[idx]=e;}}});out.sort(function(a,b){return dkey(b.date).localeCompare(dkey(a.date))||String(b.id||'').localeCompare(String(a.id||''));});return out;}
+  function recoverDaily(){var list=[];safe(function(){if(Array.isArray(window.dailyEntries))list=list.concat(window.dailyEntries);},null);safe(function(){if(Array.isArray(dailyEntries))list=list.concat(dailyEntries);},null);safe(function(){list=list.concat(readDailyKey(typeof logKey!=='undefined'?logKey:'aip5-daily-log-v5-advanced-scope'));},null);safe(function(){list=list.concat(readDailyKey('aip5-daily-log-v32-clean'));},null);safe(function(){list=list.concat(readDailyKey('aip5-daily-log-v33-clean'));},null);var out=cleanDailyList(list);safe(function(){dailyEntries=out;},null);window.dailyEntries=out;safe(function(){localStorage.setItem(typeof logKey!=='undefined'?logKey:'aip5-daily-log-v5-advanced-scope',JSON.stringify(out));},null);safe(function(){localStorage.setItem('aip5-daily-log-v33-clean',JSON.stringify(out));},null);return out;}
   function normalizeDoc(d){d=Object.assign({},d||{});d.id=d.id||('doc-'+Date.now()+'-'+Math.random().toString(36).slice(2));d.date=d.date||d.documentDate||d.receivedDate||d.createdDate||'';d.signatureDate=d.signatureDate||d.signedDate||d.signed||d.signDate||'';d.type=d.type||d.docType||d.documentType||'Document';d.ref=d.ref||d.docRef||d.reference||d.number||d.rfiNo||d.itrNo||'';d.title=d.title||d.subject||d.description||'';d.assetId=resolveSiteId(d.assetId||d.site||d.relatedSite||'');d.assetLabel=d.assetLabel||siteLabelById(d.assetId);d.system=d.system||d.relatedSystem||'';d.status=d.status||'Signed';d.remarks=d.remarks||d.comments||d.notes||'';d.attachments=Array.isArray(d.attachments)?d.attachments:[];return d;}
   function docKey(d){return [d.ref,d.title,d.date,d.signatureDate,d.assetId,d.system].map(function(x){return String(x||'').trim().toLowerCase();}).join('|');}
   function recoverDocs(){var list=[];safe(function(){if(Array.isArray(documentEntries))list=list.concat(documentEntries);},null);safe(function(){if(Array.isArray(window.documentEntries))list=list.concat(window.documentEntries);},null);list=list.concat(collectLocalArrays(function(k){k=String(k||'').toLowerCase();return k.indexOf('document')>-1||k.indexOf('doc-register')>-1||k.indexOf('documents')>-1;}));var seen={},out=[];list.forEach(function(d){if(!d||typeof d!=='object')return;d=normalizeDoc(d);var k=docKey(d);if(!seen[k]){seen[k]=1;out.push(d);}});out.sort(function(a,b){return dkey(b.date||b.signatureDate).localeCompare(dkey(a.date||a.signatureDate))||String(b.id||'').localeCompare(String(a.id||''));});safe(function(){documentEntries=out;},null);window.documentEntries=out;safe(function(){localStorage.setItem(typeof documentLogKey!=='undefined'?documentLogKey:'aip5-document-register-v14',JSON.stringify(out));},null);return out;}
@@ -5661,7 +6606,101 @@ function masterReportHtml(){
   function fMasterEntries(){var rows=fMasterRows(),allowed=new Set(rows.map(function(r){return r.id;})),systems=selectedValues('masterFilterSystem'),scopes=selectedValues('masterFilterScope'),dt=filterDates('master');return allDaily().filter(function(e){if(!allowed.has(entrySiteId(e)))return false;if(systems.length&&systems.indexOf(e.system)<0)return false;if(scopes.length&&scopes.indexOf(e.projectScope||e.scope)<0)return false;if(!inDateRange(e.date,dt.from,dt.to))return false;return true;});}
   function groupBy(list,keyFn){var m=new Map();(list||[]).forEach(function(x){var k=keyFn(x)||'Unspecified';if(!m.has(k))m.set(k,[]);m.get(k).push(x);});return Array.from(m.entries()).map(function(p){return {label:p[0],progress:avg(p[1].map(function(x){return x.progress;})),count:p[1].length};}).sort(function(a,b){return b.progress-a.progress||String(a.label).localeCompare(String(b.label));});}
   function bars(title,rows){rows=(rows||[]).slice(0,12);if(!rows.length)rows=[{label:'No matching data',progress:0}];return '<div class="chart-box"><h3>'+h(title)+'</h3><table class="chart-table"><thead><tr><th>Item</th><th>Progress</th><th>Value</th></tr></thead><tbody>'+rows.map(function(r){var v=pct(r.progress);return '<tr><td class="chart-label">'+h(r.label)+'</td><td><div class="chart-track"><span style="width:'+v+'%"></span></div></td><td class="chart-value">'+v+'%</td></tr>';}).join('')+'</tbody></table></div>';}
-  function reportShell(title,subtitle,cards,charts,body){var css='<style>@page{size:A4 landscape;margin:8mm}body{font-family:Arial,sans-serif;color:#17211f;margin:0;font-size:10.5px}.report{padding:12px}.hero{background:#11231f;color:white;border-radius:10px;padding:14px;margin-bottom:12px}.hero h1{margin:0;font-size:22px}.hero p{margin:5px 0 0;color:#d7e8e2}.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:10px 0}.card{border:1px solid #d8e2de;border-radius:8px;padding:9px;background:#f8fbf9}.card b{display:block;font-size:17px;color:#1f7a5c}.charts{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.chart-box{border:1px solid #d8e2de;border-radius:8px;padding:10px;margin:8px 0;break-inside:avoid}.chart-box h3{margin:0 0 8px;font-size:13px}.chart-table{width:100%;border-collapse:collapse}.chart-table th,.chart-table td{border:1px solid #d8e2de;padding:5px}.chart-track{height:9px;background:#e5ece9;border-radius:99px;overflow:hidden}.chart-track span{display:block;height:100%;background:#1f7a5c}.report-table{width:100%;border-collapse:collapse;table-layout:fixed;margin-top:8px}.report-table th{background:#11231f;color:white}.report-table th,.report-table td{border:1px solid #cfdad5;padding:5px;vertical-align:top;word-wrap:break-word;white-space:normal}h2{font-size:15px;margin:14px 0 6px}.note{background:#fff8e7;border:1px solid #f0d08a;border-radius:8px;padding:8px;margin:10px 0}@media print{.chart-box,.card{break-inside:avoid}}</style>';return '<!doctype html><html><head><meta charset="utf-8">'+css+'</head><body><div class="report"><div class="hero"><h1>'+h(title)+'</h1><p>'+h(subtitle)+'</p><p>Generated: '+h(new Date().toLocaleString())+'</p></div>'+cards+charts+body+'</div></body></html>';}
+  function reportShell(title,subtitle,cards,charts,body){var css='<style>@page{size:A4 landscape;margin:8mm}body{font-family:Arial,sans-serif;color:#17211f;margin:0;font-size:10.5px}.report{padding:12px}.hero{background:#11231f;color:white;border-radius:10px;padding:14px;margin-bottom:12px}.hero h1{margin:0;font-size:22px}.hero p{margin:5px 0 0;color:#d7e8e2}.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:10px 0}.card{border:1px solid #d8e2de;border-radius:8px;padding:9px;background:#f8fbf9}.card b{display:block;font-size:17px;color:#1f7a5c}.charts{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.chart-box{border:1px solid #d8e2de;border-radius:8px;padding:10px;margin:8px 0;break-inside:avoid}.chart-box h3{margin:0 0 8px;font-size:13px}.chart-table{width:100%;border-collapse:collapse}.chart-table th,.chart-table td{border:1px solid #d8e2de;padding:5px}.chart-track{height:9px;background:#e5ece9;border-radius:99px;overflow:hidden}.chart-track span{display:block;height:100%;background:#1f7a5c}.report-table{width:100%;border-collapse:collapse;table-layout:fixed;margin-top:8px}.report-table th{background:#11231f;color:white}.report-table th,.report-table td{border:1px solid #cfdad5;padding:5px;vertical-align:top;word-wrap:break-word;white-space:normal}h2{font-size:15px;margin:14px 0 6px}.note{background:#fff8e7;border:1px solid #f0d08a;border-radius:8px;padding:8px;margin:10px 0}@media print{.chart-box,.card{break-inside:avoid}}</style>';return '<!doctype html><html><head><meta charset="utf-8">'+css+'</head><body><div class="report"><div class="hero"><h1>'+h(title)+'</h1><p>'+h(subtitle)+'</p><p>Generated: '+h(new Date().toLocaleString())+'</p></div>'+cards+charts+body+'</div>
+<script>
+/* === V33_NO_AUTO_ENTRIES_ZERO_BLOCK ===
+   Focused patch on top of V32:
+   - Never create or re-merge daily entries on login from old backup/demo keys.
+   - Keep only actual user-entered positive-progress entries.
+   - Block manual/imported entries with zero progress before saving.
+   - Keep mirrored link rows as report display only; physical quantity is not doubled. */
+(function(){
+  'use strict';
+  if (window.__V33_NO_AUTO_ENTRIES_ZERO_BLOCK__) return;
+  window.__V33_NO_AUTO_ENTRIES_ZERO_BLOCK__ = true;
+  window.AIP5_VERSION_MARKER='V33_NO_AUTO_ENTRIES_ZERO_BLOCK';
+  function $id(id){return document.getElementById(id);}
+  function safe(fn,fb){try{return fn();}catch(e){console.warn('[V33]',e);return fb;}}
+  function num(v){var n=Number(v||0);return isFinite(n)?n:0;}
+  function dkey(v){try{if(typeof dateValue==='function')return dateValue(v)||'';}catch(e){}return String(v||'');}
+  function canonicalDailyKey(){return (typeof logKey!=='undefined' && logKey) ? logKey : 'aip5-daily-log-v5-advanced-scope';}
+  function readKey(k){return safe(function(){var raw=localStorage.getItem(k);if(!raw)return[];var p=JSON.parse(raw);return Array.isArray(p)?p:(p&&typeof p==='object'?Object.values(p):[]);},[]);}
+  function siteOf(e){return String((e&& (e.assetId||e.asset||e.site||e.assetLabel)) || '').trim();}
+  function isPositive(e){e=e||{};var plan=num(e.plannedQty||e.plan||e.planned),qty=num(e.dailyQty||e.qty||e.doneQty),dp=num(e.dailyProgress||e.progress),ta=num(e.totalAfter||e.overallProgress);return (plan>0&&qty>0)||dp>0||ta>0;}
+  function semKey(e){e=e||{};return [dkey(e.date),siteOf(e),e.system,e.specificItem,e.mainActivity,e.subActivity,e.tag,e.linkFrom,e.linkTo,e.plannedQty,e.dailyQty,e.uom,e.permitNo,e.docRef,e.remarks].map(function(x){return String(x||'').trim().toLowerCase();}).join('|');}
+  function cleanList(list){var seen={},out=[];(Array.isArray(list)?list:[]).forEach(function(e){if(!e||typeof e!=='object')return;if(!isPositive(e))return;var k=semKey(e);if(!seen[k]){seen[k]=1;out.push(e);}});out.sort(function(a,b){return dkey(b.date).localeCompare(dkey(a.date))||String(b.id||'').localeCompare(String(a.id||''));});return out;}
+  function writeCanonical(list){list=cleanList(list);safe(function(){window.dailyEntries=list;},null);safe(function(){dailyEntries=list;},null);safe(function(){localStorage.setItem(canonicalDailyKey(),JSON.stringify(list));},null);safe(function(){localStorage.setItem('aip5-daily-log-v33-clean',JSON.stringify(list));},null);return list;}
+  function currentClean(){var list=[];safe(function(){if(Array.isArray(window.dailyEntries))list=list.concat(window.dailyEntries);},null);safe(function(){if(Array.isArray(dailyEntries))list=list.concat(dailyEntries);},null);list=list.concat(readKey(canonicalDailyKey()));list=list.concat(readKey('aip5-daily-log-v33-clean'));return writeCanonical(list);}
+  window.AIP5_cleanDailyEntriesNoAutoMerge = currentClean;
+
+  // Override recoverDaily if older patches call it. It now reads only canonical/current data, not all historical backup keys.
+  window.AIP5_recoverDailyEntries = currentClean;
+
+  // Guard manual form submission: no zero progress entries are allowed.
+  function formHasPositiveWork(){
+    var plan=num(($id('entryPlannedQty')||{}).value), qty=num(($id('entryDailyQty')||{}).value), dp=num(($id('entryProgress')||{}).value), total=num(($id('entryOverallProgress')||{}).value);
+    return (plan>0 && qty>0) || dp>0 || total>0;
+  }
+  function installSubmitGuard(){
+    var form=$id('dailyForm');
+    if(!form || form.__v33ZeroGuard) return;
+    form.__v33ZeroGuard=true;
+    form.addEventListener('submit',function(ev){
+      if(!formHasPositiveWork()){
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+        alert('Daily Entry was not saved. Please enter Planned Qty and Daily Qty greater than zero, or enter a positive progress percentage.');
+        return false;
+      }
+    },true);
+  }
+
+  // Patch save so saving only cleans the current/canonical daily log; it does not recover old duplicated keys on every login.
+  var previousSave = (typeof window.save==='function') ? window.save : (typeof save==='function' ? save : null);
+  window.save=function(){
+    currentClean();
+    var r=safe(function(){return previousSave?previousSave.apply(this,arguments):undefined;},undefined);
+    currentClean();
+    return r;
+  };
+  safe(function(){save=window.save;},null);
+
+  // Import cleanup: imported rows with zero actual progress are removed immediately.
+  var oldImport = (typeof window.importAllValidRows==='function') ? window.importAllValidRows : (typeof importAllValidRows==='function'?importAllValidRows:null);
+  if(oldImport){
+    window.importAllValidRows=function(){
+      var before=currentClean().length;
+      var r=safe(function(){return oldImport.apply(this,arguments);},undefined);
+      var after=currentClean();
+      if(after.length===before){
+        var lbl=$id('dailyImportStatus');
+        if(lbl) lbl.textContent='Import completed. Zero-progress rows were ignored; only positive progress entries are kept.';
+      }
+      return r;
+    };
+    safe(function(){importAllValidRows=window.importAllValidRows;},null);
+  }
+
+  // Patch rendering and reporting entry sources to use the clean canonical list only.
+  var oldFiltered = window.filteredDailyEntries;
+  window.filteredDailyEntries=function(prefix){
+    currentClean();
+    return oldFiltered ? oldFiltered.apply(this,arguments) : (window.dailyEntries||[]);
+  };
+
+  // Re-run a light clean after login/render without creating any new entries.
+  function refresh(){
+    currentClean();
+    installSubmitGuard();
+    safe(function(){if(typeof renderLog==='function')renderLog();},null);
+    safe(function(){if(typeof renderKpis==='function')renderKpis();},null);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){setTimeout(refresh,250);setTimeout(refresh,1500);});
+  else {setTimeout(refresh,250);setTimeout(refresh,1500);}
+})();
+</script>
+
+</body></html>';}
   function cards(items){return '<div class="cards">'+items.map(function(x){return '<div class="card"><span>'+h(x.label)+'</span><b>'+h(x.value)+'</b></div>';}).join('')+'</div>';}
   function dailyRows(entries){return (entries||[]).map(function(e){return '<tr><td>'+h(dshow(e.date))+'</td><td>'+h(entrySiteLabel(e))+'</td><td>'+h(e.system)+'</td><td>'+h(e.specificItem||'')+'</td><td>'+h(e.mainActivity||'')+'</td><td>'+h(e.subActivity||'')+'</td><td>'+h(e.tag||'')+'</td><td>'+h(linkText(e))+'</td><td>'+h(e.plannedQty||0)+' '+h(e.uom||'')+'</td><td>'+h(e.dailyQty||0)+' '+h(e.uom||'')+'</td><td>'+h(pct(e.dailyProgress||0))+'%</td><td>'+h(pct(e.totalAfter||e.progress||0))+'%</td><td>'+h(e.permitNo||'')+'</td><td>'+h(e.docRef||'')+'</td><td>'+h(e.contractor||'')+'</td><td>'+h(e.remarks||'')+'</td></tr>';}).join('')||'<tr><td colspan="16">No matching entries.</td></tr>';}
   function comboRows(combos){return (combos||[]).map(function(c){return '<tr><td>'+h(c.site)+'</td><td>'+h(c.system)+'</td><td>'+h(c.scope)+'</td><td>'+h(c.progress)+'%</td><td>'+h(c.status)+'</td><td>'+h(c.itemCount)+'</td><td>'+h(c.stepCount)+'</td><td>'+h(c.actualCount)+'</td><td>'+h(c.entryCount)+'</td><td>'+h(dshow((c.latest||{}).date))+'</td><td>'+h((c.latest||{}).permitNo||'')+'</td><td>'+h((c.latest||{}).docRef||'')+'</td><td>'+h((c.latest||{}).remarks||'')+'</td></tr>';}).join('')||'<tr><td colspan="13">No matching planned site/system rows.</td></tr>';}
@@ -5678,11 +6717,488 @@ function masterReportHtml(){
   window.exportDailyExcel=function(){if(typeof requireExport==='function'&&!requireExport())return;exportHtml('telecom-daily-progress-v31.xls',window.dailyReportHtml(true));};
   function rebind(id,fn){var el=byId(id);if(!el)return;var c=el.cloneNode(true);el.parentNode.replaceChild(c,el);c.addEventListener('click',fn);}
   function bindReports(){rebind('masterPrintBtn',function(){window.openMasterReport(true);});rebind('masterPdfBtn',function(){window.openMasterReport(true);});rebind('masterExcelBtn',function(){window.exportMasterExcel();});rebind('printBtn',function(){window.openDailyReport(true);});rebind('pdfBtn',function(){window.openDailyReport(true);});rebind('excelBtn',function(){window.exportDailyExcel();});rebind('dailyPrintReportBtn',function(){window.openDailyReport(true);});rebind('dailyExportReportBtn',function(){window.exportDailyExcel();});rebind('dailyLogPrintBtn',function(){window.openDailyReport(true);});rebind('dailyLogExportBtn',function(){window.exportDailyExcel();});}
-  var oldSave=typeof save==='function'?save:null;window.save=function(){recoverDaily();recoverDocs();safe(function(){if(oldSave)oldSave();},null);recoverDaily();recoverDocs();};try{save=window.save;}catch(e){}
+  var oldSave=typeof save==='function'?save:null;window.save=function(){var before=recoverDaily();safe(function(){if(oldSave)oldSave();},null);var after=recoverDaily();recoverDocs();return after;};try{save=window.save;}catch(e){}
   function refresh(){recoverDaily();recoverDocs();safe(bindReports,null);safe(function(){if(typeof renderKpis==='function')renderKpis();},null);safe(function(){if(typeof renderRows==='function')renderRows();},null);}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(refresh,450);setTimeout(refresh,1600);});else{setTimeout(refresh,450);setTimeout(refresh,1600);}
   var oldRenderAll=window.renderAll;window.renderAll=function(){var r=safe(function(){return oldRenderAll?oldRenderAll.apply(this,arguments):undefined;},undefined);setTimeout(refresh,80);return r;};
 })();
 
 </script>
+<script>
+/* === V32_ZERO_ENTRY_DELETE_MIRROR_SAFE ===
+   Focused patch on top of V31:
+   - Purge zero-progress daily entries from in-memory data and all known daily/local storage keys.
+   - Block/auto-remove any new daily entry saved with zero actual progress.
+   - Allow Admin and Daily Entry users to delete daily log entries from the log.
+   - Keep mirrored link rows visible while preventing mirror quantity/progress from being treated as an additional physical quantity.
+*/
+(function(){
+  'use strict';
+  var MARKER = 'V32_ZERO_ENTRY_DELETE_MIRROR_SAFE';
+  if (window.__V32_ZERO_ENTRY_DELETE_MIRROR_SAFE__) return;
+  window.__V32_ZERO_ENTRY_DELETE_MIRROR_SAFE__ = true;
+  window.AIP5_VERSION_MARKER = MARKER;
+
+  function byId(id){ return document.getElementById(id); }
+  function safe(fn, fb){ try { return fn(); } catch(e){ console.warn('[V32]', e); return fb; } }
+  function num(v){ var x = Number(v || 0); return isFinite(x) ? x : 0; }
+  function pct(v){ v = num(v); return Math.max(0, Math.min(100, Math.round(v * 100) / 100)); }
+  function hasPositiveProgress(e){
+    e = e || {};
+    var plan = Math.max(num(e.plannedQty), num(e.plan), num(e.planned));
+    var qty = Math.max(num(e.dailyQty), num(e.qty), num(e.doneQty));
+    var dp = Math.max(num(e.dailyProgress), num(e.progress));
+    var tp = Math.max(num(e.totalAfter), num(e.overallProgress));
+    if (plan > 0 && qty > 0) return true;
+    return dp > 0 || tp > 0;
+  }
+  function normalizedEntry(e){
+    e = Object.assign({}, e || {});
+    var plan = Math.max(num(e.plannedQty), num(e.plan), num(e.planned));
+    var qty = Math.max(num(e.dailyQty), num(e.qty), num(e.doneQty));
+    if (plan > 0 && qty > 0) {
+      var p = pct((qty / plan) * 100);
+      if (p > 0 && p < 0.01) p = 0.01;
+      if (num(e.dailyProgress) <= 0) e.dailyProgress = p;
+      if (num(e.totalAfter) <= 0) e.totalAfter = p;
+      if (!e.status || e.status === 'Not Started') e.status = p >= 100 ? 'Complete' : 'In Progress';
+    }
+    return e;
+  }
+  function isDailyStorageKey(k){
+    k = String(k || '').toLowerCase();
+    return (k.indexOf('daily') > -1 || k.indexOf('log') > -1) &&
+           k.indexOf('document') < 0 && k.indexOf('dropdown') < 0 &&
+           k.indexOf('field') < 0 && k.indexOf('config') < 0;
+  }
+  function parseList(raw){
+    if (!raw) return null;
+    var p = JSON.parse(raw);
+    if (Array.isArray(p)) return p;
+    if (p && typeof p === 'object') return Object.values(p);
+    return null;
+  }
+  function purgeArray(arr){
+    var removed = 0;
+    var out = (Array.isArray(arr) ? arr : []).map(normalizedEntry).filter(function(e){
+      var keep = hasPositiveProgress(e);
+      if (!keep) removed++;
+      return keep;
+    });
+    return {out: out, removed: removed};
+  }
+  function persistDailyEntries(list){
+    list = Array.isArray(list) ? list : [];
+    safe(function(){ window.dailyEntries = list; }, null);
+    safe(function(){ dailyEntries = list; }, null);
+    safe(function(){ localStorage.setItem(typeof logKey !== 'undefined' ? logKey : 'aip5-daily-log-v5-advanced-scope', JSON.stringify(list)); }, null);
+    safe(function(){ localStorage.setItem('aip5-daily-log-v32-clean', JSON.stringify(list)); }, null);
+    safe(function(){
+      if (typeof fbDb !== 'undefined' && fbDb && fbDb.ref) {
+        var obj = {};
+        list.forEach(function(e, i){ obj['e' + i] = e; });
+        fbDb.ref('/data/dailyEntries').set(obj);
+      }
+    }, null);
+  }
+  function purgeZeroEntries(showNotice){
+    var list = [];
+    safe(function(){ if (Array.isArray(window.dailyEntries)) list = list.concat(window.dailyEntries); }, null);
+    safe(function(){ if (Array.isArray(dailyEntries)) list = list.concat(dailyEntries); }, null);
+    safe(function(){ list = list.concat(parseList(localStorage.getItem(typeof logKey !== 'undefined' ? logKey : 'aip5-daily-log-v5-advanced-scope')) || []); }, null);
+    safe(function(){ list = list.concat(parseList(localStorage.getItem('aip5-daily-log-v32-clean')) || []); }, null);
+    safe(function(){ list = list.concat(parseList(localStorage.getItem('aip5-daily-log-v33-clean')) || []); }, null);
+    var before = list.length;
+    var seen = {};
+    var merged = [];
+    (Array.isArray(list) ? list : []).map(normalizedEntry).forEach(function(e){
+      if (!hasPositiveProgress(e)) return;
+      var key = [e.date, e.assetId, e.assetLabel, e.system, e.specificItem, e.mainActivity, e.subActivity, e.tag, e.linkFrom, e.linkTo, e.plannedQty, e.dailyQty, e.uom, e.permitNo, e.docRef, e.remarks].join('|').toLowerCase();
+      if (!seen[key]) { seen[key] = 1; merged.push(e); }
+    });
+    merged.sort(function(a,b){
+      var da = String(a.date || ''), db = String(b.date || '');
+      return db.localeCompare(da) || String(b.id || '').localeCompare(String(a.id || ''));
+    });
+    persistDailyEntries(merged);
+    var totalRemoved = Math.max(0, before - merged.length);
+    if (showNotice && totalRemoved > 0) {
+      var lbl = byId('lastUpdatedLabel');
+      if (lbl) lbl.textContent = 'Removed ' + totalRemoved + ' duplicate/zero-progress daily entries';
+    }
+    return {entries: merged, removed: totalRemoved};
+  }
+  window.AIP5_purgeZeroDailyEntries = purgeZeroEntries;
+
+  function canDeleteEntry(entry){
+    var role = String(window.currentUserRole || (typeof currentUserRole !== 'undefined' ? currentUserRole : '') || '').toLowerCase();
+    var email = String(window.currentUserEmail || (typeof currentUserEmail !== 'undefined' ? currentUserEmail : '') || '').toLowerCase();
+    if (role === 'admin') return true;
+    if (role === 'daily_entry') {
+      var owner = String((entry && (entry.enteredBy || entry.createdBy || entry.userEmail)) || '').toLowerCase();
+      return !owner || owner === email;
+    }
+    return false;
+  }
+  function stableDeleteDailyEntry(entryId){
+    var state = purgeZeroEntries(false).entries;
+    var entry = state.find(function(x){ return String(x.id) === String(entryId); });
+    if (!entry) return;
+    if (!canDeleteEntry(entry)) { alert('Only Admin can delete any entry. Daily Entry users can delete their own entries only.'); return; }
+    if (!confirm('Delete this daily entry from the log and recalculate progress?')) return;
+    var asset = entry.assetId;
+    var filtered = state.filter(function(x){ return String(x.id) !== String(entryId); });
+    persistDailyEntries(filtered);
+    safe(function(){ if (typeof recomputeAssetProgress === 'function' && asset) recomputeAssetProgress(asset); }, null);
+    safe(function(){ if (typeof renderAll === 'function') renderAll(false); }, null);
+    setTimeout(function(){
+      safe(function(){ if (typeof renderLog === 'function') renderLog(); }, null);
+      safe(function(){ if (typeof renderKpis === 'function') renderKpis(); }, null);
+    }, 60);
+  }
+  window.deleteDailyEntry = stableDeleteDailyEntry;
+  safe(function(){ deleteDailyEntry = stableDeleteDailyEntry; }, null);
+
+  // Mirror helper for reports: keep mirror records visible, but mark them as display-only duplicates of the same physical link.
+  function resolveSiteId(v){
+    var s = String(v || '').trim();
+    if (!s) return '';
+    var low = s.toLowerCase();
+    var rows = safe(function(){ return (typeof DATA !== 'undefined' && DATA.items) ? DATA.items : []; }, []);
+    var r = rows.find(function(x){
+      var labels = [x.id, x.site, x.displayId, x.name];
+      safe(function(){ if (typeof label === 'function') labels.push(label(x)); }, null);
+      return labels.some(function(y){ return String(y || '').toLowerCase() === low; });
+    });
+    return r ? r.id : s;
+  }
+  function canonicalLinkKey(e){
+    e = e || {};
+    var a = resolveSiteId(e.linkFrom || ''), b = resolveSiteId(e.linkTo || '');
+    var ends = [a, b].filter(Boolean).sort().join('~');
+    return [e.system || '', e.specificItem || '', e.mainActivity || '', e.subActivity || '', e.tag || '', ends || resolveSiteId(e.assetId || e.assetLabel || '')].map(function(x){ return String(x || '').trim().toLowerCase(); }).join('|');
+  }
+  window.AIP5_canonicalPhysicalLinkKey = canonicalLinkKey;
+
+  // Wrap report HTML generators to clean zero entries before every report/export.
+  var oldMasterReportHtml = window.masterReportHtml;
+  var oldDailyReportHtml = window.dailyReportHtml;
+  window.masterReportHtml = function(){ purgeZeroEntries(false); return oldMasterReportHtml ? oldMasterReportHtml.apply(this, arguments) : '<html><body>No report generator found.
+<script>
+/* === V33_NO_AUTO_ENTRIES_ZERO_BLOCK ===
+   Focused patch on top of V32:
+   - Never create or re-merge daily entries on login from old backup/demo keys.
+   - Keep only actual user-entered positive-progress entries.
+   - Block manual/imported entries with zero progress before saving.
+   - Keep mirrored link rows as report display only; physical quantity is not doubled. */
+(function(){
+  'use strict';
+  if (window.__V33_NO_AUTO_ENTRIES_ZERO_BLOCK__) return;
+  window.__V33_NO_AUTO_ENTRIES_ZERO_BLOCK__ = true;
+  window.AIP5_VERSION_MARKER='V33_NO_AUTO_ENTRIES_ZERO_BLOCK';
+  function $id(id){return document.getElementById(id);}
+  function safe(fn,fb){try{return fn();}catch(e){console.warn('[V33]',e);return fb;}}
+  function num(v){var n=Number(v||0);return isFinite(n)?n:0;}
+  function dkey(v){try{if(typeof dateValue==='function')return dateValue(v)||'';}catch(e){}return String(v||'');}
+  function canonicalDailyKey(){return (typeof logKey!=='undefined' && logKey) ? logKey : 'aip5-daily-log-v5-advanced-scope';}
+  function readKey(k){return safe(function(){var raw=localStorage.getItem(k);if(!raw)return[];var p=JSON.parse(raw);return Array.isArray(p)?p:(p&&typeof p==='object'?Object.values(p):[]);},[]);}
+  function siteOf(e){return String((e&& (e.assetId||e.asset||e.site||e.assetLabel)) || '').trim();}
+  function isPositive(e){e=e||{};var plan=num(e.plannedQty||e.plan||e.planned),qty=num(e.dailyQty||e.qty||e.doneQty),dp=num(e.dailyProgress||e.progress),ta=num(e.totalAfter||e.overallProgress);return (plan>0&&qty>0)||dp>0||ta>0;}
+  function semKey(e){e=e||{};return [dkey(e.date),siteOf(e),e.system,e.specificItem,e.mainActivity,e.subActivity,e.tag,e.linkFrom,e.linkTo,e.plannedQty,e.dailyQty,e.uom,e.permitNo,e.docRef,e.remarks].map(function(x){return String(x||'').trim().toLowerCase();}).join('|');}
+  function cleanList(list){var seen={},out=[];(Array.isArray(list)?list:[]).forEach(function(e){if(!e||typeof e!=='object')return;if(!isPositive(e))return;var k=semKey(e);if(!seen[k]){seen[k]=1;out.push(e);}});out.sort(function(a,b){return dkey(b.date).localeCompare(dkey(a.date))||String(b.id||'').localeCompare(String(a.id||''));});return out;}
+  function writeCanonical(list){list=cleanList(list);safe(function(){window.dailyEntries=list;},null);safe(function(){dailyEntries=list;},null);safe(function(){localStorage.setItem(canonicalDailyKey(),JSON.stringify(list));},null);safe(function(){localStorage.setItem('aip5-daily-log-v33-clean',JSON.stringify(list));},null);return list;}
+  function currentClean(){var list=[];safe(function(){if(Array.isArray(window.dailyEntries))list=list.concat(window.dailyEntries);},null);safe(function(){if(Array.isArray(dailyEntries))list=list.concat(dailyEntries);},null);list=list.concat(readKey(canonicalDailyKey()));list=list.concat(readKey('aip5-daily-log-v33-clean'));return writeCanonical(list);}
+  window.AIP5_cleanDailyEntriesNoAutoMerge = currentClean;
+
+  // Override recoverDaily if older patches call it. It now reads only canonical/current data, not all historical backup keys.
+  window.AIP5_recoverDailyEntries = currentClean;
+
+  // Guard manual form submission: no zero progress entries are allowed.
+  function formHasPositiveWork(){
+    var plan=num(($id('entryPlannedQty')||{}).value), qty=num(($id('entryDailyQty')||{}).value), dp=num(($id('entryProgress')||{}).value), total=num(($id('entryOverallProgress')||{}).value);
+    return (plan>0 && qty>0) || dp>0 || total>0;
+  }
+  function installSubmitGuard(){
+    var form=$id('dailyForm');
+    if(!form || form.__v33ZeroGuard) return;
+    form.__v33ZeroGuard=true;
+    form.addEventListener('submit',function(ev){
+      if(!formHasPositiveWork()){
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+        alert('Daily Entry was not saved. Please enter Planned Qty and Daily Qty greater than zero, or enter a positive progress percentage.');
+        return false;
+      }
+    },true);
+  }
+
+  // Patch save so saving only cleans the current/canonical daily log; it does not recover old duplicated keys on every login.
+  var previousSave = (typeof window.save==='function') ? window.save : (typeof save==='function' ? save : null);
+  window.save=function(){
+    currentClean();
+    var r=safe(function(){return previousSave?previousSave.apply(this,arguments):undefined;},undefined);
+    currentClean();
+    return r;
+  };
+  safe(function(){save=window.save;},null);
+
+  // Import cleanup: imported rows with zero actual progress are removed immediately.
+  var oldImport = (typeof window.importAllValidRows==='function') ? window.importAllValidRows : (typeof importAllValidRows==='function'?importAllValidRows:null);
+  if(oldImport){
+    window.importAllValidRows=function(){
+      var before=currentClean().length;
+      var r=safe(function(){return oldImport.apply(this,arguments);},undefined);
+      var after=currentClean();
+      if(after.length===before){
+        var lbl=$id('dailyImportStatus');
+        if(lbl) lbl.textContent='Import completed. Zero-progress rows were ignored; only positive progress entries are kept.';
+      }
+      return r;
+    };
+    safe(function(){importAllValidRows=window.importAllValidRows;},null);
+  }
+
+  // Patch rendering and reporting entry sources to use the clean canonical list only.
+  var oldFiltered = window.filteredDailyEntries;
+  window.filteredDailyEntries=function(prefix){
+    currentClean();
+    return oldFiltered ? oldFiltered.apply(this,arguments) : (window.dailyEntries||[]);
+  };
+
+  // Re-run a light clean after login/render without creating any new entries.
+  function refresh(){
+    currentClean();
+    installSubmitGuard();
+    safe(function(){if(typeof renderLog==='function')renderLog();},null);
+    safe(function(){if(typeof renderKpis==='function')renderKpis();},null);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){setTimeout(refresh,250);setTimeout(refresh,1500);});
+  else {setTimeout(refresh,250);setTimeout(refresh,1500);}
+})();
+</script>
+
+</body></html>'; };
+  window.dailyReportHtml = function(){ purgeZeroEntries(false); return oldDailyReportHtml ? oldDailyReportHtml.apply(this, arguments) : '<html><body>No report generator found.
+<script>
+/* === V33_NO_AUTO_ENTRIES_ZERO_BLOCK ===
+   Focused patch on top of V32:
+   - Never create or re-merge daily entries on login from old backup/demo keys.
+   - Keep only actual user-entered positive-progress entries.
+   - Block manual/imported entries with zero progress before saving.
+   - Keep mirrored link rows as report display only; physical quantity is not doubled. */
+(function(){
+  'use strict';
+  if (window.__V33_NO_AUTO_ENTRIES_ZERO_BLOCK__) return;
+  window.__V33_NO_AUTO_ENTRIES_ZERO_BLOCK__ = true;
+  window.AIP5_VERSION_MARKER='V33_NO_AUTO_ENTRIES_ZERO_BLOCK';
+  function $id(id){return document.getElementById(id);}
+  function safe(fn,fb){try{return fn();}catch(e){console.warn('[V33]',e);return fb;}}
+  function num(v){var n=Number(v||0);return isFinite(n)?n:0;}
+  function dkey(v){try{if(typeof dateValue==='function')return dateValue(v)||'';}catch(e){}return String(v||'');}
+  function canonicalDailyKey(){return (typeof logKey!=='undefined' && logKey) ? logKey : 'aip5-daily-log-v5-advanced-scope';}
+  function readKey(k){return safe(function(){var raw=localStorage.getItem(k);if(!raw)return[];var p=JSON.parse(raw);return Array.isArray(p)?p:(p&&typeof p==='object'?Object.values(p):[]);},[]);}
+  function siteOf(e){return String((e&& (e.assetId||e.asset||e.site||e.assetLabel)) || '').trim();}
+  function isPositive(e){e=e||{};var plan=num(e.plannedQty||e.plan||e.planned),qty=num(e.dailyQty||e.qty||e.doneQty),dp=num(e.dailyProgress||e.progress),ta=num(e.totalAfter||e.overallProgress);return (plan>0&&qty>0)||dp>0||ta>0;}
+  function semKey(e){e=e||{};return [dkey(e.date),siteOf(e),e.system,e.specificItem,e.mainActivity,e.subActivity,e.tag,e.linkFrom,e.linkTo,e.plannedQty,e.dailyQty,e.uom,e.permitNo,e.docRef,e.remarks].map(function(x){return String(x||'').trim().toLowerCase();}).join('|');}
+  function cleanList(list){var seen={},out=[];(Array.isArray(list)?list:[]).forEach(function(e){if(!e||typeof e!=='object')return;if(!isPositive(e))return;var k=semKey(e);if(!seen[k]){seen[k]=1;out.push(e);}});out.sort(function(a,b){return dkey(b.date).localeCompare(dkey(a.date))||String(b.id||'').localeCompare(String(a.id||''));});return out;}
+  function writeCanonical(list){list=cleanList(list);safe(function(){window.dailyEntries=list;},null);safe(function(){dailyEntries=list;},null);safe(function(){localStorage.setItem(canonicalDailyKey(),JSON.stringify(list));},null);safe(function(){localStorage.setItem('aip5-daily-log-v33-clean',JSON.stringify(list));},null);return list;}
+  function currentClean(){var list=[];safe(function(){if(Array.isArray(window.dailyEntries))list=list.concat(window.dailyEntries);},null);safe(function(){if(Array.isArray(dailyEntries))list=list.concat(dailyEntries);},null);list=list.concat(readKey(canonicalDailyKey()));list=list.concat(readKey('aip5-daily-log-v33-clean'));return writeCanonical(list);}
+  window.AIP5_cleanDailyEntriesNoAutoMerge = currentClean;
+
+  // Override recoverDaily if older patches call it. It now reads only canonical/current data, not all historical backup keys.
+  window.AIP5_recoverDailyEntries = currentClean;
+
+  // Guard manual form submission: no zero progress entries are allowed.
+  function formHasPositiveWork(){
+    var plan=num(($id('entryPlannedQty')||{}).value), qty=num(($id('entryDailyQty')||{}).value), dp=num(($id('entryProgress')||{}).value), total=num(($id('entryOverallProgress')||{}).value);
+    return (plan>0 && qty>0) || dp>0 || total>0;
+  }
+  function installSubmitGuard(){
+    var form=$id('dailyForm');
+    if(!form || form.__v33ZeroGuard) return;
+    form.__v33ZeroGuard=true;
+    form.addEventListener('submit',function(ev){
+      if(!formHasPositiveWork()){
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+        alert('Daily Entry was not saved. Please enter Planned Qty and Daily Qty greater than zero, or enter a positive progress percentage.');
+        return false;
+      }
+    },true);
+  }
+
+  // Patch save so saving only cleans the current/canonical daily log; it does not recover old duplicated keys on every login.
+  var previousSave = (typeof window.save==='function') ? window.save : (typeof save==='function' ? save : null);
+  window.save=function(){
+    currentClean();
+    var r=safe(function(){return previousSave?previousSave.apply(this,arguments):undefined;},undefined);
+    currentClean();
+    return r;
+  };
+  safe(function(){save=window.save;},null);
+
+  // Import cleanup: imported rows with zero actual progress are removed immediately.
+  var oldImport = (typeof window.importAllValidRows==='function') ? window.importAllValidRows : (typeof importAllValidRows==='function'?importAllValidRows:null);
+  if(oldImport){
+    window.importAllValidRows=function(){
+      var before=currentClean().length;
+      var r=safe(function(){return oldImport.apply(this,arguments);},undefined);
+      var after=currentClean();
+      if(after.length===before){
+        var lbl=$id('dailyImportStatus');
+        if(lbl) lbl.textContent='Import completed. Zero-progress rows were ignored; only positive progress entries are kept.';
+      }
+      return r;
+    };
+    safe(function(){importAllValidRows=window.importAllValidRows;},null);
+  }
+
+  // Patch rendering and reporting entry sources to use the clean canonical list only.
+  var oldFiltered = window.filteredDailyEntries;
+  window.filteredDailyEntries=function(prefix){
+    currentClean();
+    return oldFiltered ? oldFiltered.apply(this,arguments) : (window.dailyEntries||[]);
+  };
+
+  // Re-run a light clean after login/render without creating any new entries.
+  function refresh(){
+    currentClean();
+    installSubmitGuard();
+    safe(function(){if(typeof renderLog==='function')renderLog();},null);
+    safe(function(){if(typeof renderKpis==='function')renderKpis();},null);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){setTimeout(refresh,250);setTimeout(refresh,1500);});
+  else {setTimeout(refresh,250);setTimeout(refresh,1500);}
+})();
+</script>
+
+</body></html>'; };
+
+  // Patch renderAll/save to always remove accidental zero entries after any save/import/recovery.
+  var oldSave = window.save;
+  window.save = function(){
+    purgeZeroEntries(false);
+    var r = oldSave ? oldSave.apply(this, arguments) : undefined;
+    purgeZeroEntries(false);
+    return r;
+  };
+  safe(function(){ save = window.save; }, null);
+
+  var oldRenderAll = window.renderAll;
+  window.renderAll = function(){
+    purgeZeroEntries(false);
+    var r = oldRenderAll ? oldRenderAll.apply(this, arguments) : undefined;
+    setTimeout(function(){ purgeZeroEntries(false); safe(function(){ if (typeof renderLog === 'function') renderLog(); }, null); }, 80);
+    return r;
+  };
+
+  function installDeleteStyle(){
+    var css = '.daily-entry-user .delete-entry{display:inline-grid!important}.viewer-user .delete-entry,.field-user.viewer-user .delete-entry{display:none!important}.admin-user .delete-entry{display:inline-grid!important}';
+    var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
+  }
+  function refreshV32(){
+    purgeZeroEntries(true);
+    installDeleteStyle();
+    safe(function(){ if (typeof renderLog === 'function') renderLog(); }, null);
+    safe(function(){ if (typeof renderKpis === 'function') renderKpis(); }, null);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function(){ setTimeout(refreshV32, 500); setTimeout(refreshV32, 1800); });
+  else { setTimeout(refreshV32, 500); setTimeout(refreshV32, 1800); }
+})();
+</script>
+
+
+<script>
+/* === V33_NO_AUTO_ENTRIES_ZERO_BLOCK ===
+   Focused patch on top of V32:
+   - Never create or re-merge daily entries on login from old backup/demo keys.
+   - Keep only actual user-entered positive-progress entries.
+   - Block manual/imported entries with zero progress before saving.
+   - Keep mirrored link rows as report display only; physical quantity is not doubled. */
+(function(){
+  'use strict';
+  if (window.__V33_NO_AUTO_ENTRIES_ZERO_BLOCK__) return;
+  window.__V33_NO_AUTO_ENTRIES_ZERO_BLOCK__ = true;
+  window.AIP5_VERSION_MARKER='V33_NO_AUTO_ENTRIES_ZERO_BLOCK';
+  function $id(id){return document.getElementById(id);}
+  function safe(fn,fb){try{return fn();}catch(e){console.warn('[V33]',e);return fb;}}
+  function num(v){var n=Number(v||0);return isFinite(n)?n:0;}
+  function dkey(v){try{if(typeof dateValue==='function')return dateValue(v)||'';}catch(e){}return String(v||'');}
+  function canonicalDailyKey(){return (typeof logKey!=='undefined' && logKey) ? logKey : 'aip5-daily-log-v5-advanced-scope';}
+  function readKey(k){return safe(function(){var raw=localStorage.getItem(k);if(!raw)return[];var p=JSON.parse(raw);return Array.isArray(p)?p:(p&&typeof p==='object'?Object.values(p):[]);},[]);}
+  function siteOf(e){return String((e&& (e.assetId||e.asset||e.site||e.assetLabel)) || '').trim();}
+  function isPositive(e){e=e||{};var plan=num(e.plannedQty||e.plan||e.planned),qty=num(e.dailyQty||e.qty||e.doneQty),dp=num(e.dailyProgress||e.progress),ta=num(e.totalAfter||e.overallProgress);return (plan>0&&qty>0)||dp>0||ta>0;}
+  function semKey(e){e=e||{};return [dkey(e.date),siteOf(e),e.system,e.specificItem,e.mainActivity,e.subActivity,e.tag,e.linkFrom,e.linkTo,e.plannedQty,e.dailyQty,e.uom,e.permitNo,e.docRef,e.remarks].map(function(x){return String(x||'').trim().toLowerCase();}).join('|');}
+  function cleanList(list){var seen={},out=[];(Array.isArray(list)?list:[]).forEach(function(e){if(!e||typeof e!=='object')return;if(!isPositive(e))return;var k=semKey(e);if(!seen[k]){seen[k]=1;out.push(e);}});out.sort(function(a,b){return dkey(b.date).localeCompare(dkey(a.date))||String(b.id||'').localeCompare(String(a.id||''));});return out;}
+  function writeCanonical(list){list=cleanList(list);safe(function(){window.dailyEntries=list;},null);safe(function(){dailyEntries=list;},null);safe(function(){localStorage.setItem(canonicalDailyKey(),JSON.stringify(list));},null);safe(function(){localStorage.setItem('aip5-daily-log-v33-clean',JSON.stringify(list));},null);return list;}
+  function currentClean(){var list=[];safe(function(){if(Array.isArray(window.dailyEntries))list=list.concat(window.dailyEntries);},null);safe(function(){if(Array.isArray(dailyEntries))list=list.concat(dailyEntries);},null);list=list.concat(readKey(canonicalDailyKey()));list=list.concat(readKey('aip5-daily-log-v33-clean'));return writeCanonical(list);}
+  window.AIP5_cleanDailyEntriesNoAutoMerge = currentClean;
+
+  // Override recoverDaily if older patches call it. It now reads only canonical/current data, not all historical backup keys.
+  window.AIP5_recoverDailyEntries = currentClean;
+
+  // Guard manual form submission: no zero progress entries are allowed.
+  function formHasPositiveWork(){
+    var plan=num(($id('entryPlannedQty')||{}).value), qty=num(($id('entryDailyQty')||{}).value), dp=num(($id('entryProgress')||{}).value), total=num(($id('entryOverallProgress')||{}).value);
+    return (plan>0 && qty>0) || dp>0 || total>0;
+  }
+  function installSubmitGuard(){
+    var form=$id('dailyForm');
+    if(!form || form.__v33ZeroGuard) return;
+    form.__v33ZeroGuard=true;
+    form.addEventListener('submit',function(ev){
+      if(!formHasPositiveWork()){
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+        alert('Daily Entry was not saved. Please enter Planned Qty and Daily Qty greater than zero, or enter a positive progress percentage.');
+        return false;
+      }
+    },true);
+  }
+
+  // Patch save so saving only cleans the current/canonical daily log; it does not recover old duplicated keys on every login.
+  var previousSave = (typeof window.save==='function') ? window.save : (typeof save==='function' ? save : null);
+  window.save=function(){
+    currentClean();
+    var r=safe(function(){return previousSave?previousSave.apply(this,arguments):undefined;},undefined);
+    currentClean();
+    return r;
+  };
+  safe(function(){save=window.save;},null);
+
+  // Import cleanup: imported rows with zero actual progress are removed immediately.
+  var oldImport = (typeof window.importAllValidRows==='function') ? window.importAllValidRows : (typeof importAllValidRows==='function'?importAllValidRows:null);
+  if(oldImport){
+    window.importAllValidRows=function(){
+      var before=currentClean().length;
+      var r=safe(function(){return oldImport.apply(this,arguments);},undefined);
+      var after=currentClean();
+      if(after.length===before){
+        var lbl=$id('dailyImportStatus');
+        if(lbl) lbl.textContent='Import completed. Zero-progress rows were ignored; only positive progress entries are kept.';
+      }
+      return r;
+    };
+    safe(function(){importAllValidRows=window.importAllValidRows;},null);
+  }
+
+  // Patch rendering and reporting entry sources to use the clean canonical list only.
+  var oldFiltered = window.filteredDailyEntries;
+  window.filteredDailyEntries=function(prefix){
+    currentClean();
+    return oldFiltered ? oldFiltered.apply(this,arguments) : (window.dailyEntries||[]);
+  };
+
+  // Re-run a light clean after login/render without creating any new entries.
+  function refresh(){
+    currentClean();
+    installSubmitGuard();
+    safe(function(){if(typeof renderLog==='function')renderLog();},null);
+    safe(function(){if(typeof renderKpis==='function')renderKpis();},null);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){setTimeout(refresh,250);setTimeout(refresh,1500);});
+  else {setTimeout(refresh,250);setTimeout(refresh,1500);}
+})();
+</script>
+
 </body></html>
